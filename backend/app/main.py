@@ -6,11 +6,21 @@
 
 import asyncio
 from datetime import datetime, timedelta
+from typing import Annotated
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import TypeAdapter, ValidationError
 
-from .contracts.rest import Health, PlanItem, PlanResponse, SetupRequest, SetupResponse
+from .chat.service import ChatService, get_chat_service
+from .contracts.rest import (
+    ChatRequest,
+    ChatResponse,
+    Health,
+    PlanItem,
+    PlanResponse,
+    SetupRequest,
+    SetupResponse,
+)
 from .contracts.ws import ClientEvent, ClockTick, ClockTickData
 from .settings import settings
 
@@ -33,6 +43,14 @@ def healthz() -> Health:
 def setup(req: SetupRequest) -> SetupResponse:
     # TODO(be): DB에 저장
     return SetupResponse()
+
+
+@app.post("/api/chat", response_model=ChatResponse)
+async def chat(req: ChatRequest, service: Annotated[ChatService, Depends(get_chat_service)]) -> ChatResponse:
+    if not settings.chat_enabled:
+        raise HTTPException(status_code=403, detail="대화 기능이 꺼져 있어요 (CHAT_ENABLED=false)")
+    result = await service.reply(req.text)
+    return ChatResponse(reply=result.reply, fallback=result.fallback)
 
 
 @app.get("/api/plan/today", response_model=PlanResponse)

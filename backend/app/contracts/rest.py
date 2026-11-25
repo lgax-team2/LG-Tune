@@ -59,6 +59,17 @@ class PlanResponse(BaseModel):
     items: list[PlanItem]
 
 
+class ChatRequest(BaseModel):
+    """글자로 AI 친구에게 말 걸기 (음성 연결 전 1단계)."""
+
+    text: str = Field(min_length=1, max_length=500, description="사용자가 한 말")
+
+
+class ChatResponse(BaseModel):
+    reply: str = Field(description="AI 친구의 답")
+    fallback: bool = Field(description="true = AI가 제때 답하지 못해 고정 멘트로 답함")
+
+
 class Health(BaseModel):
     status: Literal["ok", "degraded"]
     profile: str
