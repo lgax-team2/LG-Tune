@@ -1,0 +1,26 @@
+# 비밀값 — 절대 커밋 금지
+.env
+*.key
+keys.txt
+
+# Python
+__pycache__/
+.venv/
+.ruff_cache/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+
+# 데이터·모델 (용량 큼 / 개인정보)
+backend/data/*.db*
+models/*.onnx
+models/*.bin
+ml/**/data/
+ml/**/checkpoints/
+*.wav
+*.mp4
+
+.DS_Store
+Thumbs.db
