@@ -1,0 +1,323 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "LG TUNE",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/healthz": {
+      "get": {
+        "summary": "Healthz",
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/setup": {
+      "post": {
+        "summary": "Setup",
+        "operationId": "setup_api_setup_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plan/today": {
+      "get": {
+        "summary": "Plan Today",
+        "operationId": "plan_today_api_plan_today_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Health": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "degraded"
+            ],
+            "title": "Status"
+          },
+          "profile": {
+            "type": "string",
+            "title": "Profile"
+          },
+          "llm": {
+            "type": "string",
+            "title": "Llm"
+          },
+          "stt": {
+            "type": "string",
+            "title": "Stt"
+          },
+          "tts": {
+            "type": "string",
+            "title": "Tts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "profile",
+          "llm",
+          "stt",
+          "tts"
+        ],
+        "title": "Health"
+      },
+      "PlanItem": {
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End"
+          },
+          "channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "program_id": {
+            "type": "string",
+            "title": "Program Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "description": "고른 이유 (화면 표시용, 예: '트로트 좋아하셔서')"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "planned",
+              "reminded",
+              "accepted",
+              "declined",
+              "playing",
+              "done",
+              "skipped"
+            ],
+            "title": "Status",
+            "default": "planned"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_id",
+          "start",
+          "end",
+          "channel",
+          "program_id",
+          "title",
+          "reason"
+        ],
+        "title": "PlanItem"
+      },
+      "PlanResponse": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PlanItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "items"
+        ],
+        "title": "PlanResponse"
+      },
+      "SetupRequest": {
+        "properties": {
+          "call_name": {
+            "type": "string",
+            "title": "Call Name",
+            "description": "AI 친구가 부를 호칭 (예: '어머니', '영숙 님')"
+          },
+          "wake_time": {
+            "type": "string",
+            "pattern": "^\\d{2}:\\d{2}$",
+            "title": "Wake Time",
+            "default": "06:30"
+          },
+          "sleep_time": {
+            "type": "string",
+            "pattern": "^\\d{2}:\\d{2}$",
+            "title": "Sleep Time",
+            "default": "22:00"
+          },
+          "favorite_genres": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Favorite Genres",
+            "description": "예: ['트로트', '사극']"
+          },
+          "favorite_people": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Favorite People",
+            "description": "좋아하는 가수·배우"
+          },
+          "religion": {
+            "type": "string",
+            "enum": [
+              "none",
+              "christian",
+              "catholic",
+              "buddhist"
+            ],
+            "title": "Religion",
+            "default": "none"
+          }
+        },
+        "type": "object",
+        "required": [
+          "call_name"
+        ],
+        "title": "SetupRequest",
+        "description": "자녀 폰 첫 설정."
+      },
+      "SetupResponse": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "SetupResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

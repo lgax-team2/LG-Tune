@@ -1,0 +1,18 @@
+{
+  "name": "lg-tune",
+  "private": true,
+  "scripts": {
+    "prepare": "git config core.hooksPath .githooks",
+    "dev": "concurrently -n be,fe -c blue,magenta \"pnpm dev:be\" \"pnpm dev:fe\"",
+    "dev:be": "cd backend && uv run uvicorn app.main:app --reload --port 8000",
+    "dev:fe": "cd frontend && pnpm dev",
+    "dev:mock": "concurrently -n mock,fe -c yellow,magenta \"cd frontend && pnpm mock\" \"pnpm dev:fe\"",
+    "gen": "cd backend && uv run python scripts/gen_contracts.py && cd ../frontend && pnpm gen:types",
+    "test": "cd backend && uv run pytest -q && cd ../frontend && pnpm typecheck",
+    "setup": "cd backend && uv sync && cd ../frontend && pnpm install"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.7"
+  },
+  "packageManager": "pnpm@10.28.0"
+}

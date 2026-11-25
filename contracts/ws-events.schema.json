@@ -1,0 +1,1194 @@
+{
+  "$defs": {
+    "AsrFinal": {
+      "properties": {
+        "v": {
+          "const": 1,
+          "default": 1,
+          "title": "V",
+          "type": "integer"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "asr.final",
+          "default": "asr.final",
+          "title": "Type",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/AsrFinalData"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "title": "AsrFinal",
+      "type": "object"
+    },
+    "AsrFinalData": {
+      "properties": {
+        "window_id": {
+          "title": "Window Id",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "window_id",
+        "text"
+      ],
+      "title": "AsrFinalData",
+      "type": "object"
+    },
+    "BuddyNudge": {
+      "properties": {
+        "v": {
+          "const": 1,
+          "default": 1,
+          "title": "V",
+          "type": "integer"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "buddy.nudge",
+          "default": "buddy.nudge",
+          "title": "Type",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/BuddyNudgeData"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "title": "BuddyNudge",
+      "type": "object"
+    },
+    "BuddyNudgeData": {
+      "description": "조용한 신호: 화면 구석에 AI 친구 아이콘만 띄운다. 소리 없음.\n사용자가 반응(확인 버튼/\"왜?\")해야 buddy.say 로 이어진다.",
+      "properties": {
+        "nudge_id": {
+          "title": "Nudge Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "memory",
+            "plan",
+            "info"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "hint": {
+          "description": "아이콘 옆 아주 짧은 글 (예: '지난주 그 배우')",
+          "maxLength": 20,
+          "title": "Hint",
+          "type": "string"
+        },
+        "expires_in_s": {
+          "default": 15,
+          "description": "이 시간 안에 반응 없으면 사라짐",
+          "title": "Expires In S",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "nudge_id",
+        "kind",
+        "hint"
+      ],
+      "title": "BuddyNudgeData",
+      "type": "object"
+    },
+    "BuddySay": {
+      "properties": {
+        "v": {
+          "const": 1,
+          "default": 1,
+          "title": "V",
+          "type": "integer"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "buddy.say",
+          "default": "buddy.say",
+          "title": "Type",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/BuddySayData"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "title": "BuddySay",
+      "type": "object"
+    },
+    "BuddySayData": {
+      "properties": {
+        "say_id": {
+          "title": "Say Id",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "audio_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "TTS 음성 파일 경로. None 이면 글만 표시",
+          "title": "Audio Url"
+        },
+        "mode": {
+          "default": "reply",
+          "enum": [
+            "reply",
+            "proactive",
+            "reminder"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "duration_ms": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Ms"
+        }
+      },
+      "required": [
+        "say_id",
+        "text"
+      ],
+      "title": "BuddySayData",
+      "type": "object"
+    },
+    "CardHide": {
+      "properties": {
+        "v": {
+          "const": 1,
+          "default": 1,
+          "title": "V",
+          "type": "integer"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "card.hide",
+          "default": "card.hide",
+          "title": "Type",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/CardHideData"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "title": "CardHide",
+      "type": "object"
+    },
+    "CardHideData": {
+      "properties": {
+        "card_id": {
+          "title": "Card Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "card_id"
+      ],
+      "title": "CardHideData",
+      "type": "object"
+    },
+    "CardShow": {
+      "properties": {
+        "v": {
+          "const": 1,
+          "default": 1,
+          "title": "V",
+          "type": "integer"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "card.show",
+          "default": "card.show",
+          "title": "Type",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/CardShowData"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "title": "CardShow",
+      "type": "object"
+    },
+    "CardShowData": {
+      "properties": {
+        "card_id": {
+          "title": "Card Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "relation_map",
+            "verse",
+            "concert",
+            "plan"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "description": "카드 종류별 내용 (docs/cards.md 참고)",
+          "title": "Payload",
+          "type": "object"
+        }
+      },
+      "required": [
+        "card_id",
+        "kind",
+        "title"
+      ],
+      "title": "CardShowData",
+      "type": "object"
+    },
+    "ClockTick": {
+      "properties": {
+        "v": {
+          "const": 1,
+          "default": 1,
+          "title": "V",
+          "type": "integer"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "clock.tick",
+          "default": "clock.tick",
+          "title": "Type",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/ClockTickData"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "title": "ClockTick",
+      "type": "object"
+    },
+    "ClockTickData": {
+      "properties": {
+        "now": {
+          "description": "시연 시계 기준 현재 시각",
+          "format": "date-time",
+          "title": "Now",
+          "type": "string"
+        },
+        "speed": {
+          "default": 1.0,
+          "description": "배속 (1 = 실제 시간)",
+          "title": "Speed",
+          "type": "number"
+        }
+      },
+      "required": [
+        "now"
+      ],
+      "title": "ClockTickData",
+      "type": "object"
+    },
+    "ListenClose": {
+      "properties": {
+        "v": {
+          "const": 1,
+          "default": 1,
+          "title": "V",
+          "type": "integer"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "listen.close",
+          "default": "listen.close",
+          "title": "Type",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/ListenCloseData"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "title": "ListenClose",
+      "type": "object"
+    },
+    "ListenCloseData": {
+      "properties": {
+        "window_id": {
+          "title": "Window Id",
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "answered",
+            "timeout",
+            "cancelled"
+          ],
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "window_id",
+        "reason"
+      ],
+      "title": "ListenCloseData",
+      "type": "object"
+    },
+    "ListenOpen": {
+      "properties": {
+        "v": {
+          "const": 1,
+          "default": 1,
+          "title": "V",
+          "type": "integer"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "listen.open",
+          "default": "listen.open",
+          "title": "Type",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/ListenOpenData"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "title": "ListenOpen",
+      "type": "object"
+    },
+    "ListenOpenData": {
+      "properties": {
+        "window_id": {
+          "title": "Window Id",
+          "type": "string"
+        },
+        "expect": {
+          "description": "응/아니만 기다리는지, 자유 대화인지",
+          "enum": [
+            "yesno",
+            "free"
+          ],
+          "title": "Expect",
+          "type": "string"
+        },
+        "timeout_s": {
+          "default": 8,
+          "title": "Timeout S",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "window_id",
+        "expect"
+      ],
+      "title": "ListenOpenData",
+      "type": "object"
+    },
+    "MetricsSnapshot": {
+      "properties": {
+        "v": {
+          "const": 1,
+          "default": 1,
+          "title": "V",
+          "type": "integer"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "metrics.snapshot",
+          "default": "metrics.snapshot",
+          "title": "Type",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/MetricsSnapshotData"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "title": "MetricsSnapshot",
+      "type": "object"
+    },
+    "MetricsSnapshotData": {
+      "properties": {
+        "kpis": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "지표 이름 → 값. 이름 목록은 docs/DECISIONS.md 의 KPI 표",
+          "title": "Kpis",
+          "type": "object"
+        }
+      },
+      "required": [
+        "kpis"
+      ],
+      "title": "MetricsSnapshotData",
+      "type": "object"
+    },
+    "NudgeResponse": {
+      "properties": {
+        "v": {
+          "const": 1,
+          "default": 1,
+          "title": "V",
+          "type": "integer"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "nudge.response",
+          "default": "nudge.response",
+          "title": "Type",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/NudgeResponseData"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "title": "NudgeResponse",
+      "type": "object"
+    },
+    "NudgeResponseData": {
+      "properties": {
+        "nudge_id": {
+          "title": "Nudge Id",
+          "type": "string"
+        },
+        "action": {
+          "enum": [
+            "opened",
+            "ignored",
+            "dismissed"
+          ],
+          "title": "Action",
+          "type": "string"
+        }
+      },
+      "required": [
+        "nudge_id",
+        "action"
+      ],
+      "title": "NudgeResponseData",
+      "type": "object"
+    },
+    "PlanItem": {
+      "properties": {
+        "item_id": {
+          "title": "Item Id",
+          "type": "string"
+        },
+        "start": {
+          "format": "date-time",
+          "title": "Start",
+          "type": "string"
+        },
+        "end": {
+          "format": "date-time",
+          "title": "End",
+          "type": "string"
+        },
+        "channel": {
+          "title": "Channel",
+          "type": "string"
+        },
+        "program_id": {
+          "title": "Program Id",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "reason": {
+          "description": "고른 이유 (화면 표시용, 예: '트로트 좋아하셔서')",
+          "title": "Reason",
+          "type": "string"
+        },
+        "status": {
+          "default": "planned",
+          "enum": [
+            "planned",
+            "reminded",
+            "accepted",
+            "declined",
+            "playing",
+            "done",
+            "skipped"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "item_id",
+        "start",
+        "end",
+        "channel",
+        "program_id",
+        "title",
+        "reason"
+      ],
+      "title": "PlanItem",
+      "type": "object"
+    },
+    "PlanUpdated": {
+      "properties": {
+        "v": {
+          "const": 1,
+          "default": 1,
+          "title": "V",
+          "type": "integer"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "plan.updated",
+          "default": "plan.updated",
+          "title": "Type",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/PlanUpdatedData"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "title": "PlanUpdated",
+      "type": "object"
+    },
+    "PlanUpdatedData": {
+      "properties": {
+        "date": {
+          "description": "YYYY-MM-DD",
+          "title": "Date",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/PlanItem"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "date",
+        "items"
+      ],
+      "title": "PlanUpdatedData",
+      "type": "object"
+    },
+    "PlaybackDuck": {
+      "properties": {
+        "v": {
+          "const": 1,
+          "default": 1,
+          "title": "V",
+          "type": "integer"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "playback.duck",
+          "default": "playback.duck",
+          "title": "Type",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/PlaybackDuckData"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "title": "PlaybackDuck",
+      "type": "object"
+    },
+    "PlaybackDuckData": {
+      "description": "AI 친구가 듣거나 말할 때 TV 소리를 낮춘다 (마이크에 TV 소리가 섞이지 않게).",
+      "properties": {
+        "level": {
+          "description": "1 = 원래 볼륨, 0.2 = 크게 줄임",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Level",
+          "type": "number"
+        }
+      },
+      "required": [
+        "level"
+      ],
+      "title": "PlaybackDuckData",
+      "type": "object"
+    },
+    "PlaybackSwitch": {
+      "properties": {
+        "v": {
+          "const": 1,
+          "default": 1,
+          "title": "V",
+          "type": "integer"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "playback.switch",
+          "default": "playback.switch",
+          "title": "Type",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/PlaybackSwitchData"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "title": "PlaybackSwitch",
+      "type": "object"
+    },
+    "PlaybackSwitchData": {
+      "properties": {
+        "channel": {
+          "title": "Channel",
+          "type": "string"
+        },
+        "program_id": {
+          "title": "Program Id",
+          "type": "string"
+        },
+        "position_s": {
+          "default": 0,
+          "title": "Position S",
+          "type": "number"
+        }
+      },
+      "required": [
+        "channel",
+        "program_id"
+      ],
+      "title": "PlaybackSwitchData",
+      "type": "object"
+    },
+    "PlayerState": {
+      "properties": {
+        "v": {
+          "const": 1,
+          "default": 1,
+          "title": "V",
+          "type": "integer"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "player.state",
+          "default": "player.state",
+          "title": "Type",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/PlayerStateData"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "title": "PlayerState",
+      "type": "object"
+    },
+    "PlayerStateData": {
+      "properties": {
+        "channel": {
+          "title": "Channel",
+          "type": "string"
+        },
+        "program_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Program Id"
+        },
+        "position_s": {
+          "title": "Position S",
+          "type": "number"
+        },
+        "segment": {
+          "description": "지금 구간. break/credits 일 때만 AI 친구가 먼저 말할 수 있음",
+          "enum": [
+            "program",
+            "break",
+            "credits",
+            "idle"
+          ],
+          "title": "Segment",
+          "type": "string"
+        },
+        "volume": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Volume",
+          "type": "number"
+        }
+      },
+      "required": [
+        "channel",
+        "program_id",
+        "position_s",
+        "segment",
+        "volume"
+      ],
+      "title": "PlayerStateData",
+      "type": "object"
+    },
+    "RemotePress": {
+      "properties": {
+        "v": {
+          "const": 1,
+          "default": 1,
+          "title": "V",
+          "type": "integer"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "remote.press",
+          "default": "remote.press",
+          "title": "Type",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/RemotePressData"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "title": "RemotePress",
+      "type": "object"
+    },
+    "RemotePressData": {
+      "properties": {
+        "button": {
+          "description": "리모컨은 선택 사항. 직접 조작 감지와 리모컨 의존도 KPI용 (AI 친구는 음성으로만 부름)",
+          "enum": [
+            "ok",
+            "cancel",
+            "back",
+            "home",
+            "ai",
+            "input",
+            "up",
+            "down",
+            "left",
+            "right",
+            "ch_up",
+            "ch_down",
+            "vol_up",
+            "vol_down"
+          ],
+          "title": "Button",
+          "type": "string"
+        }
+      },
+      "required": [
+        "button"
+      ],
+      "title": "RemotePressData",
+      "type": "object"
+    },
+    "TvAction": {
+      "properties": {
+        "v": {
+          "const": 1,
+          "default": 1,
+          "title": "V",
+          "type": "integer"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "tv.action",
+          "default": "tv.action",
+          "title": "Type",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/TvActionData"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "title": "TvAction",
+      "type": "object"
+    },
+    "TvActionData": {
+      "description": "AI 친구가 말로 받은 요청을 TV 기능으로 실행 (이지TV 기능을 말로 대신 조작).\n시연에서는 화면이 흉내 내고, 실제 제품에서는 webOS 기능 호출.",
+      "properties": {
+        "action_id": {
+          "title": "Action Id",
+          "type": "string"
+        },
+        "action": {
+          "enum": [
+            "channel.set",
+            "volume.set",
+            "volume.mute",
+            "input.switch",
+            "display.text_size",
+            "display.brightness",
+            "app.open",
+            "video_call.start",
+            "game.open",
+            "help.request",
+            "power.sleep_timer"
+          ],
+          "title": "Action",
+          "type": "string"
+        },
+        "params": {
+          "additionalProperties": true,
+          "description": "예: {'channel': 'KBS1'}, {'contact': '큰아들'}",
+          "title": "Params",
+          "type": "object"
+        },
+        "spoken": {
+          "description": "사용자가 실제로 한 말 (로그·디버그용)",
+          "title": "Spoken",
+          "type": "string"
+        },
+        "confirm_required": {
+          "default": false,
+          "description": "영상통화처럼 되돌리기 어려운 건 한 번 더 확인",
+          "title": "Confirm Required",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "action_id",
+        "action",
+        "spoken"
+      ],
+      "title": "TvActionData",
+      "type": "object"
+    },
+    "UiReady": {
+      "properties": {
+        "v": {
+          "const": 1,
+          "default": 1,
+          "title": "V",
+          "type": "integer"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "ui.ready",
+          "default": "ui.ready",
+          "title": "Type",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/UiReadyData"
+        }
+      },
+      "title": "UiReady",
+      "type": "object"
+    },
+    "UiReadyData": {
+      "properties": {
+        "screen": {
+          "default": "tv",
+          "enum": [
+            "tv",
+            "setup",
+            "dashboard"
+          ],
+          "title": "Screen",
+          "type": "string"
+        }
+      },
+      "title": "UiReadyData",
+      "type": "object"
+    }
+  },
+  "description": "스키마 생성용 묶음 (실제 메시지로 쓰지 않음).",
+  "properties": {
+    "server": {
+      "discriminator": {
+        "mapping": {
+          "asr.final": "#/$defs/AsrFinal",
+          "buddy.nudge": "#/$defs/BuddyNudge",
+          "buddy.say": "#/$defs/BuddySay",
+          "card.hide": "#/$defs/CardHide",
+          "card.show": "#/$defs/CardShow",
+          "clock.tick": "#/$defs/ClockTick",
+          "listen.close": "#/$defs/ListenClose",
+          "listen.open": "#/$defs/ListenOpen",
+          "metrics.snapshot": "#/$defs/MetricsSnapshot",
+          "plan.updated": "#/$defs/PlanUpdated",
+          "playback.duck": "#/$defs/PlaybackDuck",
+          "playback.switch": "#/$defs/PlaybackSwitch",
+          "tv.action": "#/$defs/TvAction"
+        },
+        "propertyName": "type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ClockTick"
+        },
+        {
+          "$ref": "#/$defs/PlanUpdated"
+        },
+        {
+          "$ref": "#/$defs/BuddyNudge"
+        },
+        {
+          "$ref": "#/$defs/BuddySay"
+        },
+        {
+          "$ref": "#/$defs/ListenOpen"
+        },
+        {
+          "$ref": "#/$defs/ListenClose"
+        },
+        {
+          "$ref": "#/$defs/AsrFinal"
+        },
+        {
+          "$ref": "#/$defs/PlaybackSwitch"
+        },
+        {
+          "$ref": "#/$defs/PlaybackDuck"
+        },
+        {
+          "$ref": "#/$defs/CardShow"
+        },
+        {
+          "$ref": "#/$defs/CardHide"
+        },
+        {
+          "$ref": "#/$defs/TvAction"
+        },
+        {
+          "$ref": "#/$defs/MetricsSnapshot"
+        }
+      ],
+      "title": "Server"
+    },
+    "client": {
+      "discriminator": {
+        "mapping": {
+          "nudge.response": "#/$defs/NudgeResponse",
+          "player.state": "#/$defs/PlayerState",
+          "remote.press": "#/$defs/RemotePress",
+          "ui.ready": "#/$defs/UiReady"
+        },
+        "propertyName": "type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/UiReady"
+        },
+        {
+          "$ref": "#/$defs/PlayerState"
+        },
+        {
+          "$ref": "#/$defs/RemotePress"
+        },
+        {
+          "$ref": "#/$defs/NudgeResponse"
+        }
+      ],
+      "title": "Client"
+    }
+  },
+  "required": [
+    "server",
+    "client"
+  ],
+  "title": "WsContract",
+  "type": "object"
+}
