@@ -3,7 +3,7 @@
 > 목표: 하루표 엔진·API 를 **시연 가능한 상태**로 끝내고, 처음 온 개발자도 이어받을 수 있게 정리.
 > 진행: 작업 1개씩 "다음" → 테스트 먼저(TDD) → Codex 리뷰 → 반영 → `pnpm test` → 커밋·push(engine/rules) → 여기 체크 + 진행 기록.
 > 확인 화면: `pnpm dev:be` 후 http://localhost:8000/api/schedules/s1/view (s2·s3 는 주소의 s1 만 바꿈)
-> 현재 PR: #3 (engine/rules → main, draft)
+> 현재 PR: (engine/realistic → main, draft — 번호는 아래 진행 기록) · 이전 PR #3 (①·②) 합쳐짐 11/26
 
 ## 진행 규칙
 Codex 활용 (항상, 코드는 고치지 말고 의견만 받기)
@@ -53,6 +53,18 @@ Codex 활용 (항상, 코드는 고치지 말고 의견만 받기)
   - 확인 화면에서 볼 것: s1 "취향 요약 > 장르"에 3개, 하루표 칸·점수가 ①끝과 비슷한지
   - ⏸ 끝나면 **중간 합치기** ("지금 합칠 때")
 
+- [ ] **②-2 하루표 현실화** (11/26 추가, ③ 전에. 엔진 규칙 · 테스트 먼저 · 숫자는 `config.py` · `docs/약속.md` 6절 갱신 — 공통 변경)
+  - 방식: **시간 예산 DP + 넘친 장르 무게 깎아 다시 배치** (방식 2 — 실험·Codex 비교 결과. 방식 1 "배치 후 빼고 채우기"는 s1 하루표가 0분이 되는 연쇄 삭제가 나서 탈락)
+  - 고칠 파일: `engine/planner.py`(배치), `engine/preference.py`(평균 시청 시간·시청 시간대·안 본 장르), `engine/diversity.py`(새로: 장르 비율·연속 검사), `engine/novelty.py`(새로: 새로 추천 1칸), `engine/reason.py`, `engine/config.py`, `api/schedules.py`(빠진 이유), `docs/약속.md` 6절, `tests/test_engine*.py`, `tests/test_api_schedules.py`
+  - 순서 (각각 테스트 먼저):
+    - **a. 시청 시간**: 시청 시간대 = 시간대 습관 점수 0.35 이상인 시간대(방송 "시작" 기준, ①과 같음). pick·LG 채우기는 그 안에서만. 총 pick 시간 ≤ 최근 평균 시청 시간(본 날 7일 미만이면 240분). 배치는 1분 단위 시간 예산 DP. pin·새로 추천은 먼저 고정하고 남은 예산으로 배치
+    - **b. 다양성**: 같은 대표 장르 ≤ pick 시간의 50% (pin 은 분자·분모 모두 제외), 같은 장르 3칸째 연속부터 무게 ×0.7. 넘치면 그 장르 무게 ×0.7 하고 다시 DP (최대 10번). 끝까지 못 지키면 규칙을 지킨 결과 중 최고, 없으면 시간 상한은 지키고 50% 는 완화(확인 화면에 표시)
+    - **c. 새로 추천 1칸**: 가장 좋아하는 장르와 가까운 장르(`config.NEAR_GENRES`) 중 시청 기록상 거의 안 본 장르(기록 점수 < 0.2)의 방송 1개. "안 볼래"로 뺀 시리즈·장르는 절대 안 고름. kind 는 pick 그대로, reason = "새로 추천해 드려요 — …"
+    - **d. 빠진 이유**: 확인 화면에 "시청 시간대 밖", "시간 상한", "다양성" 추가 — 엔진이 배치하면서 남긴 기록으로 표시 (따로 다시 계산하지 않음)
+  - 테스트(먼저): `test_viewing_hours_are_bands_with_habit_score_over_min`, `test_daily_budget_is_recent_average_or_240_when_few_days`, `test_total_pick_minutes_stay_within_budget`, `test_lg_fill_only_inside_viewing_hours`, `test_one_genre_takes_at_most_half_of_pick_time`, `test_pinned_shows_are_left_out_of_genre_share`, `test_third_same_genre_in_a_row_is_penalized`, `test_novelty_picks_unseen_genre_near_favorite`, `test_novelty_never_picks_excluded_series_or_genre`, `test_view_shows_diversity_and_budget_reasons`
+  - 끝 기준: s1 하루표가 트로트 50% 이하 + "새로 추천" 1칸 + 총 시간이 평균 시청 시간 근처. s2·s3 도 한 장르 도배 없음
+  - 확인 화면에서 볼 것: s1 표 맨 위 요약(총 pick 시간 / 상한, 장르 비율), "새로 추천해 드려요" 칸, "빠진 방송"에 다양성·시간 상한 이유
+
 - [ ] **③ 음성 명령 API** (`POST /api/commands`, 약속 4절) + 확인 화면에 말하기 칸
   - 고칠 파일: `api/commands.py`(새로: 요청 받기·응답), `engine/commands.py`(새로: 말 해석 + 규칙 저장/취소), `contracts/rest.py`(`CommandRequest`·`CommandResponse` 추가만) → `pnpm gen`, `docs/약속.md` 4·5절, `api/views/schedule_view.html`(말하기 칸), `tests/test_api_commands.py`, `tests/test_engine_commands.py`
   - 참고 초안 없이 `docs/약속.md` 4절 기준으로 만듦
@@ -69,7 +81,8 @@ Codex 활용 (항상, 코드는 고치지 말고 의견만 받기)
   - 고칠 파일: `engine/answer.py`(새로), `api/commands.py`, `tests/test_engine_answer.py`
   - 방식: 질문에서 때(지금/아침/낮/저녁/밤/다음)를 찾아 **하루표·편성표에서 사실 목록**을 먼저 뽑음 → 진짜 LLM 이면 "이 목록 안에서만 답, 없으면 모른다고" 지시와 함께 전달 / fake 면 사실 목록을 문장 틀로 답 / 사실이 없으면 "그건 잘 모르겠어요"
   - 테스트(먼저): `test_evening_question_lists_evening_schedule`, `test_unknown_question_says_dont_know`, `test_llm_gets_only_schedule_facts`
-  - 끝 기준: "오늘 저녁에 뭐 해?" → 하루표 내용이 들어간 답
+  - 추가(11/26): "지금 뭐 볼까?" → 현재 가상 시각 기준으로 지금 하거나 곧 시작하는 방송 중 점수 높은 1~3개 추천 (`test_what_to_watch_now_recommends_up_to_three_from_clock_time`)
+  - 끝 기준: "오늘 저녁에 뭐 해?" → 하루표 내용이 들어간 답 / "지금 뭐 볼까?" → 지금 시각 기준 1~3개
   - 확인 화면에서 볼 것: 말하기 칸에 "오늘 저녁에 뭐 해?" → 답에 저녁 칸 방송 이름·시각
 
 - [ ] **⑤ 실시간 알림** (하루표 바뀌면 WebSocket `schedule.updated`)
