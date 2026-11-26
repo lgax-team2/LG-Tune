@@ -61,6 +61,44 @@
         }
       }
     },
+    "/api/chat": {
+      "post": {
+        "summary": "Chat",
+        "operationId": "chat_api_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/plan/today": {
       "get": {
         "summary": "Plan Today",
@@ -82,6 +120,43 @@
   },
   "components": {
     "schemas": {
+      "ChatRequest": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Text",
+            "description": "사용자가 한 말"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "ChatRequest",
+        "description": "글자로 AI 친구에게 말 걸기 (음성 연결 전 1단계)."
+      },
+      "ChatResponse": {
+        "properties": {
+          "reply": {
+            "type": "string",
+            "title": "Reply",
+            "description": "AI 친구의 답"
+          },
+          "fallback": {
+            "type": "boolean",
+            "title": "Fallback",
+            "description": "true = AI가 제때 답하지 못해 고정 멘트로 답함"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reply",
+          "fallback"
+        ],
+        "title": "ChatResponse"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {

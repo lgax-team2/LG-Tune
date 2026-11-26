@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     judge_provider: Literal["fake", "local", "jev", "claude"] = "fake"  # 응/아니·명령·관련성 판단
     stt_provider: Literal["fake", "whisper"] = "fake"
     tts_provider: Literal["fake", "supertonic", "custom"] = "fake"
+    chat_enabled: bool = True  # 대화 기능 켜기/끄기 (편성만 쓸 때 false)
+    llm_timeout_s: float = 3.0  # 이 시간 넘으면 고정 멘트로 답
     clock_speed: float = 1.0
     demo_mode: bool = False
 
