@@ -4,6 +4,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-news-am",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-17T06:00:00",
     "watched_min": 76.6,
@@ -16,6 +19,9 @@
     "channel_id": "EBS1",
     "series_key": "ebs-baduk",
     "genre": "취미",
+    "genres": [
+      "취미"
+    ],
     "cast": [],
     "started_at": "2026-11-17T14:00:00",
     "watched_min": 44.1,
@@ -28,6 +34,10 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-songclass",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "교양"
+    ],
     "cast": [
       "송미란"
     ],
@@ -42,6 +52,10 @@
     "channel_id": "TVC",
     "series_key": "tvc-star",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -57,6 +71,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-news-pm",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-17T19:00:00",
     "watched_min": 79.1,
@@ -69,6 +86,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-haetsal",
     "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
     "cast": [
       "한지수",
       "오민재"
@@ -84,6 +104,10 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-king",
     "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
     "cast": [
       "정대현",
       "윤서아"
@@ -99,6 +123,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-animal",
     "genre": "다큐",
+    "genres": [
+      "다큐"
+    ],
     "cast": [],
     "started_at": "2026-11-18T11:30:00",
     "watched_min": 30.0,
@@ -111,6 +138,10 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-songclass",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "교양"
+    ],
     "cast": [
       "송미란"
     ],
@@ -125,6 +156,9 @@
     "channel_id": "TVC",
     "series_key": "tvc-current-pm",
     "genre": "시사",
+    "genres": [
+      "시사"
+    ],
     "cast": [],
     "started_at": "2026-11-18T18:00:00",
     "watched_min": 89.6,
@@ -137,6 +171,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-news-pm",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-18T19:00:00",
     "watched_min": 59.9,
@@ -149,6 +186,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-haetsal",
     "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
     "cast": [
       "한지수",
       "오민재"
@@ -164,6 +204,9 @@
     "channel_id": "MBC",
     "series_key": "mbc-bluesea",
     "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
     "cast": [
       "이은정"
     ],
@@ -178,6 +221,10 @@
     "channel_id": "TVC",
     "series_key": "tvc-star",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -193,6 +240,10 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-king",
     "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
     "cast": [
       "정대현",
       "윤서아"
@@ -208,6 +259,9 @@
     "channel_id": "MBC",
     "series_key": "mbc-current",
     "genre": "시사",
+    "genres": [
+      "시사"
+    ],
     "cast": [],
     "started_at": "2026-11-18T22:40:00",
     "watched_min": 1.2,
@@ -220,6 +274,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-news-am",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-19T06:00:00",
     "watched_min": 117.2,
@@ -232,6 +289,9 @@
     "channel_id": "KBS2",
     "series_key": "kbs2-spring",
     "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
     "cast": [
       "이은정"
     ],
@@ -246,6 +306,9 @@
     "channel_id": "EBS1",
     "series_key": "ebs-baduk",
     "genre": "취미",
+    "genres": [
+      "취미"
+    ],
     "cast": [],
     "started_at": "2026-11-19T14:00:00",
     "watched_min": 50.3,
@@ -258,6 +321,10 @@
     "channel_id": "KBS2",
     "series_key": "kbs2-king-of-song",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -273,6 +340,10 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-songclass",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "교양"
+    ],
     "cast": [
       "송미란"
     ],
@@ -287,6 +358,9 @@
     "channel_id": "EBS1",
     "series_key": "ebs-prime",
     "genre": "다큐",
+    "genres": [
+      "다큐"
+    ],
     "cast": [],
     "started_at": "2026-11-19T17:00:00",
     "watched_min": 2.1,
@@ -299,6 +373,9 @@
     "channel_id": "TVC",
     "series_key": "tvc-current-pm",
     "genre": "시사",
+    "genres": [
+      "시사"
+    ],
     "cast": [],
     "started_at": "2026-11-19T18:00:00",
     "watched_min": 63.1,
@@ -311,6 +388,10 @@
     "channel_id": "KBS2",
     "series_key": "kbs2-king-of-song",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -326,6 +407,10 @@
     "channel_id": "TVC",
     "series_key": "tvc-star",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -341,6 +426,10 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-king",
     "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
     "cast": [
       "정대현",
       "윤서아"
@@ -356,6 +445,9 @@
     "channel_id": "SBS",
     "series_key": "sbs-laugh",
     "genre": "예능",
+    "genres": [
+      "예능"
+    ],
     "cast": [],
     "started_at": "2026-11-19T22:20:00",
     "watched_min": 3.7,
@@ -368,6 +460,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-news-am",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-20T06:00:00",
     "watched_min": 75.8,
@@ -380,6 +475,9 @@
     "channel_id": "KBS2",
     "series_key": "kbs2-wisdom",
     "genre": "교양",
+    "genres": [
+      "교양"
+    ],
     "cast": [],
     "started_at": "2026-11-20T09:10:00",
     "watched_min": 2.7,
@@ -392,6 +490,9 @@
     "channel_id": "TVC",
     "series_key": "tvc-news-noon",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-20T12:30:00",
     "watched_min": 2.4,
@@ -404,6 +505,10 @@
     "channel_id": "KBS2",
     "series_key": "kbs2-king-of-song",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -419,6 +524,10 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-songclass",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "교양"
+    ],
     "cast": [
       "송미란"
     ],
@@ -433,6 +542,9 @@
     "channel_id": "TVC",
     "series_key": "tvc-current-pm",
     "genre": "시사",
+    "genres": [
+      "시사"
+    ],
     "cast": [],
     "started_at": "2026-11-20T18:00:00",
     "watched_min": 83.0,
@@ -445,6 +557,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-news-pm",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-20T19:00:00",
     "watched_min": 83.4,
@@ -457,6 +572,10 @@
     "channel_id": "TVC",
     "series_key": "tvc-star",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -472,6 +591,10 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-king",
     "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
     "cast": [
       "정대현",
       "윤서아"
@@ -487,6 +610,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-debate",
     "genre": "시사",
+    "genres": [
+      "시사"
+    ],
     "cast": [],
     "started_at": "2026-11-20T22:40:00",
     "watched_min": 2.9,
@@ -499,6 +625,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-news-am",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-21T06:00:00",
     "watched_min": 87.9,
@@ -511,6 +640,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-docu",
     "genre": "다큐",
+    "genres": [
+      "다큐"
+    ],
     "cast": [],
     "started_at": "2026-11-21T14:30:00",
     "watched_min": 1.9,
@@ -523,6 +655,10 @@
     "channel_id": "KBS2",
     "series_key": "kbs2-king-of-song",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -538,6 +674,9 @@
     "channel_id": "MBC",
     "series_key": "mbc-bluesea",
     "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
     "cast": [
       "이은정"
     ],
@@ -552,6 +691,10 @@
     "channel_id": "TVC",
     "series_key": "tvc-star",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -567,6 +710,10 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-king",
     "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
     "cast": [
       "정대현",
       "윤서아"
@@ -582,6 +729,9 @@
     "channel_id": "SBS",
     "series_key": "sbs-laugh",
     "genre": "예능",
+    "genres": [
+      "예능"
+    ],
     "cast": [],
     "started_at": "2026-11-21T22:20:00",
     "watched_min": 2.5,
@@ -594,6 +744,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-news-am",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-22T06:00:00",
     "watched_min": 108.2,
@@ -606,6 +759,10 @@
     "channel_id": "KBS2",
     "series_key": "kbs2-king-of-song",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -621,6 +778,10 @@
     "channel_id": "KBS2",
     "series_key": "kbs2-king-of-song",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -636,6 +797,10 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-songclass",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "교양"
+    ],
     "cast": [
       "송미란"
     ],
@@ -650,6 +815,9 @@
     "channel_id": "TVC",
     "series_key": "tvc-current-pm",
     "genre": "시사",
+    "genres": [
+      "시사"
+    ],
     "cast": [],
     "started_at": "2026-11-22T18:00:00",
     "watched_min": 54.5,
@@ -662,6 +830,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-news-pm",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-22T19:00:00",
     "watched_min": 84.8,
@@ -674,6 +845,10 @@
     "channel_id": "KBS2",
     "series_key": "kbs2-king-of-song",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -689,6 +864,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-haetsal",
     "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
     "cast": [
       "한지수",
       "오민재"
@@ -704,6 +882,10 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-king",
     "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
     "cast": [
       "정대현",
       "윤서아"
@@ -719,6 +901,9 @@
     "channel_id": "KBS2",
     "series_key": "kbs2-laugh",
     "genre": "예능",
+    "genres": [
+      "예능"
+    ],
     "cast": [],
     "started_at": "2026-11-22T22:50:00",
     "watched_min": 2.2,
@@ -731,6 +916,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-news-am",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-23T06:00:00",
     "watched_min": 74.7,
@@ -743,6 +931,10 @@
     "channel_id": "KBS2",
     "series_key": "kbs2-king-of-song",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -758,6 +950,10 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-hometown",
     "genre": "교양",
+    "genres": [
+      "교양",
+      "다큐"
+    ],
     "cast": [
       "이철호"
     ],
@@ -772,6 +968,9 @@
     "channel_id": "TVC",
     "series_key": "tvc-current-pm",
     "genre": "시사",
+    "genres": [
+      "시사"
+    ],
     "cast": [],
     "started_at": "2026-11-23T18:00:00",
     "watched_min": 68.5,
@@ -784,6 +983,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-news-pm",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-23T19:00:00",
     "watched_min": 84.6,
@@ -796,6 +998,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-haetsal",
     "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
     "cast": [
       "한지수",
       "오민재"
@@ -811,6 +1016,10 @@
     "channel_id": "TVC",
     "series_key": "tvc-star",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -826,6 +1035,10 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-king",
     "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
     "cast": [
       "정대현",
       "윤서아"
@@ -841,6 +1054,9 @@
     "channel_id": "MBC",
     "series_key": "mbc-current",
     "genre": "시사",
+    "genres": [
+      "시사"
+    ],
     "cast": [],
     "started_at": "2026-11-23T22:40:00",
     "watched_min": 1.9,
@@ -853,6 +1069,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-news-am",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-24T06:00:00",
     "watched_min": 85.7,
@@ -865,6 +1084,10 @@
     "channel_id": "TVC",
     "series_key": "tvc-health",
     "genre": "건강",
+    "genres": [
+      "건강",
+      "교양"
+    ],
     "cast": [
       "강민수"
     ],
@@ -879,6 +1102,10 @@
     "channel_id": "KBS2",
     "series_key": "kbs2-king-of-song",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -894,6 +1121,9 @@
     "channel_id": "MBC",
     "series_key": "mbc-bluesea",
     "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
     "cast": [
       "이은정"
     ],
@@ -908,6 +1138,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-haetsal",
     "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
     "cast": [
       "한지수",
       "오민재"
@@ -923,6 +1156,10 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-king",
     "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
     "cast": [
       "정대현",
       "윤서아"
@@ -938,6 +1175,9 @@
     "channel_id": "EBS1",
     "series_key": "ebs-movie",
     "genre": "영화",
+    "genres": [
+      "영화"
+    ],
     "cast": [],
     "started_at": "2026-11-24T23:00:00",
     "watched_min": 4.5,
@@ -950,6 +1190,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-news-am",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-25T06:00:00",
     "watched_min": 93.2,
@@ -962,6 +1205,10 @@
     "channel_id": "EBS1",
     "series_key": "ebs-doctor",
     "genre": "건강",
+    "genres": [
+      "건강",
+      "교양"
+    ],
     "cast": [
       "강민수"
     ],
@@ -976,6 +1223,10 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-songclass",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "교양"
+    ],
     "cast": [
       "송미란"
     ],
@@ -990,6 +1241,9 @@
     "channel_id": "TVC",
     "series_key": "tvc-current-pm",
     "genre": "시사",
+    "genres": [
+      "시사"
+    ],
     "cast": [],
     "started_at": "2026-11-25T18:00:00",
     "watched_min": 88.0,
@@ -1002,6 +1256,9 @@
     "channel_id": "MBC",
     "series_key": "mbc-town",
     "genre": "교양",
+    "genres": [
+      "교양"
+    ],
     "cast": [],
     "started_at": "2026-11-25T18:30:00",
     "watched_min": 60.0,
@@ -1014,6 +1271,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-news-pm",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-25T19:00:00",
     "watched_min": 74.2,
@@ -1026,6 +1286,9 @@
     "channel_id": "SBS",
     "series_key": "sbs-news-pm",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-25T20:00:00",
     "watched_min": 60.0,
@@ -1038,6 +1301,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-haetsal",
     "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
     "cast": [
       "한지수",
       "오민재"
@@ -1053,6 +1319,9 @@
     "channel_id": "MBC",
     "series_key": "mbc-bluesea",
     "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
     "cast": [
       "이은정"
     ],
@@ -1067,6 +1336,10 @@
     "channel_id": "TVC",
     "series_key": "tvc-star",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -1082,6 +1355,9 @@
     "channel_id": "SBS",
     "series_key": "sbs-laugh",
     "genre": "예능",
+    "genres": [
+      "예능"
+    ],
     "cast": [],
     "started_at": "2026-11-25T22:20:00",
     "watched_min": 1.1,
@@ -1094,6 +1370,10 @@
     "channel_id": "MBC",
     "series_key": "mbc-health",
     "genre": "건강",
+    "genres": [
+      "건강",
+      "교양"
+    ],
     "cast": [
       "강민수"
     ],
@@ -1108,6 +1388,9 @@
     "channel_id": "EBS1",
     "series_key": "ebs-baduk",
     "genre": "취미",
+    "genres": [
+      "취미"
+    ],
     "cast": [],
     "started_at": "2026-11-26T14:00:00",
     "watched_min": 58.3,
@@ -1120,6 +1403,10 @@
     "channel_id": "TVC",
     "series_key": "tvc-star",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -1135,6 +1422,9 @@
     "channel_id": "TVC",
     "series_key": "tvc-current-pm",
     "genre": "시사",
+    "genres": [
+      "시사"
+    ],
     "cast": [],
     "started_at": "2026-11-26T18:00:00",
     "watched_min": 80.5,
@@ -1147,6 +1437,10 @@
     "channel_id": "TVC",
     "series_key": "tvc-star",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -1162,6 +1456,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-news-night",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-26T23:40:00",
     "watched_min": 20.0,
@@ -1174,6 +1471,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-news-am",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-27T06:00:00",
     "watched_min": 87.1,
@@ -1186,6 +1486,9 @@
     "channel_id": "EBS1",
     "series_key": "ebs-exercise",
     "genre": "건강",
+    "genres": [
+      "건강"
+    ],
     "cast": [],
     "started_at": "2026-11-27T16:00:00",
     "watched_min": 1.3,
@@ -1198,6 +1501,10 @@
     "channel_id": "TVC",
     "series_key": "tvc-star",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -1213,6 +1520,9 @@
     "channel_id": "TVC",
     "series_key": "tvc-current-pm",
     "genre": "시사",
+    "genres": [
+      "시사"
+    ],
     "cast": [],
     "started_at": "2026-11-27T18:00:00",
     "watched_min": 90.0,
@@ -1225,6 +1535,9 @@
     "channel_id": "TVC",
     "series_key": "tvc-current-pm",
     "genre": "시사",
+    "genres": [
+      "시사"
+    ],
     "cast": [],
     "started_at": "2026-11-27T18:00:00",
     "watched_min": 63.6,
@@ -1237,6 +1550,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-news-pm",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-27T19:00:00",
     "watched_min": 60.4,
@@ -1249,6 +1565,9 @@
     "channel_id": "SBS",
     "series_key": "sbs-animal",
     "genre": "다큐",
+    "genres": [
+      "다큐"
+    ],
     "cast": [],
     "started_at": "2026-11-27T19:00:00",
     "watched_min": 60.0,
@@ -1261,6 +1580,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-haetsal",
     "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
     "cast": [
       "한지수",
       "오민재"
@@ -1276,6 +1598,10 @@
     "channel_id": "TVC",
     "series_key": "tvc-star",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -1291,6 +1617,10 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-king",
     "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
     "cast": [
       "정대현",
       "윤서아"
@@ -1306,6 +1636,10 @@
     "channel_id": "EBS1",
     "series_key": "ebs-doctor",
     "genre": "건강",
+    "genres": [
+      "건강",
+      "교양"
+    ],
     "cast": [
       "강민수"
     ],
@@ -1320,6 +1654,10 @@
     "channel_id": "TVC",
     "series_key": "tvc-star",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -1335,6 +1673,9 @@
     "channel_id": "EBS1",
     "series_key": "ebs-prime",
     "genre": "다큐",
+    "genres": [
+      "다큐"
+    ],
     "cast": [],
     "started_at": "2026-11-28T17:00:00",
     "watched_min": 2.9,
@@ -1347,6 +1688,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-news-pm",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-28T19:00:00",
     "watched_min": 58.6,
@@ -1359,6 +1703,10 @@
     "channel_id": "KBS2",
     "series_key": "kbs2-king-of-song",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -1374,6 +1722,10 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-king",
     "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
     "cast": [
       "정대현",
       "윤서아"
@@ -1389,6 +1741,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-news-am",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-29T06:00:00",
     "watched_min": 93.9,
@@ -1401,6 +1756,9 @@
     "channel_id": "EBS1",
     "series_key": "ebs-baduk",
     "genre": "취미",
+    "genres": [
+      "취미"
+    ],
     "cast": [],
     "started_at": "2026-11-29T14:00:00",
     "watched_min": 50.7,
@@ -1413,6 +1771,10 @@
     "channel_id": "KBS2",
     "series_key": "kbs2-king-of-song",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -1428,6 +1790,10 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-hometown",
     "genre": "교양",
+    "genres": [
+      "교양",
+      "다큐"
+    ],
     "cast": [
       "이철호"
     ],
@@ -1442,6 +1808,10 @@
     "channel_id": "KBS2",
     "series_key": "kbs2-king-of-song",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -1457,6 +1827,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-haetsal",
     "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
     "cast": [
       "한지수",
       "오민재"
@@ -1472,6 +1845,9 @@
     "channel_id": "MBC",
     "series_key": "mbc-news-dawn",
     "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
     "cast": [],
     "started_at": "2026-11-30T05:00:00",
     "watched_min": 3.9,
@@ -1484,6 +1860,10 @@
     "channel_id": "MBC",
     "series_key": "mbc-health",
     "genre": "건강",
+    "genres": [
+      "건강",
+      "교양"
+    ],
     "cast": [
       "강민수"
     ],
@@ -1498,6 +1878,9 @@
     "channel_id": "EBS1",
     "series_key": "ebs-cook",
     "genre": "요리",
+    "genres": [
+      "요리"
+    ],
     "cast": [],
     "started_at": "2026-11-30T12:00:00",
     "watched_min": 60.0,
@@ -1510,6 +1893,10 @@
     "channel_id": "EBS1",
     "series_key": "ebs-doctor",
     "genre": "건강",
+    "genres": [
+      "건강",
+      "교양"
+    ],
     "cast": [
       "강민수"
     ],
@@ -1524,6 +1911,10 @@
     "channel_id": "TVC",
     "series_key": "tvc-star",
     "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
     "cast": [
       "김태호",
       "송미란"
@@ -1539,6 +1930,9 @@
     "channel_id": "TVC",
     "series_key": "tvc-current-pm",
     "genre": "시사",
+    "genres": [
+      "시사"
+    ],
     "cast": [],
     "started_at": "2026-11-30T18:00:00",
     "watched_min": 83.9,
@@ -1551,6 +1945,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-haetsal",
     "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
     "cast": [
       "한지수",
       "오민재"
@@ -1566,6 +1963,10 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-king",
     "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
     "cast": [
       "정대현",
       "윤서아"
@@ -1581,6 +1982,9 @@
     "channel_id": "KBS1",
     "series_key": "kbs1-debate",
     "genre": "시사",
+    "genres": [
+      "시사"
+    ],
     "cast": [],
     "started_at": "2026-11-30T22:40:00",
     "watched_min": 1.4,

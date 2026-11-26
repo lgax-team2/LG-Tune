@@ -50,7 +50,8 @@ class Program(Base):
     channel_id: Mapped[str] = mapped_column(ForeignKey("channels.id"))
     title: Mapped[str] = mapped_column(String)
     series_key: Mapped[str] = mapped_column(String, index=True)  # 같은 프로그램의 회차를 묶는 키
-    genre: Mapped[str] = mapped_column(String)
+    genre: Mapped[str] = mapped_column(String)  # 대표 장르 1개
+    genres: Mapped[list[str]] = mapped_column(default=list)  # 장르 전부 (외부 편성표). 비면 [genre] 로 봄
     start: Mapped[datetime] = mapped_column(DateTime)
     end: Mapped[datetime] = mapped_column(DateTime)
     cast: Mapped[list[str]] = mapped_column(default=list)  # 출연자 이름
@@ -79,7 +80,8 @@ class WatchLog(Base):
     senior_id: Mapped[str] = mapped_column(ForeignKey("seniors.id"), index=True)
     channel_id: Mapped[str] = mapped_column(String)
     series_key: Mapped[str] = mapped_column(String)
-    genre: Mapped[str] = mapped_column(String)
+    genre: Mapped[str] = mapped_column(String)  # 대표 장르 1개
+    genres: Mapped[list[str]] = mapped_column(default=list)  # 장르 전부. 비면 [genre] 로 봄
     cast: Mapped[list[str]] = mapped_column(default=list)
     started_at: Mapped[datetime] = mapped_column(DateTime)
     watched_min: Mapped[float] = mapped_column(Float)  # 5분 미만은 취향 계산에서 무시

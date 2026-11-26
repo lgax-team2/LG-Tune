@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1920">
+<title>엔진 확인 화면</title>
+<!-- 개발용: 하루표 엔진 결과를 사람이 눈으로 검사하는 화면. 외부 파일 없이 이 한 파일로 동작. -->
+<style>
+  :root {
+    --bg: #f4f5f7; --card: #fff; --ink: #1c1f24; --mute: #5f6670; --line: #e2e5ea;
+    --pick: #1f5fd1; --pick-bg: #e7efff;
+    --fill: #6b7280; --fill-bg: #eef0f3;
+    --lg: #a4148a; --lg-bg: #fbe8f6;
+    --why-overlap: #b45309; --why-time: #475569; --why-rule: #b91c1c; --why-floor: #0f766e;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 24px/1.35 "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
+  main { width: 1920px; padding: 16px 36px; display: flex; flex-direction: column; gap: 10px; }
+
+  header { display: flex; align-items: center; gap: 24px; }
+  header h1 { margin: 0; font-size: 34px; }
+  header .tag { font-size: 18px; color: var(--mute); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; }
+  label { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  select, input[type=date], button { font: inherit; font-size: 26px; padding: 6px 12px; border: 2px solid #c6ccd5;
+         border-radius: 8px; background: #fff; }
+  button { background: var(--ink); color: #fff; border-color: var(--ink); cursor: pointer; }
+  header .facts { margin-left: auto; color: var(--mute); font-size: 22px; text-align: right; }
+  header .facts b { color: var(--ink); }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px 20px; }
+  .profile { display: flex; gap: 36px; }
+  .profile .grp { min-width: 0; flex: 0 1 auto; }
+  .profile .grp:first-child { flex-shrink: 4; }  /* 시리즈 이름이 길면 시리즈 칸부터 줄임(… 표시) */
+  .profile .grp h3 { margin: 0 0 2px; font-size: 19px; color: var(--mute); }
+  .profile .grp div { font-size: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .profile .v { color: var(--mute); font-size: 17px; margin-left: 4px; }
+  .profile .empty { color: var(--mute); }
+
+  h2 { margin: 2px 0 0; font-size: 27px; display: flex; align-items: baseline; gap: 14px; }
+  h2 small { font-size: 20px; color: var(--mute); font-weight: 400; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 20px; color: var(--mute); font-weight: 600; padding: 4px 12px;
+       border-bottom: 2px solid var(--line); }
+  td { padding: 5px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tr:last-child td { border-bottom: 0; }
+  .time { font-variant-numeric: tabular-nums; white-space: nowrap; width: 190px; }
+  .num { font-variant-numeric: tabular-nums; text-align: right; width: 110px; }
+  .ch { white-space: nowrap; width: 170px; }
+  .ch .no { color: var(--mute); font-size: 20px; }
+  .title { font-weight: 600; }
+  .reason { color: #333a44; }
+
+  .badge { display: inline-block; min-width: 70px; text-align: center; font-size: 20px; font-weight: 700;
+           border-radius: 999px; padding: 2px 12px; }
+  .k-pick { color: var(--pick); background: var(--pick-bg); }
+  .k-fill { color: var(--fill); background: var(--fill-bg); }
+  .k-lg   { color: var(--lg);   background: var(--lg-bg); }
+  tr.row-pick td:first-child { box-shadow: inset 6px 0 0 var(--pick); }
+  tr.row-fill td:first-child { box-shadow: inset 6px 0 0 var(--fill); }
+  tr.row-lg   td:first-child { box-shadow: inset 6px 0 0 var(--lg); }
+  tr.row-fill td { color: var(--mute); }
+
+  .why { font-weight: 700; white-space: nowrap; }
+  .why-overlap { color: var(--why-overlap); } .why-time { color: var(--why-time); }
+  .why-rule { color: var(--why-rule); }       .why-floor { color: var(--why-floor); }
+  .detail { color: var(--mute); font-size: 21px; margin-left: 8px; }
+  .none { color: var(--mute); padding: 18px 12px; }
+  .legend { display: flex; gap: 12px; font-size: 20px; margin-left: auto; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>엔진 확인 화면</h1>
+    <span class="tag">개발용</span>
+    <label>어르신 <select id="senior"></select></label>
+    <label>날짜 <input type="date" id="date"></label>
+    <button id="go">보기</button>
+    <div class="facts" id="facts"></div>
+  </header>
+
+  <section class="card profile" id="profile"></section>
+
+  <h2>하루표 <small id="plan-sub"></small>
+    <span class="legend">
+      <span class="badge k-pick">pick</span><span class="badge k-fill">fill</span><span class="badge k-lg">lg</span>
+    </span>
+  </h2>
+  <section class="card">
+    <table>
+      <thead><tr><th>시간</th><th>종류</th><th class="num">점수</th><th>채널</th><th>제목</th><th>이유</th></tr></thead>
+      <tbody id="plan"></tbody>
+    </table>
+  </section>
+
+  <h2>점수는 높은데 안 들어간 방송 <small id="missed-sub"></small></h2>
+  <section class="card">
+    <table>
+      <thead><tr><th class="num">점수</th><th>시간</th><th>채널</th><th>제목</th><th>빠진 이유</th></tr></thead>
+      <tbody id="missed"></tbody>
+    </table>
+  </section>
+</main>
+
+<script id="view-data" type="application/json">__VIEW_DATA__</script>
+<script>
+(function () {
+  "use strict";
+  var data = JSON.parse(document.getElementById("view-data").textContent);
+  var $ = function (id) { return document.getElementById(id); };
+
+  // 글자는 전부 textContent 로 넣는다 (방송 제목 등에 태그가 섞여도 안전)
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined && text !== null) e.textContent = text;
+    return e;
+  }
+  function hhmm(iso) { return iso.slice(11, 16); }
+  function span(a, b) { return hhmm(a) + "–" + hhmm(b); }
+  function score(v) { return v.toFixed(3); }
+
+  // ── 위: 어르신·날짜 ──
+  data.seniors.forEach(function (s) {
+    var o = el("option", null, s.id + " · " + s.name);
+    o.value = s.id;
+    if (s.id === data.senior.id) o.selected = true;
+    $("senior").appendChild(o);
+  });
+  $("date").value = data.date;
+  function go() {
+    var d = $("date").value || data.date;
+    location.href = "/api/schedules/" + encodeURIComponent($("senior").value) + "/view?date=" + d;
+  }
+  $("senior").addEventListener("change", go);
+  $("date").addEventListener("change", go);
+  $("go").addEventListener("click", go);
+
+  var p = data.profile;
+  $("facts").innerHTML = "";
+  [["기상", data.senior.wake], ["취침", data.senior.sleep], ["시청 기록", p.n_logs + "건"],
+   ["기록 비중", Math.round(p.history_share * 100) + "%"], ["기준점", score(data.floor)]
+  ].forEach(function (kv, i) {
+    if (i) $("facts").appendChild(document.createTextNode(" · "));
+    $("facts").appendChild(document.createTextNode(kv[0] + " "));
+    $("facts").appendChild(el("b", null, kv[1]));
+  });
+
+  // ── 취향 요약 (build_profile 상위 3개) ──
+  [["series", "시리즈"], ["cast", "출연자"], ["genre", "장르"], ["timeslot", "시간대"]].forEach(function (g) {
+    var box = el("div", "grp");
+    box.appendChild(el("h3", null, g[1]));
+    var line = el("div");
+    if (!p[g[0]].length) line.appendChild(el("span", "empty", "없음"));
+    p[g[0]].forEach(function (t, i) {
+      if (i) line.appendChild(document.createTextNode(" · "));
+      line.appendChild(document.createTextNode(t.name));
+      line.appendChild(el("span", "v", t.value.toFixed(2)));
+    });
+    line.title = line.textContent;
+    box.appendChild(line);
+    $("profile").appendChild(box);
+  });
+
+  // ── 하루표 ──
+  var counts = { pick: 0, fill: 0, lg: 0 };
+  data.items.forEach(function (it) {
+    counts[it.kind] = (counts[it.kind] || 0) + 1;
+    var tr = el("tr", "row-" + it.kind);
+    tr.appendChild(el("td", "time", span(it.start, it.end)));
+    var k = el("td"); k.appendChild(el("span", "badge k-" + it.kind, it.kind)); tr.appendChild(k);
+    tr.appendChild(el("td", "num", it.kind === "pick" ? score(it.score) : "—"));
+    var ch = el("td", "ch", it.channel_id + " ");
+    if (it.channel_number !== null && it.channel_number !== undefined) ch.appendChild(el("span", "no", it.channel_number + "번"));
+    tr.appendChild(ch);
+    tr.appendChild(el("td", "title", it.title));
+    tr.appendChild(el("td", "reason", it.reason));
+    $("plan").appendChild(tr);
+  });
+  if (!data.items.length) {
+    var tr0 = el("tr"); var td0 = el("td", "none", "이 날짜엔 하루표가 없어요 (편성표가 없는 날일 수 있어요)");
+    td0.colSpan = 6; tr0.appendChild(td0); $("plan").appendChild(tr0);
+  }
+  $("plan-sub").textContent = data.senior.name + " · " + data.date + " · 총 " + data.items.length +
+    "개 (pick " + counts.pick + " · fill " + counts.fill + " · lg " + counts.lg + ")";
+
+  // ── 점수는 높은데 빠진 방송 ──
+  var whyCls = { "겹침": "why-overlap", "기상 전·취침 후": "why-time", "규칙으로 제외": "why-rule", "기준점 미만": "why-floor" };
+  data.missed.forEach(function (m) {
+    var tr = el("tr");
+    tr.appendChild(el("td", "num", score(m.score)));
+    tr.appendChild(el("td", "time", span(m.start, m.end)));
+    tr.appendChild(el("td", "ch", m.channel_id));
+    tr.appendChild(el("td", "title", m.title));
+    var w = el("td");
+    w.appendChild(el("span", "why " + (whyCls[m.why] || ""), m.why));
+    w.appendChild(el("span", "detail", m.detail));
+    tr.appendChild(w);
+    $("missed").appendChild(tr);
+  });
+  if (!data.missed.length) {
+    var tr1 = el("tr"); var td1 = el("td", "none", "빠진 방송이 없어요");
+    td1.colSpan = 5; tr1.appendChild(td1); $("missed").appendChild(tr1);
+  }
+  $("missed-sub").textContent = "오늘 편성 중 하루표에 없는 것, 점수 순 상위 " + data.missed.length + "개";
+})();
+</script>
+</body>
+</html>

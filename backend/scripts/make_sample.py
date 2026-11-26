@@ -134,6 +134,28 @@ LINEUP: dict[str, list[tuple]] = {
     ],
 }
 
+# 대표 장르 말고 더 붙는 장르 (외부 편성표처럼 장르가 여러 개인 방송). 이름은 data/sample/genre_map.json 의 표준 장르
+EXTRA_GENRES: dict[str, list[str]] = {
+    "kbs1-sarangbang": ["예능"],
+    "kbs1-health100": ["교양"],
+    "kbs1-hometown": ["다큐"],
+    "kbs1-trot-party": ["예능"],
+    "kbs1-songclass": ["교양"],
+    "kbs1-king": ["드라마"],
+    "kbs2-cook": ["예능"],
+    "kbs2-king-of-song": ["예능"],
+    "mbc-health": ["교양"],
+    "mbc-countryfood": ["교양"],
+    "mbc-joseon": ["드라마"],
+    "mbc-trot": ["예능"],
+    "sbs-trotstar": ["예능"],
+    "ebs-doctor": ["교양"],
+    "ebs-korea": ["다큐"],
+    "tvc-trotshow": ["예능"],
+    "tvc-health": ["교양"],
+    "tvc-star": ["예능"],
+}
+
 SENIORS = [
     {
         "id": "s1",
@@ -210,6 +232,7 @@ def day_programs(d: date) -> list[dict]:
                     "title": title,
                     "series_key": key,
                     "genre": genre,
+                    "genres": [genre, *EXTRA_GENRES.get(key, [])],
                     "start": _dt(d, start).isoformat(),
                     "end": end.isoformat(),
                     "cast": cast,
@@ -261,6 +284,7 @@ def _log(senior_id: str, p: dict, minutes: float, feedback: str, how_started: st
         "channel_id": p["channel_id"],
         "series_key": p["series_key"],
         "genre": p["genre"],
+        "genres": p["genres"],
         "cast": p["cast"],
         "started_at": p["start"],
         "watched_min": round(minutes, 1),
