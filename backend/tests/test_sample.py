@@ -76,18 +76,26 @@ def test_schedule_example_points_to_real_programs_without_overlap():
     assert items[0]["start"][11:16] >= s1["wake_time"]
 
 
-def test_schedule_api_returns_example_in_contract_shape():
+def test_schedule_api_returns_example_in_contract_shape(tmp_path):
     from fastapi.testclient import TestClient
 
+    from app.api.schedules import get_session, open_session
     from app.main import app
 
-    client = TestClient(app)
-    r = client.get("/api/schedules/s1", params={"date": "2026-12-01"})
-    assert r.status_code == 200
-    body = r.json()
-    assert body["items"][0]["reason"]
-    assert {i["kind"] for i in body["items"]} <= {"pick", "fill"}
-    assert client.get("/api/schedules/s9").status_code == 404
+    def session_on_tmp_db():
+        yield from open_session(tmp_path / "t.db")
+
+    app.dependency_overrides[get_session] = session_on_tmp_db
+    try:
+        client = TestClient(app)
+        r = client.get("/api/schedules/s1", params={"date": "2026-12-01"})
+        assert r.status_code == 200
+        body = r.json()
+        assert body["items"][0]["reason"]
+        assert {i["kind"] for i in body["items"]} <= {"pick", "fill", "lg"}
+        assert client.get("/api/schedules/s9").status_code == 404
+    finally:
+        app.dependency_overrides.pop(get_session, None)
 
 
 def test_sample_has_voice_rules_lg_contents_and_signal_types(session):
