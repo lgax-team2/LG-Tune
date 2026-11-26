@@ -21,7 +21,7 @@
 
 ## 작업 목록
 
-- [ ] **① 엔진 규칙 2개 변경** (취침 전 "시작"이면 허용 / 기상~첫 방송 빈 시간 채우기)
+- [x] **① 엔진 규칙 2개 변경** (취침 전 "시작"이면 허용 / 기상~첫 방송 빈 시간 채우기)
   - 고칠 파일: `engine/planner.py`, `engine/config.py`(필요 시 숫자), `api/schedules.py`(확인 화면의 "빠진 이유" 판정도 같은 규칙으로 — 엔진 함수를 같이 쓰게 해서 중복 제거), `docs/약속.md` 5·6절("기상~취침 안" 문구), `tests/test_engine.py`
   - 규칙: 후보 = `기상 ≤ 시작 < 취침` (끝나는 시간 무관). 기상~첫 칸 사이 빈 시간: 20분 미만 비움(앞 채널이 없으니 fill 안 함), 20분 이상 LG채널·VOD 중 점수 최고 1개
   - 테스트(먼저): `test_show_starting_before_sleep_is_allowed_even_if_it_ends_after`, `test_show_starting_at_or_after_sleep_is_not_allowed`, `test_morning_gap_of_20min_or_more_gets_lg_content_at_wake_time`, `test_morning_gap_under_20min_stays_empty`
@@ -110,6 +110,7 @@
 ## 진행 기록
 | 날짜 | 작업 | 커밋 | 확인 화면 |
 | --- | --- | --- | --- |
-| 2026-11-26 | 계획 작성·승인 (기본값 6개 OK), main 합치기 | (이 커밋) | — |
+| 2026-11-26 | 계획 작성·승인 (기본값 6개 OK), main 합치기 | ef9bc7e | — |
+| 2026-11-26 | ① 취침 전 시작 허용 + 아침 빈 시간 LG. Codex: 심각한 문제 없음. 변화: s1 20:00 왕중왕(0.806) → 21:00 별의 노래(0.865)로 바뀜(겹쳐서 점수 높은 쪽) | 766769e | /api/schedules/s1/view, s3/view |
 
 ## 다음 후보 (⑨에서 채움)
