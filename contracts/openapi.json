@@ -5,6 +5,64 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/api/schedules/{senior_id}": {
+      "get": {
+        "tags": [
+          "schedules"
+        ],
+        "summary": "Get Schedule",
+        "operationId": "get_schedule_api_schedules__senior_id__get",
+        "parameters": [
+          {
+            "name": "senior_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Senior Id"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/healthz": {
       "get": {
         "summary": "Healthz",
@@ -287,6 +345,107 @@
           "items"
         ],
         "title": "PlanResponse"
+      },
+      "ScheduleItem": {
+        "properties": {
+          "program_id": {
+            "type": "string",
+            "title": "Program Id"
+          },
+          "channel_id": {
+            "type": "string",
+            "title": "Channel Id",
+            "description": "예: 'KBS1'. LG 콘텐츠면 'LG채널' 또는 'LG VOD'"
+          },
+          "channel_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel Number",
+            "description": "리모컨 채널 번호 (LG 콘텐츠는 없음)"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start",
+            "description": "한국 시간, 시간대 표기 없음"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score",
+            "description": "엔진 점수 (fill 이면 0)"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "description": "화면에 보여 줄 고른 이유"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "pick",
+              "fill",
+              "lg"
+            ],
+            "title": "Kind",
+            "description": "pick = 점수로 고름, fill = 짧은 빈 시간 채널 유지, lg = 긴 빈 시간에 LG채널·VOD"
+          }
+        },
+        "type": "object",
+        "required": [
+          "program_id",
+          "channel_id",
+          "title",
+          "start",
+          "end",
+          "score",
+          "reason",
+          "kind"
+        ],
+        "title": "ScheduleItem",
+        "description": "하루표의 한 칸 (마이모드)."
+      },
+      "ScheduleResponse": {
+        "properties": {
+          "senior_id": {
+            "type": "string",
+            "title": "Senior Id"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date",
+            "description": "YYYY-MM-DD"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ScheduleItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "시작 시각 순, 서로 겹치지 않음"
+          }
+        },
+        "type": "object",
+        "required": [
+          "senior_id",
+          "date",
+          "items"
+        ],
+        "title": "ScheduleResponse"
       },
       "SetupRequest": {
         "properties": {

@@ -1,13 +1,15 @@
 [project]
 name = "lg-tune-backend"
 version = "0.1.0"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.32",
     "pydantic>=2.9",
     "pydantic-settings>=2.6",
     "anthropic>=0.40",
+    "sqlalchemy>=2.0",
+    "openai>=1.50",
 ]
 
 [dependency-groups]
@@ -19,8 +21,10 @@ dev = [
 
 [tool.ruff]
 line-length = 110
-target-version = "py311"
+target-version = "py312"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+# Windows 공용 PC에서 기본 임시 폴더 권한 오류가 나서, 프로젝트 안 폴더를 쓴다
+addopts = "--basetemp=.pytest_tmp"

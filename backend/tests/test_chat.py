@@ -132,5 +132,15 @@ def test_test_profile_never_uses_real_llm(monkeypatch):
     from app.llm import make_llm
     from app.settings import Settings
 
-    s = Settings(profile="test", llm_provider="claude", anthropic_api_key="x")
-    assert isinstance(make_llm(s), FakeLLM)
+    for provider in ("claude", "openai"):
+        s = Settings(profile="test", llm_provider=provider, anthropic_api_key="x", openai_api_key="x")
+        assert isinstance(make_llm(s), FakeLLM)
+
+
+def test_openai_adapter_is_chosen_by_setting():
+    from app.llm import make_llm
+    from app.llm.openai_llm import OpenAILLM
+    from app.settings import Settings
+
+    s = Settings(profile="dev", llm_provider="openai", openai_api_key="x", openai_model="m")
+    assert isinstance(make_llm(s), OpenAILLM)  # 만들기만 하고 호출은 안 함 (네트워크 없음)

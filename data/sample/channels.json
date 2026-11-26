@@ -1,0 +1,32 @@
+[
+  {
+    "id": "KBS1",
+    "number": 9,
+    "name": "KBS1"
+  },
+  {
+    "id": "KBS2",
+    "number": 7,
+    "name": "KBS2"
+  },
+  {
+    "id": "MBC",
+    "number": 11,
+    "name": "MBC"
+  },
+  {
+    "id": "SBS",
+    "number": 5,
+    "name": "SBS"
+  },
+  {
+    "id": "EBS1",
+    "number": 13,
+    "name": "EBS1"
+  },
+  {
+    "id": "TVC",
+    "number": 19,
+    "name": "TV조선"
+  }
+]

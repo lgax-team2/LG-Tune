@@ -11,6 +11,7 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import TypeAdapter, ValidationError
 
+from .api.schedules import router as schedules_router
 from .chat.service import ChatService, get_chat_service
 from .contracts.rest import (
     ChatRequest,
@@ -25,6 +26,7 @@ from .contracts.ws import ClientEvent, ClockTick, ClockTickData
 from .settings import settings
 
 app = FastAPI(title="LG TUNE", version="0.1.0")
+app.include_router(schedules_router)
 _client_event = TypeAdapter(ClientEvent)
 
 

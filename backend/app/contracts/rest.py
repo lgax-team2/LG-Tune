@@ -59,6 +59,28 @@ class PlanResponse(BaseModel):
     items: list[PlanItem]
 
 
+class ScheduleItem(BaseModel):
+    """하루표의 한 칸 (마이모드)."""
+
+    program_id: str
+    channel_id: str = Field(description="예: 'KBS1'. LG 콘텐츠면 'LG채널' 또는 'LG VOD'")
+    channel_number: int | None = Field(default=None, description="리모컨 채널 번호 (LG 콘텐츠는 없음)")
+    title: str
+    start: datetime = Field(description="한국 시간, 시간대 표기 없음")
+    end: datetime
+    score: float = Field(description="엔진 점수 (fill 이면 0)")
+    reason: str = Field(description="화면에 보여 줄 고른 이유")
+    kind: Literal["pick", "fill", "lg"] = Field(
+        description="pick = 점수로 고름, fill = 짧은 빈 시간 채널 유지, lg = 긴 빈 시간에 LG채널·VOD"
+    )
+
+
+class ScheduleResponse(BaseModel):
+    senior_id: str
+    date: str = Field(description="YYYY-MM-DD")
+    items: list[ScheduleItem] = Field(description="시작 시각 순, 서로 겹치지 않음")
+
+
 class ChatRequest(BaseModel):
     """글자로 AI 친구에게 말 걸기 (음성 연결 전 1단계)."""
 

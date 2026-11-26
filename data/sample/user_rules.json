@@ -1,0 +1,14 @@
+[
+  {
+    "senior_id": "s1",
+    "kind": "exclude",
+    "target_type": "series",
+    "target": "mbc-bluesea"
+  },
+  {
+    "senior_id": "s2",
+    "kind": "pin",
+    "target_type": "series",
+    "target": "kbs1-news-pm"
+  }
+]

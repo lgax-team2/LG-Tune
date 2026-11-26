@@ -1,0 +1,68 @@
+[
+  {
+    "id": "s1",
+    "name": "김영숙",
+    "age": 75,
+    "wake_time": "06:00",
+    "sleep_time": "22:00",
+    "pref_source": "child",
+    "seed_prefs": {
+      "series": [
+        "kbs1-haetsal",
+        "tvc-star"
+      ],
+      "cast": [
+        "송미란"
+      ],
+      "genres": [
+        "트로트",
+        "드라마"
+      ]
+    },
+    "family_picks": [
+      "kbs1-life"
+    ]
+  },
+  {
+    "id": "s2",
+    "name": "박철수",
+    "age": 80,
+    "wake_time": "05:30",
+    "sleep_time": "21:30",
+    "pref_source": "self",
+    "seed_prefs": {
+      "series": [
+        "kbs1-king"
+      ],
+      "cast": [
+        "정대현"
+      ],
+      "genres": [
+        "뉴스",
+        "사극",
+        "시사"
+      ]
+    },
+    "family_picks": []
+  },
+  {
+    "id": "s3",
+    "name": "이순자",
+    "age": 70,
+    "wake_time": "06:30",
+    "sleep_time": "22:30",
+    "pref_source": "age_default",
+    "seed_prefs": {
+      "series": [],
+      "cast": [],
+      "genres": [
+        "교양",
+        "건강",
+        "트로트"
+      ]
+    },
+    "family_picks": [
+      "ebs-doctor"
+    ]
+  }
+]

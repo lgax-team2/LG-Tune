@@ -1,7 +1,7 @@
-# LG TUNE — webOS TV에 사는 친구
+# 마이모드 (LG TUNE) — 시니어 TV 하루표 + 추천 에이전트
 
-> 리모컨 없이 말로. 같이 보고, 같이 본 걸 기억해서, 방해되지 않는 순간에 먼저 꺼내는 TV 단짝.
-> 최신 결정은 항상 [`docs/DECISIONS.md`](docs/DECISIONS.md) 를 먼저 보세요.
+> TV를 켜면 내 취향에 맞춘 하루표가 있고, 궁금한 걸 물어보면 답해 주는 TV.
+> 최신 결정은 [`docs/DECISIONS.md`](docs/DECISIONS.md), 데이터·API 약속은 [`docs/약속.md`](docs/약속.md), 누가 어느 폴더인지는 [`AGENTS.md`](AGENTS.md).
 
 ---
 
@@ -27,7 +27,7 @@
 
 ### 2. 내려받기
 ```bash
-git clone https://github.com/CoSunny-713/LG-Tune.git
+git clone https://github.com/lgax-team2/LG-Tune.git
 cd LG-Tune
 pnpm install            # 루트 도구
 pnpm setup              # 백엔드 + 프론트 의존성 설치
@@ -40,40 +40,40 @@ pnpm setup              # 백엔드 + 프론트 의존성 설치
 | `pnpm dev` | 백엔드 + 화면 같이 |
 | `pnpm gen` | 계약(스키마)이 바뀌었을 때 → 프론트 타입 다시 생성 |
 | `pnpm test` | 올리기 전에 검사 |
+| `pnpm sample` | 공통 샘플을 개발 DB(`backend/data/mymode.db`)에 새로 넣기 |
 
 ---
 
 ## 폴더 = 누가 무엇을
 | 폴더 | 담당 | 내용 |
 | --- | --- | --- |
-| `contracts/` | 백엔드 + 프론트 **공동 승인** | 백엔드↔화면 약속(스키마)과 시연 시나리오 |
-| `backend/` | 백엔드 | FastAPI 서버, 편성·기억·음성·Claude 연결 |
-| `frontend/` | 프론트 | TV 화면(React), 자녀 설정, 대시보드 |
-| `ml/` | AI 학습 | 응/아니 분류기 학습·평가 |
-| `docs/` | 전원 | 결정 기록, 명세서 |
+| `backend/app/data/`, `frontend/src/family/` | A · 데이터 | 편성표·인물·채널 번호표 → DB, 가족 화면 |
+| `backend/app/engine/`, `backend/app/api/schedules.py` | B · 하루표 엔진 | 취향 추정·점수·배치·빈 시간, 하루표 API |
+| `frontend/src/tv/`, `frontend/src/remote/`, `backend/app/voice/`, `backend/app/devices/` | C · TV 화면·연동 | TV 화면, 폰 리모컨, 가상 시계·채널 전환, 음성 |
+| `backend/app/models/`, `backend/app/contracts/`, `main.py`, `data/sample/`, `docs/` | **공통 (3명 확인)** | DB 구조, API 약속, 공통 샘플, 결정 기록 |
+| `backend/app/chat`·`memory`·`llm`, `ml/` | 보류 | 이전 범위(대화·음성) 코드. 나중에 재사용 |
 
 ## 협업 규칙 (이것만 지키면 됨)
 1. **`main` 에 직접 올리지 않는다.** `main` = 항상 돌아가는 완성본 (`pnpm install` 하면 실수 방지 훅이 자동 설치됨)
-2. 작업 시작할 때 브랜치 만들기: `git switch -c feat/fe-편성표화면` (이름 앞머리: `feat/` 기능, `fix/` 버그, `ml/` 학습)
-3. **자기 폴더만** 고친다. `contracts/` 는 백엔드·프론트 둘 다 동의할 때만
-4. 다 되면 GitHub에서 **Pull Request** → 자동 검사 초록불이면 **본인이** 합치기(Squash and merge). `contracts/` 변경만 상대 담당 확인
+2. 할 일은 GitHub 이슈로 올리고, 브랜치 만들기: `git switch -c engine/scoring` (`영역/내용`)
+3. **자기 폴더만** 고친다. 공통 폴더(`models/`, `contracts/`, `main.py`, `data/sample/`, `docs/`)는 3명 동의할 때만
+4. 다 되면 GitHub에서 **Pull Request** → 자동 검사 초록불이면 **본인이** 합치기(Squash and merge). 공통 폴더 변경만 3명 확인
 5. 브랜치는 1~2일 안에 합친다. 길어지면 쪼개기
 6. **API 키는 절대 코드·채팅에 붙여넣지 않는다.** `backend/.env` 에만 (Git에 안 올라감)
 
 ```
 main  ●──────────●──────────●
         \        /  \        /
-   feat/be-편성 ●─●   feat/fe-화면 ●─●
+   engine/scoring ●─●   tv/popup ●─●
 ```
 
 ## 계약(스키마)이란?
-백엔드가 화면에 보내는 메시지의 **모양 약속**. 예) AI 친구가 말할 때:
+백엔드가 화면에 보내는 데이터의 **모양 약속**. 예) 하루표의 한 칸 (`GET /api/schedules/s1`):
 ```json
-{"v":1, "type":"buddy.say", "data":{"text":"8시에 가요무대 해요", "mode":"reminder", "audio_url":"/audio/s1.wav"}}
+{"program_id":"KBS1-20261201-2030", "channel_number":9, "title":"일일드라마 햇살 가득", "start":"2026-12-01T20:30:00", "reason":"매일 보시는 드라마 새 회차예요", "kind":"pick"}
 ```
 - 원본: `backend/app/contracts/*.py` → 자동 생성: `contracts/*.json` → 프론트 타입: `frontend/src/shared/api/*.ts`
-- 전체 이벤트 목록: [`docs/개발계획서_v1.md`](docs/개발계획서_v1.md) 3.3절 + `backend/app/contracts/ws.py`
-- 시연 흐름 예시: `contracts/scenarios/day1_evening.jsonl`
+- 전체 약속: [`docs/약속.md`](docs/약속.md) · 공통 샘플: `data/sample/`
 
-## AI 코딩 도구 (Claude Code / Codex)
-저장소 루트의 `CLAUDE.md` / `AGENTS.md` 를 자동으로 읽습니다. 이슈 1개 = 브랜치 1개 = AI 세션 1개.
+## AI 코딩 도구 (Claude Code / Codex / Gemini)
+규칙 원본은 `AGENTS.md` 하나. `CLAUDE.md`·`GEMINI.md` 는 그걸 불러오기만 합니다. 이슈 1개 = 브랜치 1개 = AI 세션 1개.
