@@ -8,6 +8,7 @@ from datetime import date, datetime, timedelta
 from itertools import pairwise
 
 import pytest
+from sqlalchemy import select
 
 from app.engine import config
 from app.engine.planner import Candidate, build_plan, select_best
@@ -24,27 +25,29 @@ def at(hhmm: str, d: date = DAY) -> datetime:
     return datetime(d.year, d.month, d.day, h, m)
 
 
-def prog(pid, start, end, key=None, genre="교양", cast=(), ch="KBS1", is_new=False, is_live=False):
+def prog(pid, start, end, key=None, genre="교양", cast=(), ch="KBS1", is_new=False, is_live=False, genres=()):
     return Program(
         id=pid,
         channel_id=ch,
         title=pid,
         series_key=key or pid,
         genre=genre,
+        genres=list(genres),
         start=at(start),
-        end=at(end),
+        end=at(end) if end != "24:30" else at("00:30", DAY + timedelta(days=1)),
         cast=list(cast),
         is_new=is_new,
         is_live=is_live,
     )
 
 
-def log(key, d, minutes=30.0, how="chosen", genre="교양", cast=(), hhmm="20:00", cancelled=False):
+def log(key, d, minutes=30.0, how="chosen", genre="교양", cast=(), hhmm="20:00", cancelled=False, genres=()):
     return WatchLog(
         senior_id="s1",
         channel_id="KBS1",
         series_key=key,
         genre=genre,
+        genres=list(genres),
         cast=list(cast),
         started_at=at(hhmm, d),
         watched_min=minutes,
@@ -156,9 +159,12 @@ def test_left_on_tv_counts_less_than_chosen_show():
 
 def test_score_formula_weights():
     p = flat_profile(series={"k": 1.0})
-    s = score_program(prog("x", "10:00", "11:00", key="k"), p, family_picks=[])
+    known_cast = ["누군가"]  # 출연자 정보가 있어야 가중치가 그대로 (없으면 ÷0.75 — 아래 호환 테스트)
+    s = score_program(prog("x", "10:00", "11:00", key="k", cast=known_cast), p, family_picks=[])
     assert s.score == pytest.approx(0.30)
-    s2 = score_program(prog("x", "10:00", "11:00", key="k", is_new=True), p, family_picks=["k"])
+    s2 = score_program(
+        prog("x", "10:00", "11:00", key="k", is_new=True, cast=known_cast), p, family_picks=["k"]
+    )
     assert s2.score == pytest.approx(0.30 + 0.10 + 0.05)
     assert sum(config.WEIGHTS.values()) == pytest.approx(1.0)
 
@@ -372,3 +378,175 @@ def test_reason_uses_correct_korean_ending():
     assert ieyo("트로트") == "트로트예요"
     assert ieyo("방송") == "방송이에요"
     assert ieyo("드라마") == "드라마예요"
+
+
+# ───────── 외부 편성표 호환: 장르 여러 개 · 빠진 정보 ─────────
+
+
+def test_profile_counts_every_genre_of_a_log():
+    """장르가 [트로트, 예능] 인 기록 한 건은 두 장르에 같은 무게로 더해진다."""
+    p = build_profile(
+        [log("star", DAY - timedelta(days=1), genre="트로트", genres=["트로트", "예능"])], senior(), DAY
+    )
+    assert p.genre["트로트"] == p.genre["예능"] > 0
+
+
+def test_log_without_genres_list_uses_main_genre():
+    p = build_profile([log("news", DAY - timedelta(days=1), genre="뉴스")], senior(), DAY)
+    assert p.genre["뉴스"] > 0
+
+
+def test_genre_score_uses_best_liked_of_many():
+    show = prog("star", "20:00", "21:00", genre="예능", genres=["예능", "트로트"], cast=["가수"])
+    s = score_program(show, flat_profile(genre={"예능": 0.2, "트로트": 1.0}), [])
+    assert s.parts["genre"] == pytest.approx(config.WEIGHTS["genre"] * 1.0)
+    assert s.top_genre == "트로트"
+
+
+def test_unknown_genre_scores_zero_without_error():
+    show = prog("odd", "20:00", "21:00", genre="처음 보는 장르", cast=["누군가"])
+    s = score_program(show, flat_profile(genre={"트로트": 1.0}), [])
+    assert s.parts["genre"] == 0.0
+
+
+def test_empty_cast_is_left_out_and_other_weights_rescaled():
+    """출연자 정보가 없으면 출연자 항목(0.25)을 빼고 나머지 합(0.75)으로 나눠 0~1 로 맞춘다."""
+    profile = flat_profile(series={"news": 1.0}, genre={"교양": 1.0})
+    no_cast = score_program(prog("news", "20:00", "21:00"), profile, [])
+    with_cast = score_program(prog("news", "20:00", "21:00", cast=["모르는 사람"]), profile, [])
+    assert with_cast.score == pytest.approx(0.30 + 0.15)
+    assert no_cast.score == pytest.approx((0.30 + 0.15) / 0.75)
+    assert no_cast.parts["cast"] == 0.0
+    assert sum(no_cast.parts.values()) == pytest.approx(no_cast.score)
+
+
+def test_missing_is_new_is_live_defaults_to_false(tmp_path):
+    """외부 편성표에 새 회차·생방송 칸이 없어도 DB 에 넣으면 false, 점수의 새 회차 항목은 0."""
+    from app.models.db import init_db, make_engine, make_session_factory
+
+    engine = make_engine(tmp_path / "m.db")
+    init_db(engine)
+    with make_session_factory(engine)() as session:
+        session.add(
+            Program(
+                id="x",
+                channel_id="KBS1",
+                title="x",
+                series_key="x",
+                genre="뉴스",
+                start=at("10:00"),
+                end=at("11:00"),
+            )
+        )
+        session.commit()
+        p = session.get(Program, "x")
+        assert p.is_new is False and p.is_live is False and p.genres == [] and p.cast == []
+        assert score_program(p, flat_profile(), []).parts["fresh"] == 0.0
+    engine.dispose()
+
+
+def test_show_crossing_midnight_is_handled():
+    """23:30~다음 날 00:30 방송: 취침(23:50) 전에 시작하니 들어간다."""
+    entries = plan([prog("late", "23:30", "24:30")], s=senior(sleep="23:50"))
+    assert [e.program_id for e in entries] == ["late"]
+    assert entries[0].end == at("00:30", DAY + timedelta(days=1))
+
+
+def test_series_key_equal_to_title_works():
+    """외부 편성표에 회차 묶음 키가 없어 제목을 그대로 쓴 경우에도 시청 기록과 이어진다."""
+    title = "노래 교실 (재)"
+    profile = build_profile([log(title, DAY - timedelta(days=1))], senior(), DAY)
+    s = score_program(prog("p1", "10:00", "11:00", key=title, cast=["가수"]), profile, [])
+    assert s.parts["series"] > 0
+
+
+def test_excluded_genre_blocks_show_with_that_genre_among_many():
+    progs = [prog("star", "20:00", "21:00", genre="트로트", genres=["트로트", "예능"])]
+    assert [e.program_id for e in plan(progs)] == ["star"], "규칙이 없으면 들어감"
+    assert plan(progs, rules=[rule("exclude", "예능", target_type="genre")]) == []
+
+
+def test_reason_names_the_liked_genre_among_many():
+    from app.engine.planner import Entry
+    from app.engine.reason import make_reason
+
+    show = prog("star", "20:00", "21:00", genre="예능", genres=["예능", "트로트"], cast=["가수"])
+    scored = score_program(show, flat_profile(genre={"트로트": 1.0}), [])
+    entry = Entry(
+        program_id="star",
+        channel_id="KBS1",
+        title="star",
+        start=show.start,
+        end=show.end,
+        score=scored.score,
+        kind="pick",
+        scored=scored,
+        source=show,
+    )
+    assert make_reason(entry) == "좋아하시는 트로트 방송이에요"
+
+
+def test_sample_programs_and_logs_list_all_genres_with_main_genre_first(sample_session):
+    """샘플도 외부 편성표처럼 장르 목록(genres)을 갖고, 대표 장르(genre)가 맨 앞."""
+    programs = sample_session.scalars(select(Program)).all()
+    logs = sample_session.scalars(select(WatchLog)).all()
+    for row in [*programs, *logs]:
+        assert row.genres and row.genres[0] == row.genre, row
+    assert any(len(p.genres) >= 2 for p in programs), "장르 2개 이상인 방송이 있어야 함"
+    assert any(len(w.genres) >= 2 for w in logs if w.senior_id == "s1")
+
+
+def test_genre_map_covers_every_sample_genre_with_unique_synonyms():
+    """data/sample/genre_map.json (표준 장르 사전 초안): 샘플 장르는 전부 표준 이름이고, 동의어는 한 장르에만."""
+    import json
+
+    from app.models.sample import SAMPLE_DIR
+
+    standard = json.loads((SAMPLE_DIR / "genre_map.json").read_text(encoding="utf-8"))["genres"]
+    assert 10 <= len(standard) <= 15
+    programs = json.loads((SAMPLE_DIR / "programs.json").read_text(encoding="utf-8"))
+    lg_contents = json.loads((SAMPLE_DIR / "lg_contents.json").read_text(encoding="utf-8"))
+    used = {g for p in programs for g in p["genres"]} | {c["genre"] for c in lg_contents}
+    assert used <= set(standard), used - set(standard)
+    synonyms = [s for g in standard.values() for s in g["synonyms"]]
+    assert len(synonyms) == len(set(synonyms)), "같은 동의어가 두 장르에 있으면 안 됨"
+    assert all(g["title_keywords"] is not None for g in standard.values())
+
+
+# ───────── 배치 무게 = (점수 − 기준점) × 길이 ─────────
+
+
+def test_several_shows_just_above_floor_cannot_push_out_a_favorite():
+    """기준점(0.35)을 겨우 넘은 방송 여러 개를 합쳐도 겹치는 최애 하나를 밀어내지 못한다.
+    (② 때 s1: 왕중왕 + 가족 여행이 별의 노래 새 회차를 밀어낸 일)"""
+    fav = Candidate(key="star", start=at("21:00"), end=at("23:00"), score=0.865, floor=0.35)
+    king = Candidate(key="king", start=at("20:00"), end=at("21:30"), score=0.806, floor=0.35)
+    trip = Candidate(key="trip", start=at("21:30"), end=at("22:40"), score=0.366, floor=0.35)
+    assert [c.key for c in select_best([fav, king, trip])] == ["star"]
+
+
+def test_plan_weighs_by_score_above_floor():
+    """점수 0.70 최애(2시간) vs 겹치는 0.40 두 개(1시간씩): 길이만 보면 두 개가 이기지만, 기준점 넘은 만큼으로 재면 최애."""
+    profile = flat_profile(series={"fav": 1.0}, cast={"가수": 1.0}, genre={"교양": 1.0})
+    progs = [
+        prog("fav", "20:00", "22:00", cast=["가수"]),
+        prog("weak1", "20:00", "21:00", cast=["가수"]),
+        prog("weak2", "21:00", "22:00", cast=["가수"]),
+    ]
+    assert [e.program_id for e in plan(progs, profile=profile)] == ["fav"]
+
+
+def test_show_scoring_exactly_at_floor_is_still_placed_when_free():
+    """무게가 0 이어도(점수 = 기준점) 겹치는 게 없으면 들어간다 (첫날 기준점을 낮췄을 때 6등도 후보)."""
+    edge = Candidate(key="edge", start=at("10:00"), end=at("11:00"), score=0.35, floor=0.35)
+    assert [c.key for c in select_best([edge])] == ["edge"]
+
+
+def test_floor_drops_to_sixth_score_when_fewer_than_six_pass_threshold():
+    """기준점(0.35)을 넘는 방송이 6개도 안 되면 기준점을 6등 점수까지 낮춘다 (첫날에도 하루표가 비지 않게).
+    약속 6절 규칙 5 의 예외. 6개 이상 넘으면 0.35 그대로."""
+    from app.engine.planner import candidate_floor
+
+    assert candidate_floor([0.9, 0.3, 0.2, 0.1, 0.05, 0.04, 0.01]) == 0.04
+    assert candidate_floor([0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.1]) == config.THRESHOLD
+    assert candidate_floor([0.2, 0.1]) == config.THRESHOLD  # 방송이 6개도 안 되면 낮추지 않음

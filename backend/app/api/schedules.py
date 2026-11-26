@@ -15,16 +15,19 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import HTMLResponse
-from sqlalchemy import func, select
+from sqlalchemy import func, inspect, select
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from ..contracts.rest import ScheduleResponse
+from ..engine.genres import genres_of
 from ..engine.planner import candidate_floor, starts_in_day, wake_and_sleep
 from ..engine.preference import Profile, build_profile
 from ..engine.rules import RuleSet
 from ..engine.scoring import score_program
 from ..engine.service import SeniorNotFound, make_schedule
 from ..models.db import (
+    Base,
     Program,
     Senior,
     UserRule,
@@ -42,16 +45,35 @@ router = APIRouter(prefix="/api/schedules", tags=["schedules"])
 
 
 def open_session(db_path: str | Path) -> Iterator[Session]:
-    """db_path 의 DB 를 열어 세션을 준다. 표가 없으면 만들고, 어르신이 한 명도 없으면 샘플을 넣는다."""
+    """db_path 의 DB 를 열어 세션을 준다. 표가 없으면 만들고, 어르신이 한 명도 없으면 샘플을 넣는다.
+    DB 구조가 바뀐 뒤의 옛날 DB 파일이면 'pnpm sample' 로 다시 만들라고 안내한다."""
     engine = make_engine(db_path)
     try:
         init_db(engine)
+        missing = missing_columns(engine)
+        if missing:
+            raise HTTPException(
+                500,
+                f"DB 구조가 옛날 거예요 ({', '.join(missing)} 없음). "
+                "루트 폴더에서 `pnpm sample` 로 다시 만들어 주세요 (샘플을 새로 넣음)",
+            )
         with make_session_factory(engine)() as session:
             if session.scalar(select(func.count()).select_from(Senior)) == 0:
                 load_sample(session)
             yield session
     finally:
         engine.dispose()  # 요청마다 파일 연결을 닫음 (Windows 파일 잠금 방지)
+
+
+def missing_columns(engine: Engine) -> list[str]:
+    """DB 파일에 없는 칸 목록 (예: 'programs.genres'). 구조가 바뀐 뒤 옛날 DB 를 그대로 쓰면 생긴다.
+    init_db(create_all) 는 없는 표만 만들고 있는 표에 칸을 더하지 않기 때문."""
+    db = inspect(engine)
+    out = []
+    for table in Base.metadata.sorted_tables:
+        have = {c["name"] for c in db.get_columns(table.name)}
+        out += [f"{table.name}.{c.name}" for c in table.columns if c.name not in have]
+    return out
 
 
 def get_session() -> Iterator[Session]:
@@ -164,7 +186,7 @@ def find_missed(
         return starts_in_day(p, wake, sleep)
 
     def by_rule(p: Program) -> bool:
-        return not rules.allows_start(p.start) or rules.blocks(p.series_key, p.genre)
+        return not rules.allows_start(p.start) or rules.blocks(p.series_key, genres_of(p))
 
     floor = candidate_floor([s.score for p, s in scored if in_day(p) and not by_rule(p)])
 
@@ -206,6 +228,6 @@ def find_missed(
 def _rule_detail(p: Program, rules: RuleSet) -> str:
     if not rules.allows_start(p.start):
         return '"오늘은 그만 볼래" 이후'
-    if rules.blocks(p.series_key, ""):  # 장르 빼고 시리즈만으로도 막히는지
+    if rules.blocks(p.series_key, []):  # 장르 빼고 시리즈만으로도 막히는지
         return f"뺀 프로그램 ({p.series_key})"
-    return f"뺀 장르 ({p.genre})"
+    return f"뺀 장르 ({', '.join(g for g in genres_of(p) if rules.blocks(None, [g]))})"

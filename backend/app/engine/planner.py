@@ -1,7 +1,8 @@
 """③ 배치(DP) + ⑤ 빈 시간 채우기.
 
-배치: 기상~취침 사이에 "시작"하는(끝은 취침 뒤여도 됨) 점수 0.35 이상 후보 중에서
-      겹치지 않게 "점수 × min(방송 길이, 60분)" 합이 최대가 되는 조합.
+배치: 기상~취침 사이에 "시작"하는(끝은 취침 뒤여도 됨) 점수 0.35(기준점) 이상 후보 중에서
+      겹치지 않게 "(점수 − 기준점) × min(방송 길이, 60분)" 합이 최대가 되는 조합.
+      기준점을 겨우 넘은 방송은 무게가 0 에 가까워서, 여러 개를 합쳐도 겹치는 최애를 밀어내지 못한다.
       (가중 구간 스케줄링 — 앞에서부터 욕심내서 고르는 것보다 정확)
 빈 시간: 방송 사이 — 20분 미만 → 앞 채널 그대로(fill) / 20분 이상 → 들어가는 LG채널·VOD 중 점수 최고(lg, 하루 한 번씩)
          기상~첫 방송 — 20분 미만 → 비움(앞 채널이 없음) / 20분 이상 → LG채널·VOD
@@ -15,6 +16,7 @@ from typing import Any
 
 from ..models.db import LgContent, Program, Senior
 from . import config
+from .genres import genres_of
 from .preference import Profile
 from .rules import RuleSet
 from .scoring import Scored, score_lg, score_program
@@ -26,13 +28,16 @@ class Candidate:
     start: datetime
     end: datetime
     score: float
+    floor: float = 0.0  # 기준점. 무게는 기준점을 넘은 만큼으로만 잰다
     pinned: bool = False
     payload: Any = None
 
     @property
     def weight(self) -> float:
+        """배치 무게 = (점수 − 기준점) × min(길이, 60분). "매일 챙겨 줘" 방송은 큰 가산."""
         minutes = (self.end - self.start).total_seconds() / 60
-        return self.score * min(minutes, config.LENGTH_CAP_MIN) + (config.PIN_BONUS if self.pinned else 0.0)
+        above_floor = self.score - self.floor
+        return above_floor * min(minutes, config.LENGTH_CAP_MIN) + (config.PIN_BONUS if self.pinned else 0.0)
 
 
 @dataclass
@@ -61,7 +66,7 @@ def select_best(cands: list[Candidate]) -> list[Candidate]:
     while j > 0:
         c = cands[j - 1]
         p = bisect_right(ends, c.start, 0, j - 1)
-        if c.weight + best[p] >= best[j - 1] and c.weight > 0:
+        if c.weight + best[p] >= best[j - 1] and c.weight >= 0:  # 무게 0 은 손해가 없을 때만 들어감
             chosen.append(c)
             j = p
         else:
@@ -106,13 +111,15 @@ def build_plan(
         for p in programs
         if starts_in_day(p, wake, sleep)
         and rules.allows_start(p.start)
-        and not rules.blocks(p.series_key, p.genre)
+        and not rules.blocks(p.series_key, genres_of(p))
     ]
     scored = [(p, score_program(p, profile, senior.family_picks or [])) for p in usable]
     floor = candidate_floor([s.score for _, s in scored])
 
     cands = [
-        Candidate(p.id, p.start, p.end, s.score, pinned=rules.is_pinned(p.series_key), payload=(p, s))
+        Candidate(
+            p.id, p.start, p.end, s.score, floor=floor, pinned=rules.is_pinned(p.series_key), payload=(p, s)
+        )
         for p, s in scored
         if s.score >= floor or rules.is_pinned(p.series_key)
     ]
@@ -185,7 +192,7 @@ def _lg_for_gap(
     fits = [
         (c, score_lg(c, profile, start))
         for c in lg_contents
-        if c.duration_min <= gap and c.id not in used_lg and not rules.blocks(None, c.genre)
+        if c.duration_min <= gap and c.id not in used_lg and not rules.blocks(None, genres_of(c))
     ]
     if not fits:
         return None

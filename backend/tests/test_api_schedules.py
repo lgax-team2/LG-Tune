@@ -123,6 +123,28 @@ def test_view_out_of_day_reason_uses_start_time_only(client):
         assert (m["why"] == "기상 전·취침 후") == (not starts_in_day), m
 
 
+def test_old_db_without_new_columns_gives_clear_message(tmp_path):
+    """DB 구조가 바뀐 뒤 옛날 DB 파일을 그대로 쓰면, 이유 모를 오류 대신 'pnpm sample' 안내가 나온다."""
+    import sqlite3
+
+    first = TestClient(app)
+    old_db = tmp_path / "old.db"
+
+    def session_on_old_db():
+        yield from open_session(old_db)
+
+    app.dependency_overrides[get_session] = session_on_old_db
+    try:
+        assert first.get("/api/schedules/s1").status_code == 200  # 새로 만든 DB 는 정상
+        with sqlite3.connect(old_db) as con:  # 예전 구조 흉내: genres 칸이 없던 때
+            con.execute("ALTER TABLE programs DROP COLUMN genres")
+        r = first.get("/api/schedules/s1")
+        assert r.status_code == 500
+        assert "pnpm sample" in r.json()["detail"] and "programs.genres" in r.json()["detail"]
+    finally:
+        app.dependency_overrides.pop(get_session, None)
+
+
 def test_view_unknown_senior_is_404(client):
     assert client.get("/api/schedules/s9/view").status_code == 404
 

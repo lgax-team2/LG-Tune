@@ -28,7 +28,7 @@ def make_reason(e: Entry) -> str:
     if top == "cast":
         return f"{e.scored.top_cast} 님이 나와요"
     if top == "genre":
-        return f"좋아하시는 {getattr(p, 'genre', '')} " + ieyo("방송")
+        return f"좋아하시는 {e.scored.top_genre or getattr(p, 'genre', '')} " + ieyo("방송")
     if top == "timeslot":
         return "이 시간에 자주 보시는 " + ieyo("방송")
     if top == "fresh":

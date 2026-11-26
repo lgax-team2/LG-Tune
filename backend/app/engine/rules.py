@@ -23,8 +23,9 @@ class RuleSet:
         rest = [r.from_time for r in on if r.kind == "rest_day" and r.date == today and r.from_time]
         self._rest_from = min(time.fromisoformat(t) for t in rest) if rest else None
 
-    def blocks(self, series_key: str | None, genre: str) -> bool:
-        return (series_key in self._blocked_series) or (genre in self._blocked_genres)
+    def blocks(self, series_key: str | None, genres: list[str]) -> bool:
+        """뺀 시리즈이거나, 장르 목록 중 하나라도 뺀 장르면 막는다."""
+        return (series_key in self._blocked_series) or any(g in self._blocked_genres for g in genres)
 
     def is_pinned(self, series_key: str) -> bool:
         return series_key in self._pinned and series_key not in self._blocked_series

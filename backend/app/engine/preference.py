@@ -3,6 +3,7 @@
 - 신호 세기: 직접 고름 1.0 / 이어짐·추천 0.3 / 5분 미만·취소 0
 - 본 날 기준 반감기: 최근 본 날부터 세어 14번째 본 날의 기록은 절반 (달력 날짜가 아님)
 - 기록이 적으면 첫날 정보(seed_prefs)를 더 믿음: 기록 비중 = n / (n + 10)
+- 장르가 여러 개인 기록은 각 장르에 같은 무게로 더함 (나눠 갖지 않음)
 """
 
 from collections import defaultdict
@@ -11,6 +12,7 @@ from datetime import date, datetime
 
 from ..models.db import Senior, WatchLog
 from . import config
+from .genres import genres_of
 
 
 def band_of(dt: datetime) -> str:
@@ -75,7 +77,8 @@ def build_profile(logs: list[WatchLog], senior: Senior, today: date) -> Profile:
     series, cast, genre, slot = defaultdict(float), defaultdict(float), defaultdict(float), defaultdict(float)
     for w in weighted:
         series[w.log.series_key] += w.weight
-        genre[w.log.genre] += w.weight
+        for g in genres_of(w.log):
+            genre[g] += w.weight
         slot[band_of(w.log.started_at)] += w.weight
         for person in w.log.cast or []:
             cast[person] += w.weight
