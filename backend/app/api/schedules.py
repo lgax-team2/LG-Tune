@@ -19,7 +19,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..contracts.rest import ScheduleResponse
-from ..engine import config
+from ..engine.planner import candidate_floor, starts_in_day, wake_and_sleep
 from ..engine.preference import Profile, build_profile
 from ..engine.rules import RuleSet
 from ..engine.scoring import score_program
@@ -155,23 +155,18 @@ def find_missed(
     schedule: ScheduleResponse,
     limit: int = 5,
 ) -> tuple[list[dict], float]:
-    """오늘 편성 중 하루표에 안 들어간 방송을 점수 순으로, 빠진 이유와 함께. (엔진 planner 와 같은 순서로 판정)"""
-    wake = datetime.combine(day, time.fromisoformat(senior.wake_time))
-    sleep = datetime.combine(day, time.fromisoformat(senior.sleep_time))
+    """오늘 편성 중 하루표에 안 들어간 방송을 점수 순으로, 빠진 이유와 함께. (엔진 planner 의 판정 함수를 그대로 씀)"""
+    wake, sleep = wake_and_sleep(senior, day)
     family = senior.family_picks or []
     scored = [(p, score_program(p, profile, family)) for p in programs]
 
     def in_day(p: Program) -> bool:
-        return wake <= p.start and p.end <= sleep
+        return starts_in_day(p, wake, sleep)
 
     def by_rule(p: Program) -> bool:
         return not rules.allows_start(p.start) or rules.blocks(p.series_key, p.genre)
 
-    # 기준점: planner.build_plan 과 같은 계산 (후보가 적으면 상위 MIN_CANDIDATES 번째 점수까지 내림)
-    ranked = sorted((s.score for p, s in scored if in_day(p) and not by_rule(p)), reverse=True)
-    floor = config.THRESHOLD
-    if len(ranked) >= config.MIN_CANDIDATES and ranked[config.MIN_CANDIDATES - 1] < floor:
-        floor = ranked[config.MIN_CANDIDATES - 1]
+    floor = candidate_floor([s.score for p, s in scored if in_day(p) and not by_rule(p)])
 
     planned = {i.program_id for i in schedule.items}
     picks = [i for i in schedule.items if i.kind == "pick"]

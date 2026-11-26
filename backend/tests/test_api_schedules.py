@@ -114,6 +114,15 @@ def test_view_marks_excluded_series_as_rule(client):
     assert blue and all(m["why"] == "규칙으로 제외" for m in blue)
 
 
+def test_view_out_of_day_reason_uses_start_time_only(client):
+    """취침 전에 시작한 방송은 '기상 전·취침 후'로 빠지지 않는다 (엔진 규칙과 같은 판정)."""
+    data = _view_data(client.get("/api/schedules/s1/view", params={"limit": 100}).text)
+    wake, sleep = data["senior"]["wake"], data["senior"]["sleep"]
+    for m in data["missed"]:
+        starts_in_day = wake <= m["start"][11:16] < sleep
+        assert (m["why"] == "기상 전·취침 후") == (not starts_in_day), m
+
+
 def test_view_unknown_senior_is_404(client):
     assert client.get("/api/schedules/s9/view").status_code == 404
 

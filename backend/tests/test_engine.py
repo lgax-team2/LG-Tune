@@ -192,16 +192,41 @@ def plan(programs, profile=None, s=None, rules=(), lgs=()):
     )
 
 
-def test_plan_stays_inside_wake_and_sleep_and_threshold():
+def test_plan_skips_shows_before_wake_and_below_threshold():
     progs = [
         prog("early", "05:00", "05:50"),
         prog("ok", "10:00", "11:00"),
-        prog("late", "21:30", "22:30"),
         prog("weak", "12:00", "13:00"),
     ]
-    p = flat_profile(series={"early": 1, "ok": 1, "late": 1}, genre={"교양": 1})  # weak = 장르만 0.15 < 0.35
+    p = flat_profile(series={"early": 1, "ok": 1}, genre={"교양": 1})  # weak = 장르만 0.15 < 0.35
     keys = [e.program_id for e in plan(progs, profile=p) if e.kind == "pick"]
     assert keys == ["ok"]
+
+
+def test_show_starting_before_sleep_is_allowed_even_if_it_ends_after():
+    """취침(22:00) 전에 '시작'하면 끝나는 시간과 상관없이 넣는다."""
+    progs = [prog("late", "21:30", "22:30")]
+    assert [e.program_id for e in plan(progs)] == ["late"]
+
+
+def test_show_starting_at_or_after_sleep_is_not_allowed():
+    progs = [prog("at-sleep", "22:00", "23:00"), prog("after", "22:30", "23:30")]
+    assert plan(progs) == []
+
+
+def test_morning_gap_of_20min_or_more_gets_lg_content_at_wake_time():
+    """기상(06:00)~첫 방송(09:00) 사이도 빈 시간: 20분 이상이면 LG 콘텐츠를 기상 시각부터."""
+    progs = [prog("first", "09:00", "10:00")]
+    entries = plan(progs, lgs=[lg("morning", "교양", 30)])
+    assert [(e.program_id, e.kind) for e in entries] == [("morning", "lg"), ("first", "pick")]
+    assert entries[0].start == at("06:00") and entries[0].end == at("06:30")
+
+
+def test_morning_gap_under_20min_stays_empty():
+    """기상 직후 짧은 빈 시간은 앞 채널이 없으니 채우지 않고 비워 둔다."""
+    progs = [prog("first", "06:15", "07:00")]
+    entries = plan(progs, lgs=[lg("short", "교양", 20)])
+    assert [(e.program_id, e.kind) for e in entries] == [("first", "pick")]
 
 
 # ───────── 규칙 4: 음성 명령 규칙 ─────────
@@ -272,7 +297,7 @@ def test_long_gap_gets_best_fitting_lg_content():
     progs = [prog("a", "10:00", "11:00"), prog("b", "12:00", "13:00")]
     p = flat_profile(series={"a": 1, "b": 1}, genre={"교양": 1, "트로트": 1.0, "다큐": 0.2})
     lgs = [lg("too-long", "트로트", 90), lg("trot", "트로트", 30), lg("docu", "다큐", 45)]
-    entries = plan(progs, profile=p, lgs=lgs)
+    entries = plan(progs, profile=p, lgs=lgs, s=senior(wake="10:00"))  # 아침 빈 시간 없이 방송 사이만 봄
     middle = [e for e in entries if e.kind == "lg"]
     assert [e.program_id for e in middle] == ["trot"]
     assert middle[0].start == at("11:00") and middle[0].end == at("11:30")
@@ -310,7 +335,7 @@ def test_sample_seniors_get_valid_plans(sample_session, sid):
     for a, b in pairwise(items):
         assert a.end <= b.start, "겹침"
     assert items[0].start.strftime("%H:%M") >= s.wake_time
-    assert items[-1].end.strftime("%H:%M") <= s.sleep_time or items[-1].end.date() > DAY
+    assert items[-1].start.strftime("%H:%M") < s.sleep_time, "취침 전에 시작해야 함"
     assert all(i.reason for i in items)
 
 
