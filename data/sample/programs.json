@@ -1,0 +1,1185 @@
+[
+  {
+    "id": "KBS1-20261201-0500",
+    "channel_id": "KBS1",
+    "title": "새벽 뉴스",
+    "series_key": "kbs1-news-dawn",
+    "genre": "뉴스",
+    "start": "2026-12-01T05:00:00",
+    "end": "2026-12-01T06:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "KBS1-20261201-0600",
+    "channel_id": "KBS1",
+    "title": "아침 뉴스",
+    "series_key": "kbs1-news-am",
+    "genre": "뉴스",
+    "start": "2026-12-01T06:00:00",
+    "end": "2026-12-01T08:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "KBS1-20261201-0800",
+    "channel_id": "KBS1",
+    "title": "아침 사랑방",
+    "series_key": "kbs1-sarangbang",
+    "genre": "교양",
+    "start": "2026-12-01T08:00:00",
+    "end": "2026-12-01T09:30:00",
+    "cast": [
+      "박미숙",
+      "이철호"
+    ],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "KBS1-20261201-0930",
+    "channel_id": "KBS1",
+    "title": "건강 백세",
+    "series_key": "kbs1-health100",
+    "genre": "건강",
+    "start": "2026-12-01T09:30:00",
+    "end": "2026-12-01T10:30:00",
+    "cast": [
+      "강민수"
+    ],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "KBS1-20261201-1030",
+    "channel_id": "KBS1",
+    "title": "고향 한 바퀴",
+    "series_key": "kbs1-hometown",
+    "genre": "교양",
+    "start": "2026-12-01T10:30:00",
+    "end": "2026-12-01T11:30:00",
+    "cast": [
+      "이철호"
+    ],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "KBS1-20261201-1130",
+    "channel_id": "KBS1",
+    "title": "동물 이야기",
+    "series_key": "kbs1-animal",
+    "genre": "다큐",
+    "start": "2026-12-01T11:30:00",
+    "end": "2026-12-01T12:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "KBS1-20261201-1200",
+    "channel_id": "KBS1",
+    "title": "정오 뉴스",
+    "series_key": "kbs1-news-noon",
+    "genre": "뉴스",
+    "start": "2026-12-01T12:00:00",
+    "end": "2026-12-01T13:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "KBS1-20261201-1300",
+    "channel_id": "KBS1",
+    "title": "트로트 대잔치",
+    "series_key": "kbs1-trot-party",
+    "genre": "트로트",
+    "start": "2026-12-01T13:00:00",
+    "end": "2026-12-01T14:30:00",
+    "cast": [
+      "송미란",
+      "김태호"
+    ],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "KBS1-20261201-1430",
+    "channel_id": "KBS1",
+    "title": "다큐 세상",
+    "series_key": "kbs1-docu",
+    "genre": "다큐",
+    "start": "2026-12-01T14:30:00",
+    "end": "2026-12-01T15:30:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "KBS1-20261201-1530",
+    "channel_id": "KBS1",
+    "title": "인생 극장",
+    "series_key": "kbs1-life",
+    "genre": "교양",
+    "start": "2026-12-01T15:30:00",
+    "end": "2026-12-01T16:30:00",
+    "cast": [],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "KBS1-20261201-1630",
+    "channel_id": "KBS1",
+    "title": "어르신 노래교실",
+    "series_key": "kbs1-songclass",
+    "genre": "트로트",
+    "start": "2026-12-01T16:30:00",
+    "end": "2026-12-01T17:30:00",
+    "cast": [
+      "송미란"
+    ],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "KBS1-20261201-1730",
+    "channel_id": "KBS1",
+    "title": "고향 한 바퀴",
+    "series_key": "kbs1-hometown",
+    "genre": "교양",
+    "start": "2026-12-01T17:30:00",
+    "end": "2026-12-01T19:00:00",
+    "cast": [
+      "이철호"
+    ],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "KBS1-20261201-1900",
+    "channel_id": "KBS1",
+    "title": "저녁 뉴스",
+    "series_key": "kbs1-news-pm",
+    "genre": "뉴스",
+    "start": "2026-12-01T19:00:00",
+    "end": "2026-12-01T20:30:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "KBS1-20261201-2030",
+    "channel_id": "KBS1",
+    "title": "일일드라마 햇살 가득",
+    "series_key": "kbs1-haetsal",
+    "genre": "드라마",
+    "start": "2026-12-01T20:30:00",
+    "end": "2026-12-01T21:30:00",
+    "cast": [
+      "한지수",
+      "오민재"
+    ],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "KBS1-20261201-2130",
+    "channel_id": "KBS1",
+    "title": "사극 왕의 길",
+    "series_key": "kbs1-king",
+    "genre": "사극",
+    "start": "2026-12-01T21:30:00",
+    "end": "2026-12-01T22:40:00",
+    "cast": [
+      "정대현",
+      "윤서아"
+    ],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "KBS1-20261201-2240",
+    "channel_id": "KBS1",
+    "title": "밤 시사 토론",
+    "series_key": "kbs1-debate",
+    "genre": "시사",
+    "start": "2026-12-01T22:40:00",
+    "end": "2026-12-01T23:40:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "KBS1-20261201-2340",
+    "channel_id": "KBS1",
+    "title": "마감 뉴스",
+    "series_key": "kbs1-news-night",
+    "genre": "뉴스",
+    "start": "2026-12-01T23:40:00",
+    "end": "2026-12-02T00:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "KBS2-20261201-0500",
+    "channel_id": "KBS2",
+    "title": "꽃피는 마을 (재)",
+    "series_key": "kbs2-flower",
+    "genre": "드라마",
+    "start": "2026-12-01T05:00:00",
+    "end": "2026-12-01T06:30:00",
+    "cast": [
+      "한지수"
+    ],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "KBS2-20261201-0630",
+    "channel_id": "KBS2",
+    "title": "아침 생활 정보",
+    "series_key": "kbs2-info-am",
+    "genre": "교양",
+    "start": "2026-12-01T06:30:00",
+    "end": "2026-12-01T08:30:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "KBS2-20261201-0830",
+    "channel_id": "KBS2",
+    "title": "아침드라마 봄날의 약속",
+    "series_key": "kbs2-spring",
+    "genre": "드라마",
+    "start": "2026-12-01T08:30:00",
+    "end": "2026-12-01T09:10:00",
+    "cast": [
+      "이은정"
+    ],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "KBS2-20261201-0910",
+    "channel_id": "KBS2",
+    "title": "생활의 지혜",
+    "series_key": "kbs2-wisdom",
+    "genre": "교양",
+    "start": "2026-12-01T09:10:00",
+    "end": "2026-12-01T10:30:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "KBS2-20261201-1030",
+    "channel_id": "KBS2",
+    "title": "꽃피는 마을 (재)",
+    "series_key": "kbs2-flower",
+    "genre": "드라마",
+    "start": "2026-12-01T10:30:00",
+    "end": "2026-12-01T12:00:00",
+    "cast": [
+      "한지수"
+    ],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "KBS2-20261201-1200",
+    "channel_id": "KBS2",
+    "title": "요리 한 상",
+    "series_key": "kbs2-cook",
+    "genre": "요리",
+    "start": "2026-12-01T12:00:00",
+    "end": "2026-12-01T13:00:00",
+    "cast": [
+      "최영자"
+    ],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "KBS2-20261201-1300",
+    "channel_id": "KBS2",
+    "title": "고전 명작 영화",
+    "series_key": "kbs2-movie",
+    "genre": "영화",
+    "start": "2026-12-01T13:00:00",
+    "end": "2026-12-01T15:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "KBS2-20261201-1500",
+    "channel_id": "KBS2",
+    "title": "노래 경연 왕중왕 (재)",
+    "series_key": "kbs2-king-of-song",
+    "genre": "트로트",
+    "start": "2026-12-01T15:00:00",
+    "end": "2026-12-01T17:00:00",
+    "cast": [
+      "김태호",
+      "송미란"
+    ],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "KBS2-20261201-1700",
+    "channel_id": "KBS2",
+    "title": "퀴즈 한마당",
+    "series_key": "kbs2-quiz",
+    "genre": "예능",
+    "start": "2026-12-01T17:00:00",
+    "end": "2026-12-01T18:00:00",
+    "cast": [],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "KBS2-20261201-1800",
+    "channel_id": "KBS2",
+    "title": "스포츠 하이라이트",
+    "series_key": "kbs2-sports",
+    "genre": "스포츠",
+    "start": "2026-12-01T18:00:00",
+    "end": "2026-12-01T19:00:00",
+    "cast": [],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "KBS2-20261201-1900",
+    "channel_id": "KBS2",
+    "title": "저녁 생활 정보",
+    "series_key": "kbs2-info-pm",
+    "genre": "교양",
+    "start": "2026-12-01T19:00:00",
+    "end": "2026-12-01T20:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "KBS2-20261201-2000",
+    "channel_id": "KBS2",
+    "title": "노래 경연 왕중왕",
+    "series_key": "kbs2-king-of-song",
+    "genre": "트로트",
+    "start": "2026-12-01T20:00:00",
+    "end": "2026-12-01T21:30:00",
+    "cast": [
+      "김태호",
+      "송미란"
+    ],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "KBS2-20261201-2130",
+    "channel_id": "KBS2",
+    "title": "드라마 사랑의 계절",
+    "series_key": "kbs2-season",
+    "genre": "드라마",
+    "start": "2026-12-01T21:30:00",
+    "end": "2026-12-01T22:50:00",
+    "cast": [
+      "오민재"
+    ],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "KBS2-20261201-2250",
+    "channel_id": "KBS2",
+    "title": "웃음 충전",
+    "series_key": "kbs2-laugh",
+    "genre": "예능",
+    "start": "2026-12-01T22:50:00",
+    "end": "2026-12-02T00:00:00",
+    "cast": [],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "MBC-20261201-0500",
+    "channel_id": "MBC",
+    "title": "새벽 뉴스",
+    "series_key": "mbc-news-dawn",
+    "genre": "뉴스",
+    "start": "2026-12-01T05:00:00",
+    "end": "2026-12-01T06:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "MBC-20261201-0600",
+    "channel_id": "MBC",
+    "title": "생방송 아침",
+    "series_key": "mbc-morning",
+    "genre": "교양",
+    "start": "2026-12-01T06:00:00",
+    "end": "2026-12-01T08:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "MBC-20261201-0800",
+    "channel_id": "MBC",
+    "title": "아침드라마 바람의 언덕",
+    "series_key": "mbc-hill",
+    "genre": "드라마",
+    "start": "2026-12-01T08:00:00",
+    "end": "2026-12-01T08:40:00",
+    "cast": [
+      "윤서아"
+    ],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "MBC-20261201-0840",
+    "channel_id": "MBC",
+    "title": "오늘의 건강",
+    "series_key": "mbc-health",
+    "genre": "건강",
+    "start": "2026-12-01T08:40:00",
+    "end": "2026-12-01T10:00:00",
+    "cast": [
+      "강민수"
+    ],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "MBC-20261201-1000",
+    "channel_id": "MBC",
+    "title": "시골 밥상 (재)",
+    "series_key": "mbc-countryfood",
+    "genre": "요리",
+    "start": "2026-12-01T10:00:00",
+    "end": "2026-12-01T11:00:00",
+    "cast": [
+      "최영자"
+    ],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "MBC-20261201-1100",
+    "channel_id": "MBC",
+    "title": "자연 다큐",
+    "series_key": "mbc-nature",
+    "genre": "다큐",
+    "start": "2026-12-01T11:00:00",
+    "end": "2026-12-01T12:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "MBC-20261201-1200",
+    "channel_id": "MBC",
+    "title": "정오 뉴스",
+    "series_key": "mbc-news-noon",
+    "genre": "뉴스",
+    "start": "2026-12-01T12:00:00",
+    "end": "2026-12-01T13:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "MBC-20261201-1300",
+    "channel_id": "MBC",
+    "title": "사극 조선의 별 (재)",
+    "series_key": "mbc-joseon",
+    "genre": "사극",
+    "start": "2026-12-01T13:00:00",
+    "end": "2026-12-01T15:00:00",
+    "cast": [
+      "정대현"
+    ],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "MBC-20261201-1500",
+    "channel_id": "MBC",
+    "title": "트로트 열전 (재)",
+    "series_key": "mbc-trot",
+    "genre": "트로트",
+    "start": "2026-12-01T15:00:00",
+    "end": "2026-12-01T16:30:00",
+    "cast": [
+      "송미란"
+    ],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "MBC-20261201-1630",
+    "channel_id": "MBC",
+    "title": "경제 매거진",
+    "series_key": "mbc-economy",
+    "genre": "시사",
+    "start": "2026-12-01T16:30:00",
+    "end": "2026-12-01T17:30:00",
+    "cast": [],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "MBC-20261201-1730",
+    "channel_id": "MBC",
+    "title": "시골 밥상",
+    "series_key": "mbc-countryfood",
+    "genre": "요리",
+    "start": "2026-12-01T17:30:00",
+    "end": "2026-12-01T18:30:00",
+    "cast": [
+      "최영자"
+    ],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "MBC-20261201-1830",
+    "channel_id": "MBC",
+    "title": "우리 동네 이야기",
+    "series_key": "mbc-town",
+    "genre": "교양",
+    "start": "2026-12-01T18:30:00",
+    "end": "2026-12-01T19:30:00",
+    "cast": [],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "MBC-20261201-1930",
+    "channel_id": "MBC",
+    "title": "저녁 뉴스",
+    "series_key": "mbc-news-pm",
+    "genre": "뉴스",
+    "start": "2026-12-01T19:30:00",
+    "end": "2026-12-01T20:30:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "MBC-20261201-2030",
+    "channel_id": "MBC",
+    "title": "일일극 푸른 바다",
+    "series_key": "mbc-bluesea",
+    "genre": "드라마",
+    "start": "2026-12-01T20:30:00",
+    "end": "2026-12-01T21:30:00",
+    "cast": [
+      "이은정"
+    ],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "MBC-20261201-2130",
+    "channel_id": "MBC",
+    "title": "가족 여행",
+    "series_key": "mbc-family-trip",
+    "genre": "예능",
+    "start": "2026-12-01T21:30:00",
+    "end": "2026-12-01T22:40:00",
+    "cast": [],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "MBC-20261201-2240",
+    "channel_id": "MBC",
+    "title": "시사 매거진",
+    "series_key": "mbc-current",
+    "genre": "시사",
+    "start": "2026-12-01T22:40:00",
+    "end": "2026-12-01T23:40:00",
+    "cast": [],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "MBC-20261201-2340",
+    "channel_id": "MBC",
+    "title": "마감 뉴스",
+    "series_key": "mbc-news-night",
+    "genre": "뉴스",
+    "start": "2026-12-01T23:40:00",
+    "end": "2026-12-02T00:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "SBS-20261201-0500",
+    "channel_id": "SBS",
+    "title": "새벽 뉴스",
+    "series_key": "sbs-news-dawn",
+    "genre": "뉴스",
+    "start": "2026-12-01T05:00:00",
+    "end": "2026-12-01T06:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "SBS-20261201-0600",
+    "channel_id": "SBS",
+    "title": "모닝 와이드",
+    "series_key": "sbs-wide",
+    "genre": "교양",
+    "start": "2026-12-01T06:00:00",
+    "end": "2026-12-01T08:30:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "SBS-20261201-0830",
+    "channel_id": "SBS",
+    "title": "아침드라마 두 번째 봄",
+    "series_key": "sbs-second-spring",
+    "genre": "드라마",
+    "start": "2026-12-01T08:30:00",
+    "end": "2026-12-01T09:10:00",
+    "cast": [
+      "이은정"
+    ],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "SBS-20261201-0910",
+    "channel_id": "SBS",
+    "title": "생활 백서",
+    "series_key": "sbs-life-book",
+    "genre": "교양",
+    "start": "2026-12-01T09:10:00",
+    "end": "2026-12-01T10:20:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "SBS-20261201-1020",
+    "channel_id": "SBS",
+    "title": "동물 친구들 (재)",
+    "series_key": "sbs-animal",
+    "genre": "다큐",
+    "start": "2026-12-01T10:20:00",
+    "end": "2026-12-01T12:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "SBS-20261201-1200",
+    "channel_id": "SBS",
+    "title": "정오 뉴스",
+    "series_key": "sbs-news-noon",
+    "genre": "뉴스",
+    "start": "2026-12-01T12:00:00",
+    "end": "2026-12-01T13:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "SBS-20261201-1300",
+    "channel_id": "SBS",
+    "title": "스포츠 매거진",
+    "series_key": "sbs-sports",
+    "genre": "스포츠",
+    "start": "2026-12-01T13:00:00",
+    "end": "2026-12-01T14:00:00",
+    "cast": [],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "SBS-20261201-1400",
+    "channel_id": "SBS",
+    "title": "오후의 영화",
+    "series_key": "sbs-movie",
+    "genre": "영화",
+    "start": "2026-12-01T14:00:00",
+    "end": "2026-12-01T16:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "SBS-20261201-1600",
+    "channel_id": "SBS",
+    "title": "트로트 스타 (재)",
+    "series_key": "sbs-trotstar",
+    "genre": "트로트",
+    "start": "2026-12-01T16:00:00",
+    "end": "2026-12-01T17:30:00",
+    "cast": [
+      "김태호"
+    ],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "SBS-20261201-1730",
+    "channel_id": "SBS",
+    "title": "생방송 오늘 저녁",
+    "series_key": "sbs-tonight",
+    "genre": "교양",
+    "start": "2026-12-01T17:30:00",
+    "end": "2026-12-01T19:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "SBS-20261201-1900",
+    "channel_id": "SBS",
+    "title": "동물 친구들",
+    "series_key": "sbs-animal",
+    "genre": "다큐",
+    "start": "2026-12-01T19:00:00",
+    "end": "2026-12-01T20:00:00",
+    "cast": [],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "SBS-20261201-2000",
+    "channel_id": "SBS",
+    "title": "저녁 뉴스",
+    "series_key": "sbs-news-pm",
+    "genre": "뉴스",
+    "start": "2026-12-01T20:00:00",
+    "end": "2026-12-01T21:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "SBS-20261201-2100",
+    "channel_id": "SBS",
+    "title": "드라마 비밀의 정원",
+    "series_key": "sbs-garden",
+    "genre": "드라마",
+    "start": "2026-12-01T21:00:00",
+    "end": "2026-12-01T22:20:00",
+    "cast": [
+      "한지수"
+    ],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "SBS-20261201-2220",
+    "channel_id": "SBS",
+    "title": "웃음 공장",
+    "series_key": "sbs-laugh",
+    "genre": "예능",
+    "start": "2026-12-01T22:20:00",
+    "end": "2026-12-01T23:30:00",
+    "cast": [],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "SBS-20261201-2330",
+    "channel_id": "SBS",
+    "title": "나이트 뉴스",
+    "series_key": "sbs-news-night",
+    "genre": "뉴스",
+    "start": "2026-12-01T23:30:00",
+    "end": "2026-12-02T00:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "EBS1-20261201-0500",
+    "channel_id": "EBS1",
+    "title": "세계 테마 여행 (재)",
+    "series_key": "ebs-world",
+    "genre": "다큐",
+    "start": "2026-12-01T05:00:00",
+    "end": "2026-12-01T06:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "EBS1-20261201-0600",
+    "channel_id": "EBS1",
+    "title": "어르신 체조",
+    "series_key": "ebs-exercise",
+    "genre": "건강",
+    "start": "2026-12-01T06:00:00",
+    "end": "2026-12-01T07:00:00",
+    "cast": [],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "EBS1-20261201-0700",
+    "channel_id": "EBS1",
+    "title": "다큐 프라임 (재)",
+    "series_key": "ebs-prime",
+    "genre": "다큐",
+    "start": "2026-12-01T07:00:00",
+    "end": "2026-12-01T08:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "EBS1-20261201-0800",
+    "channel_id": "EBS1",
+    "title": "명의 건강 (재)",
+    "series_key": "ebs-doctor",
+    "genre": "건강",
+    "start": "2026-12-01T08:00:00",
+    "end": "2026-12-01T09:00:00",
+    "cast": [
+      "강민수"
+    ],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "EBS1-20261201-0900",
+    "channel_id": "EBS1",
+    "title": "세계 테마 여행 (재)",
+    "series_key": "ebs-world",
+    "genre": "다큐",
+    "start": "2026-12-01T09:00:00",
+    "end": "2026-12-01T11:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "EBS1-20261201-1100",
+    "channel_id": "EBS1",
+    "title": "한국 기행",
+    "series_key": "ebs-korea",
+    "genre": "교양",
+    "start": "2026-12-01T11:00:00",
+    "end": "2026-12-01T12:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "EBS1-20261201-1200",
+    "channel_id": "EBS1",
+    "title": "요리 비결",
+    "series_key": "ebs-cook",
+    "genre": "요리",
+    "start": "2026-12-01T12:00:00",
+    "end": "2026-12-01T13:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "EBS1-20261201-1300",
+    "channel_id": "EBS1",
+    "title": "명의 건강 (재)",
+    "series_key": "ebs-doctor",
+    "genre": "건강",
+    "start": "2026-12-01T13:00:00",
+    "end": "2026-12-01T14:00:00",
+    "cast": [
+      "강민수"
+    ],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "EBS1-20261201-1400",
+    "channel_id": "EBS1",
+    "title": "바둑 한 판",
+    "series_key": "ebs-baduk",
+    "genre": "취미",
+    "start": "2026-12-01T14:00:00",
+    "end": "2026-12-01T15:00:00",
+    "cast": [],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "EBS1-20261201-1500",
+    "channel_id": "EBS1",
+    "title": "한국 기행",
+    "series_key": "ebs-korea",
+    "genre": "교양",
+    "start": "2026-12-01T15:00:00",
+    "end": "2026-12-01T16:00:00",
+    "cast": [],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "EBS1-20261201-1600",
+    "channel_id": "EBS1",
+    "title": "어르신 체조 (재)",
+    "series_key": "ebs-exercise",
+    "genre": "건강",
+    "start": "2026-12-01T16:00:00",
+    "end": "2026-12-01T17:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "EBS1-20261201-1700",
+    "channel_id": "EBS1",
+    "title": "다큐 프라임 (재)",
+    "series_key": "ebs-prime",
+    "genre": "다큐",
+    "start": "2026-12-01T17:00:00",
+    "end": "2026-12-01T19:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "EBS1-20261201-1900",
+    "channel_id": "EBS1",
+    "title": "세계 테마 여행",
+    "series_key": "ebs-world",
+    "genre": "다큐",
+    "start": "2026-12-01T19:00:00",
+    "end": "2026-12-01T20:00:00",
+    "cast": [],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "EBS1-20261201-2000",
+    "channel_id": "EBS1",
+    "title": "극한 직업",
+    "series_key": "ebs-extreme",
+    "genre": "다큐",
+    "start": "2026-12-01T20:00:00",
+    "end": "2026-12-01T21:00:00",
+    "cast": [],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "EBS1-20261201-2100",
+    "channel_id": "EBS1",
+    "title": "명의 건강",
+    "series_key": "ebs-doctor",
+    "genre": "건강",
+    "start": "2026-12-01T21:00:00",
+    "end": "2026-12-01T22:00:00",
+    "cast": [
+      "강민수"
+    ],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "EBS1-20261201-2200",
+    "channel_id": "EBS1",
+    "title": "다큐 프라임",
+    "series_key": "ebs-prime",
+    "genre": "다큐",
+    "start": "2026-12-01T22:00:00",
+    "end": "2026-12-01T23:00:00",
+    "cast": [],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "EBS1-20261201-2300",
+    "channel_id": "EBS1",
+    "title": "고전 영화",
+    "series_key": "ebs-movie",
+    "genre": "영화",
+    "start": "2026-12-01T23:00:00",
+    "end": "2026-12-02T00:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "TVC-20261201-0500",
+    "channel_id": "TVC",
+    "title": "새벽 뉴스",
+    "series_key": "tvc-news-dawn",
+    "genre": "뉴스",
+    "start": "2026-12-01T05:00:00",
+    "end": "2026-12-01T07:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "TVC-20261201-0700",
+    "channel_id": "TVC",
+    "title": "시사 아침",
+    "series_key": "tvc-current-am",
+    "genre": "시사",
+    "start": "2026-12-01T07:00:00",
+    "end": "2026-12-01T09:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "TVC-20261201-0900",
+    "channel_id": "TVC",
+    "title": "트로트 쇼 (재)",
+    "series_key": "tvc-trotshow",
+    "genre": "트로트",
+    "start": "2026-12-01T09:00:00",
+    "end": "2026-12-01T11:00:00",
+    "cast": [
+      "송미란",
+      "김태호"
+    ],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "TVC-20261201-1100",
+    "channel_id": "TVC",
+    "title": "건강 정보 쇼",
+    "series_key": "tvc-health",
+    "genre": "건강",
+    "start": "2026-12-01T11:00:00",
+    "end": "2026-12-01T12:30:00",
+    "cast": [
+      "강민수"
+    ],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "TVC-20261201-1230",
+    "channel_id": "TVC",
+    "title": "정오 뉴스",
+    "series_key": "tvc-news-noon",
+    "genre": "뉴스",
+    "start": "2026-12-01T12:30:00",
+    "end": "2026-12-01T13:30:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "TVC-20261201-1330",
+    "channel_id": "TVC",
+    "title": "트로트 쇼 (재)",
+    "series_key": "tvc-trotshow",
+    "genre": "트로트",
+    "start": "2026-12-01T13:30:00",
+    "end": "2026-12-01T15:30:00",
+    "cast": [
+      "송미란",
+      "김태호"
+    ],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "TVC-20261201-1530",
+    "channel_id": "TVC",
+    "title": "역사 이야기",
+    "series_key": "tvc-history",
+    "genre": "다큐",
+    "start": "2026-12-01T15:30:00",
+    "end": "2026-12-01T16:30:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "TVC-20261201-1630",
+    "channel_id": "TVC",
+    "title": "트로트 오디션 별의 노래 (재)",
+    "series_key": "tvc-star",
+    "genre": "트로트",
+    "start": "2026-12-01T16:30:00",
+    "end": "2026-12-01T18:00:00",
+    "cast": [
+      "김태호",
+      "송미란"
+    ],
+    "is_new": false,
+    "is_live": false
+  },
+  {
+    "id": "TVC-20261201-1800",
+    "channel_id": "TVC",
+    "title": "시사 판",
+    "series_key": "tvc-current-pm",
+    "genre": "시사",
+    "start": "2026-12-01T18:00:00",
+    "end": "2026-12-01T19:30:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "TVC-20261201-1930",
+    "channel_id": "TVC",
+    "title": "저녁 뉴스",
+    "series_key": "tvc-news-pm",
+    "genre": "뉴스",
+    "start": "2026-12-01T19:30:00",
+    "end": "2026-12-01T21:00:00",
+    "cast": [],
+    "is_new": false,
+    "is_live": true
+  },
+  {
+    "id": "TVC-20261201-2100",
+    "channel_id": "TVC",
+    "title": "트로트 오디션 별의 노래",
+    "series_key": "tvc-star",
+    "genre": "트로트",
+    "start": "2026-12-01T21:00:00",
+    "end": "2026-12-01T23:00:00",
+    "cast": [
+      "김태호",
+      "송미란"
+    ],
+    "is_new": true,
+    "is_live": false
+  },
+  {
+    "id": "TVC-20261201-2300",
+    "channel_id": "TVC",
+    "title": "트로트 쇼 (재)",
+    "series_key": "tvc-trotshow",
+    "genre": "트로트",
+    "start": "2026-12-01T23:00:00",
+    "end": "2026-12-02T00:00:00",
+    "cast": [
+      "송미란",
+      "김태호"
+    ],
+    "is_new": false,
+    "is_live": false
+  }
+]

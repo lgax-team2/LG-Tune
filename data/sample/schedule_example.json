@@ -1,0 +1,72 @@
+{
+  "senior_id": "s1",
+  "date": "2026-12-01",
+  "items": [
+    {
+      "program_id": "KBS1-20261201-0930",
+      "channel_id": "KBS1",
+      "channel_number": 9,
+      "title": "건강 백세",
+      "start": "2026-12-01T09:30:00",
+      "end": "2026-12-01T10:30:00",
+      "score": 0.5,
+      "reason": "아침에 보기 좋은 건강 정보예요",
+      "kind": "pick"
+    },
+    {
+      "program_id": "KBS1-20261201-1300",
+      "channel_id": "KBS1",
+      "channel_number": 9,
+      "title": "트로트 대잔치",
+      "start": "2026-12-01T13:00:00",
+      "end": "2026-12-01T14:30:00",
+      "score": 0.5,
+      "reason": "송미란 님이 나오는 트로트예요",
+      "kind": "pick"
+    },
+    {
+      "program_id": "KBS1-20261201-1530",
+      "channel_id": "KBS1",
+      "channel_number": 9,
+      "title": "인생 극장",
+      "start": "2026-12-01T15:30:00",
+      "end": "2026-12-01T16:30:00",
+      "score": 0.5,
+      "reason": "가족이 추천한 프로그램이에요",
+      "kind": "pick"
+    },
+    {
+      "program_id": "KBS1-20261201-1630",
+      "channel_id": "KBS1",
+      "channel_number": 9,
+      "title": "어르신 노래교실",
+      "start": "2026-12-01T16:30:00",
+      "end": "2026-12-01T17:30:00",
+      "score": 0.5,
+      "reason": "좋아하시는 트로트 새 회차예요",
+      "kind": "pick"
+    },
+    {
+      "program_id": "KBS1-20261201-1730",
+      "channel_id": "KBS1",
+      "channel_number": 9,
+      "title": "고향 한 바퀴",
+      "start": "2026-12-01T17:30:00",
+      "end": "2026-12-01T19:00:00",
+      "score": 0.0,
+      "reason": "채널을 그대로 두고 이어서 봐요",
+      "kind": "fill"
+    },
+    {
+      "program_id": "KBS1-20261201-2030",
+      "channel_id": "KBS1",
+      "channel_number": 9,
+      "title": "일일드라마 햇살 가득",
+      "start": "2026-12-01T20:30:00",
+      "end": "2026-12-01T21:30:00",
+      "score": 0.5,
+      "reason": "매일 보시는 드라마 새 회차예요",
+      "kind": "pick"
+    }
+  ]
+}

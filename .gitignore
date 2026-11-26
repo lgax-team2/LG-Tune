@@ -24,3 +24,6 @@ ml/**/checkpoints/
 
 .DS_Store
 Thumbs.db
+
+# pytest 임시 폴더
+.pytest_tmp/

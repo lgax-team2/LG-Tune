@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     profile: Literal["dev", "test", "demo"] = "dev"
-    llm_provider: Literal["fake", "claude"] = "fake"
+    llm_provider: Literal["fake", "claude", "openai"] = "fake"
     llm_fallback: Literal["none", "qwen_local", "exaone"] = "none"
     judge_provider: Literal["fake", "local", "jev", "claude"] = "fake"  # 응/아니·명령·관련성 판단
     stt_provider: Literal["fake", "whisper"] = "fake"
@@ -26,8 +26,11 @@ class Settings(BaseSettings):
     jev_api_key: str = ""
     claude_realtime_model: str = "claude-haiku-5-5"
     claude_batch_model: str = "claude-sonnet-5-5"
+    openai_api_key: str = ""
+    openai_model: str = ""  # 쓰는 사람이 backend/.env 에 모델 이름을 넣는다
 
-    db_path: str = "data/tune.db"
+    db_path: str = "data/tune.db"  # 대화 기록(보류 기능)
+    mymode_db_path: str = "data/mymode.db"  # 편성표·어르신·시청 기록 (SQLAlchemy)
 
 
 settings = Settings()

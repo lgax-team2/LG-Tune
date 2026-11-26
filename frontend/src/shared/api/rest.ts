@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/schedules/{senior_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Schedule */
+        get: operations["get_schedule_api_schedules__senior_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -161,6 +178,68 @@ export interface components {
             items: components["schemas"]["PlanItem"][];
         };
         /**
+         * ScheduleItem
+         * @description 하루표의 한 칸 (마이모드).
+         */
+        ScheduleItem: {
+            /** Program Id */
+            program_id: string;
+            /**
+             * Channel Id
+             * @description 예: 'KBS1'
+             */
+            channel_id: string;
+            /**
+             * Channel Number
+             * @description 리모컨 채널 번호
+             */
+            channel_number: number;
+            /** Title */
+            title: string;
+            /**
+             * Start
+             * Format: date-time
+             * @description 한국 시간, 시간대 표기 없음
+             */
+            start: string;
+            /**
+             * End
+             * Format: date-time
+             */
+            end: string;
+            /**
+             * Score
+             * @description 엔진 점수 (fill 이면 0)
+             */
+            score: number;
+            /**
+             * Reason
+             * @description 화면에 보여 줄 고른 이유
+             */
+            reason: string;
+            /**
+             * Kind
+             * @description pick = 점수로 고름, fill = 빈 시간 채움
+             * @enum {string}
+             */
+            kind: "pick" | "fill";
+        };
+        /** ScheduleResponse */
+        ScheduleResponse: {
+            /** Senior Id */
+            senior_id: string;
+            /**
+             * Date
+             * @description YYYY-MM-DD
+             */
+            date: string;
+            /**
+             * Items
+             * @description 시작 시각 순, 서로 겹치지 않음
+             */
+            items: components["schemas"]["ScheduleItem"][];
+        };
+        /**
          * SetupRequest
          * @description 자녀 폰 첫 설정.
          */
@@ -227,6 +306,39 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_schedule_api_schedules__senior_id__get: {
+        parameters: {
+            query?: {
+                date?: string | null;
+            };
+            header?: never;
+            path: {
+                senior_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     healthz_healthz_get: {
         parameters: {
             query?: never;

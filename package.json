@@ -9,7 +9,8 @@
     "dev:mock": "concurrently -n mock,fe -c yellow,magenta \"cd frontend && pnpm mock\" \"pnpm dev:fe\"",
     "gen": "cd backend && uv run python scripts/gen_contracts.py && cd ../frontend && pnpm gen:types",
     "test": "cd backend && uv run pytest -q && cd ../frontend && pnpm typecheck",
-    "setup": "cd backend && uv sync && cd ../frontend && pnpm install"
+    "setup": "cd backend && uv sync && cd ../frontend && pnpm install",
+    "sample": "cd backend && uv run python scripts/load_sample.py"
   },
   "devDependencies": {
     "concurrently": "^10.0.7"
