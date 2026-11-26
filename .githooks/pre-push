@@ -1,0 +1,15 @@
+#!/bin/sh
+# main 에 직접 push 하는 것을 막는다 (실수 방지용 안전장치).
+# 정말 필요할 때만: ALLOW_MAIN_PUSH=1 git push
+while read local_ref local_sha remote_ref remote_sha; do
+  if [ "$remote_ref" = "refs/heads/main" ] && [ "$ALLOW_MAIN_PUSH" != "1" ]; then
+    echo ""
+    echo "  ✋ main 에 직접 올릴 수 없어요."
+    echo "  브랜치를 만들어서 올린 뒤 GitHub에서 Pull Request 를 열어주세요:"
+    echo "    git switch -c feat/작업이름"
+    echo "    git push -u origin feat/작업이름"
+    echo ""
+    exit 1
+  fi
+done
+exit 0
