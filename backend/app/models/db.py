@@ -1,11 +1,13 @@
 """DB 구조 (공통 약속 · SQLite + SQLAlchemy).
 
-표 5개:
+표 7개:
 | 표 | 한 줄 = | 누가 채우나 |
 | channels | 채널 하나 (번호·이름) | A |
 | programs | 편성표의 방송 한 편 | A |
+| lg_contents | 빈 시간에 끼울 LG채널·VOD 콘텐츠 | A |
 | seniors | 가상 어르신 한 명 (첫날 정보 포함) | A(가족 화면) |
 | watch_logs | 시청 기록 한 건 | C(TV 화면) / 샘플 |
+| user_rules | 음성 명령으로 생긴 규칙 (빼기·챙기기·오늘만·쉬기) | B(음성 명령 API) |
 | plan_items | 엔진이 만든 하루표의 한 칸 | B |
 
 바꾸면 docs/약속.md 도 같이 고치고 3명 모두 확인.
@@ -19,7 +21,13 @@ from sqlalchemy import JSON, DateTime, Float, ForeignKey, Integer, String, creat
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
-Feedback = Literal["none", "next", "help"]  # next = "다음에" (−0.3), help = "됐다/그만" (−0.5)
+Feedback = Literal["none", "next", "help"]  # 기록용. 엔진은 점수로 깎지 않음 (확실한 거절은 user_rules)
+HowStarted = Literal[
+    "chosen", "continued", "plan"
+]  # 직접 고름(말·리모컨) / 앞 방송에서 이어짐 / 하루표 추천으로
+RuleKind = Literal[
+    "exclude", "pin", "skip_today", "rest_day"
+]  # 앞으로 빼기 / 항상 챙기기 / 오늘만 넘기기 / 오늘은 그만
 PrefSource = Literal["child", "self", "age_default"]  # 첫날 정보 출처: 자녀 입력 > 본인 선택 > 나이대 기본값
 
 
@@ -76,6 +84,37 @@ class WatchLog(Base):
     started_at: Mapped[datetime] = mapped_column(DateTime)
     watched_min: Mapped[float] = mapped_column(Float)  # 5분 미만은 취향 계산에서 무시
     feedback: Mapped[str] = mapped_column(String, default="none")  # Feedback
+    how_started: Mapped[str] = mapped_column(String, default="chosen")  # HowStarted
+    cancelled: Mapped[bool] = mapped_column(default=False)  # "방금 거 취소" → 학습에서 제외
+
+
+class LgContent(Base):
+    """빈 시간에 끼울 LG채널(무료 채널)·VOD 콘텐츠. 시간에 맞춰 언제든 틀 수 있다고 가정."""
+
+    __tablename__ = "lg_contents"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    title: Mapped[str] = mapped_column(String)
+    genre: Mapped[str] = mapped_column(String)
+    cast: Mapped[list[str]] = mapped_column(default=list)
+    duration_min: Mapped[int] = mapped_column(Integer)
+    source: Mapped[str] = mapped_column(String, default="LG채널")  # LG채널 | LG VOD
+
+
+class UserRule(Base):
+    """음성 명령으로 생긴 규칙. 점수가 아니라 규칙이라 반드시 지켜진다."""
+
+    __tablename__ = "user_rules"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    senior_id: Mapped[str] = mapped_column(ForeignKey("seniors.id"), index=True)
+    kind: Mapped[str] = mapped_column(String)  # RuleKind
+    target_type: Mapped[str] = mapped_column(String, default="series")  # series | genre | none
+    target: Mapped[str] = mapped_column(String, default="")  # series_key 또는 장르
+    date: Mapped[str | None] = mapped_column(String, nullable=True)  # skip_today·rest_day 는 그날만
+    from_time: Mapped[str | None] = mapped_column(String, nullable=True)  # rest_day: 이 시각(HH:MM)부터 쉬기
+    active: Mapped[bool] = mapped_column(default=True)  # "방금 거 취소" → False
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
 
 
 class PlanItem(Base):
@@ -84,10 +123,10 @@ class PlanItem(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     senior_id: Mapped[str] = mapped_column(ForeignKey("seniors.id"), index=True)
     date: Mapped[str] = mapped_column(String, index=True)  # YYYY-MM-DD
-    program_id: Mapped[str] = mapped_column(ForeignKey("programs.id"))
+    program_id: Mapped[str] = mapped_column(String)  # programs.id 또는 lg_contents.id
     score: Mapped[float] = mapped_column(Float)
     reason: Mapped[str] = mapped_column(String)  # 화면에 보여 줄 고른 이유
-    kind: Mapped[str] = mapped_column(String, default="pick")  # pick(점수로 고름) | fill(빈 시간 채움)
+    kind: Mapped[str] = mapped_column(String, default="pick")  # pick | fill(채널 유지) | lg(LG 콘텐츠)
 
 
 def make_engine(db_path: str | Path) -> Engine:

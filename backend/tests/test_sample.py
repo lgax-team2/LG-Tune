@@ -88,3 +88,13 @@ def test_schedule_api_returns_example_in_contract_shape():
     assert body["items"][0]["reason"]
     assert {i["kind"] for i in body["items"]} <= {"pick", "fill"}
     assert client.get("/api/schedules/s9").status_code == 404
+
+
+def test_sample_has_voice_rules_lg_contents_and_signal_types(session):
+    counts = load_sample(session)
+    assert counts["lg_contents"] >= 10 and counts["user_rules"] == 2
+    logs = read("watch_logs.json")
+    assert {w["how_started"] for w in logs} == {"chosen", "continued", "plan"}
+    long_continued = [w for w in logs if w["how_started"] == "continued" and w["watched_min"] >= 30]
+    assert long_continued, "틀어만 놓은 긴 기록이 있어야 엔진이 약하게 반영하는지 시험할 수 있음"
+    assert all(c["duration_min"] >= 20 for c in read("lg_contents.json")), "LG 콘텐츠는 20분 이상 빈 시간용"

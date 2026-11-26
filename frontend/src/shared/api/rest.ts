@@ -186,14 +186,14 @@ export interface components {
             program_id: string;
             /**
              * Channel Id
-             * @description 예: 'KBS1'
+             * @description 예: 'KBS1'. LG 콘텐츠면 'LG채널' 또는 'LG VOD'
              */
             channel_id: string;
             /**
              * Channel Number
-             * @description 리모컨 채널 번호
+             * @description 리모컨 채널 번호 (LG 콘텐츠는 없음)
              */
-            channel_number: number;
+            channel_number?: number | null;
             /** Title */
             title: string;
             /**
@@ -219,10 +219,10 @@ export interface components {
             reason: string;
             /**
              * Kind
-             * @description pick = 점수로 고름, fill = 빈 시간 채움
+             * @description pick = 점수로 고름, fill = 짧은 빈 시간 채널 유지, lg = 긴 빈 시간에 LG채널·VOD
              * @enum {string}
              */
-            kind: "pick" | "fill";
+            kind: "pick" | "fill" | "lg";
         };
         /** ScheduleResponse */
         ScheduleResponse: {

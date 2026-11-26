@@ -6,7 +6,7 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from .db import Channel, Program, Senior, WatchLog
+from .db import Channel, LgContent, Program, Senior, UserRule, WatchLog
 
 SAMPLE_DIR = Path(__file__).resolve().parents[3] / "data" / "sample"
 
@@ -27,11 +27,15 @@ def load_sample(session: Session, sample_dir: Path = SAMPLE_DIR) -> dict[str, in
         WatchLog(**{**w, "started_at": datetime.fromisoformat(w["started_at"])})
         for w in _read("watch_logs.json", sample_dir)
     ]
-    session.add_all([*channels, *programs, *seniors, *logs])
+    lg = [LgContent(**c) for c in _read("lg_contents.json", sample_dir)]
+    rules = [UserRule(**r) for r in _read("user_rules.json", sample_dir)]
+    session.add_all([*channels, *programs, *seniors, *logs, *lg, *rules])
     session.commit()
     return {
         "channels": len(channels),
         "programs": len(programs),
         "seniors": len(seniors),
         "watch_logs": len(logs),
+        "lg_contents": len(lg),
+        "user_rules": len(rules),
     }

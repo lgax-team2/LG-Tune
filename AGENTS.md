@@ -14,8 +14,8 @@
 | 담당 | 맡는 일 | 고칠 수 있는 폴더 |
 | --- | --- | --- |
 | A · 데이터 | 편성표·인물·채널 번호표, DB 넣기 → 가족 화면 | `backend/app/data/`, `frontend/src/family/` |
-| B · 하루표 엔진 | 취향 추정·점수·배치·빈 시간, 하루표 API | `backend/app/engine/`, `backend/app/api/schedules.py` |
-| C · TV 화면·연동 | TV 화면, 가상 시계·채널 전환, 음성 | `frontend/src/tv/`, `backend/app/voice/`, `backend/app/devices/` |
+| B · 하루표 엔진 | 취향 추정·점수·배치·빈 시간, 하루표·음성 명령 API | `backend/app/engine/`, `backend/app/api/schedules.py`, `backend/app/api/commands.py` |
+| C · TV 화면·연동 | TV 화면, 폰 리모컨, 가상 시계·채널 전환, 음성 | `frontend/src/tv/`, `frontend/src/remote/`, `backend/app/voice/`, `backend/app/devices/` |
 | **공통** (3명 확인) | DB 구조, 약속, 서버 시작점, 규칙 | `backend/app/models/`, `backend/app/contracts/`, `backend/app/main.py`, `data/sample/`, `docs/`, `AGENTS.md` |
 
 - 백엔드: Python 3.12+, FastAPI, SQLite + SQLAlchemy, uv. 실행 `pnpm dev:be`, 테스트 `pnpm test`

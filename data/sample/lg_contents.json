@@ -1,0 +1,128 @@
+[
+  {
+    "id": "lg-trot-1",
+    "title": "LG채널 트로트 명곡 모음",
+    "genre": "트로트",
+    "cast": [
+      "송미란"
+    ],
+    "duration_min": 30,
+    "source": "LG채널"
+  },
+  {
+    "id": "lg-trot-2",
+    "title": "LG채널 트로트 라이브",
+    "genre": "트로트",
+    "cast": [
+      "김태호"
+    ],
+    "duration_min": 60,
+    "source": "LG채널"
+  },
+  {
+    "id": "lg-trot-3",
+    "title": "추억의 가요 20분",
+    "genre": "트로트",
+    "cast": [],
+    "duration_min": 20,
+    "source": "LG채널"
+  },
+  {
+    "id": "lg-drama-1",
+    "title": "LG VOD 명작 드라마 1화",
+    "genre": "드라마",
+    "cast": [
+      "한지수"
+    ],
+    "duration_min": 50,
+    "source": "LG VOD"
+  },
+  {
+    "id": "lg-drama-2",
+    "title": "LG VOD 주말극 다시보기",
+    "genre": "드라마",
+    "cast": [
+      "오민재"
+    ],
+    "duration_min": 60,
+    "source": "LG VOD"
+  },
+  {
+    "id": "lg-health-1",
+    "title": "LG채널 5분 건강 체조 모음",
+    "genre": "건강",
+    "cast": [],
+    "duration_min": 20,
+    "source": "LG채널"
+  },
+  {
+    "id": "lg-health-2",
+    "title": "LG채널 명의 특강",
+    "genre": "건강",
+    "cast": [
+      "강민수"
+    ],
+    "duration_min": 40,
+    "source": "LG채널"
+  },
+  {
+    "id": "lg-docu-1",
+    "title": "LG채널 세계 자연 다큐",
+    "genre": "다큐",
+    "cast": [],
+    "duration_min": 45,
+    "source": "LG채널"
+  },
+  {
+    "id": "lg-docu-2",
+    "title": "LG채널 우리 땅 기행",
+    "genre": "교양",
+    "cast": [],
+    "duration_min": 30,
+    "source": "LG채널"
+  },
+  {
+    "id": "lg-news-1",
+    "title": "LG채널 뉴스 요약",
+    "genre": "뉴스",
+    "cast": [],
+    "duration_min": 20,
+    "source": "LG채널"
+  },
+  {
+    "id": "lg-history-1",
+    "title": "LG VOD 사극 명장면",
+    "genre": "사극",
+    "cast": [
+      "정대현"
+    ],
+    "duration_min": 40,
+    "source": "LG VOD"
+  },
+  {
+    "id": "lg-cook-1",
+    "title": "LG채널 집밥 한 그릇",
+    "genre": "요리",
+    "cast": [
+      "최영자"
+    ],
+    "duration_min": 25,
+    "source": "LG채널"
+  },
+  {
+    "id": "lg-baduk-1",
+    "title": "LG채널 바둑 명국",
+    "genre": "취미",
+    "cast": [],
+    "duration_min": 60,
+    "source": "LG채널"
+  },
+  {
+    "id": "lg-fun-1",
+    "title": "LG채널 웃음 모음",
+    "genre": "예능",
+    "cast": [],
+    "duration_min": 30,
+    "source": "LG채널"
+  }
+]

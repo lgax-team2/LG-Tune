@@ -235,21 +235,27 @@ def watch_logs(rng: random.Random) -> list[dict]:
             chosen = {p["id"]: p for p in rng.choices(liked, weights, k=n)} if liked and n else {}
             for p in chosen.values():
                 dur = (datetime.fromisoformat(p["end"]) - datetime.fromisoformat(p["start"])).seconds / 60
-                logs.append(_log(senior["id"], p, rng.uniform(0.6, 1.0) * dur, "none"))
+                how = rng.choices(["chosen", "plan", "continued"], [6, 2, 2])[0]
+                logs.append(_log(senior["id"], p, rng.uniform(0.6, 1.0) * dur, "none", how))
             # 싫어하는 것: 잠깐 보다가 "다음에"/"됐다"
             for key, fb in h["dislike"].items():
                 if rng.random() < 0.3:
                     p = next(p for p in progs if p["series_key"] == key)
-                    logs.append(_log(senior["id"], p, rng.uniform(1, 4), fb))
+                    logs.append(_log(senior["id"], p, rng.uniform(1, 4), fb, "continued"))
             # 채널 돌리다 잠깐 (5분 미만 → 취향 계산에서 무시돼야 함)
             if rng.random() < 0.5:
                 p = rng.choice(progs)
-                logs.append(_log(senior["id"], p, rng.uniform(0.5, 4.5), "none"))
+                logs.append(_log(senior["id"], p, rng.uniform(0.5, 4.5), "none", "chosen"))
+            # 틀어만 놓고 집안일 (이어서 켜진 채 오래) → 엔진은 약하게만 반영해야 함
+            if senior["id"] != "s3" and rng.random() < 0.3:
+                p = rng.choice([p for p in progs if p["series_key"] not in h["like"]])
+                dur = (datetime.fromisoformat(p["end"]) - datetime.fromisoformat(p["start"])).seconds / 60
+                logs.append(_log(senior["id"], p, dur, "none", "continued"))
     logs.sort(key=lambda x: (x["started_at"], x["senior_id"]))
     return logs
 
 
-def _log(senior_id: str, p: dict, minutes: float, feedback: str) -> dict:
+def _log(senior_id: str, p: dict, minutes: float, feedback: str, how_started: str) -> dict:
     return {
         "senior_id": senior_id,
         "channel_id": p["channel_id"],
@@ -259,8 +265,44 @@ def _log(senior_id: str, p: dict, minutes: float, feedback: str) -> dict:
         "started_at": p["start"],
         "watched_min": round(minutes, 1),
         "feedback": feedback,
+        "how_started": how_started,
+        "cancelled": False,
     }
 
+
+# 빈 시간(20분 이상)에 끼울 LG채널·VOD 콘텐츠 (가상)
+LG_CONTENTS = [
+    ("lg-trot-1", "LG채널 트로트 명곡 모음", "트로트", ["송미란"], 30, "LG채널"),
+    ("lg-trot-2", "LG채널 트로트 라이브", "트로트", ["김태호"], 60, "LG채널"),
+    ("lg-trot-3", "추억의 가요 20분", "트로트", [], 20, "LG채널"),
+    ("lg-drama-1", "LG VOD 명작 드라마 1화", "드라마", ["한지수"], 50, "LG VOD"),
+    ("lg-drama-2", "LG VOD 주말극 다시보기", "드라마", ["오민재"], 60, "LG VOD"),
+    ("lg-health-1", "LG채널 5분 건강 체조 모음", "건강", [], 20, "LG채널"),
+    ("lg-health-2", "LG채널 명의 특강", "건강", ["강민수"], 40, "LG채널"),
+    ("lg-docu-1", "LG채널 세계 자연 다큐", "다큐", [], 45, "LG채널"),
+    ("lg-docu-2", "LG채널 우리 땅 기행", "교양", [], 30, "LG채널"),
+    ("lg-news-1", "LG채널 뉴스 요약", "뉴스", [], 20, "LG채널"),
+    ("lg-history-1", "LG VOD 사극 명장면", "사극", ["정대현"], 40, "LG VOD"),
+    ("lg-cook-1", "LG채널 집밥 한 그릇", "요리", ["최영자"], 25, "LG채널"),
+    ("lg-baduk-1", "LG채널 바둑 명국", "취미", [], 60, "LG채널"),
+    ("lg-fun-1", "LG채널 웃음 모음", "예능", [], 30, "LG채널"),
+]
+
+# 음성 명령으로 이미 생긴 규칙 (예시)
+USER_RULES = [
+    {
+        "senior_id": "s1",
+        "kind": "exclude",
+        "target_type": "series",
+        "target": "mbc-bluesea",
+    },  # "푸른 바다 이제 안 볼래"
+    {
+        "senior_id": "s2",
+        "kind": "pin",
+        "target_type": "series",
+        "target": "kbs1-news-pm",
+    },  # "저녁 뉴스 매일 챙겨 줘"
+]
 
 # 하루표 API 응답 예시 (모양 약속용. 엔진 결과가 아님) — s1 김영숙
 EXAMPLE_PICKS = [
@@ -304,6 +346,11 @@ def main() -> None:
         "seniors.json": SENIORS,
         "watch_logs.json": watch_logs(random.Random(42)),
         "schedule_example.json": schedule_example(progs),
+        "lg_contents.json": [
+            {"id": i, "title": t, "genre": g, "cast": c, "duration_min": d, "source": src}
+            for i, t, g, c, d, src in LG_CONTENTS
+        ],
+        "user_rules.json": USER_RULES,
     }
     for name, data in files.items():
         (OUT / name).write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

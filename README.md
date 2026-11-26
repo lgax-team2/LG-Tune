@@ -49,7 +49,7 @@ pnpm setup              # 백엔드 + 프론트 의존성 설치
 | --- | --- | --- |
 | `backend/app/data/`, `frontend/src/family/` | A · 데이터 | 편성표·인물·채널 번호표 → DB, 가족 화면 |
 | `backend/app/engine/`, `backend/app/api/schedules.py` | B · 하루표 엔진 | 취향 추정·점수·배치·빈 시간, 하루표 API |
-| `frontend/src/tv/`, `backend/app/voice/`, `backend/app/devices/` | C · TV 화면·연동 | TV 화면, 가상 시계·채널 전환, 음성 |
+| `frontend/src/tv/`, `frontend/src/remote/`, `backend/app/voice/`, `backend/app/devices/` | C · TV 화면·연동 | TV 화면, 폰 리모컨, 가상 시계·채널 전환, 음성 |
 | `backend/app/models/`, `backend/app/contracts/`, `main.py`, `data/sample/`, `docs/` | **공통 (3명 확인)** | DB 구조, API 약속, 공통 샘플, 결정 기록 |
 | `backend/app/chat`·`memory`·`llm`, `ml/` | 보류 | 이전 범위(대화·음성) 코드. 나중에 재사용 |
 
