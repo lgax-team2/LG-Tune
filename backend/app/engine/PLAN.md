@@ -5,6 +5,15 @@
 > 확인 화면: `pnpm dev:be` 후 http://localhost:8000/api/schedules/s1/view (s2·s3 는 주소의 s1 만 바꿈)
 > 현재 PR: #3 (engine/rules → main, draft)
 
+## 진행 규칙
+Codex 활용 (항상, 코드는 고치지 말고 의견만 받기)
+1. 커밋 직전: `codex exec` 로 diff 리뷰 (AGENTS.md 기준, 심각한 것 3개 이내)
+2. 사람에게 결정을 물어보기 전: `codex exec` 로 선택지 비교·추천을 먼저 받고, 보고에 "Codex 의견" 칸을 따로 둠
+3. 같은 테스트가 2번 실패하면: `codex exec` 로 원인 의견 받기
+4. 중간 합치기 전(②·⑥·⑨): `codex exec` 로 이번 구간 전체 diff 리뷰
+- Codex 의견은 맞는지 먼저 판단하고(receiving-code-review), 내 의견과 다르면 둘 다 보여 줌
+- 3줄 보고에 "Codex: 한 줄 요약"을 항상 포함
+
 ## 정한 것 (2026-11-26 승인)
 - 기본값: 장르 여러 개는 각각 같은 무게 / 출연자 없으면 그 항목 빼고 ÷0.75 / 확인 대기는 서버 메모리 / 알림은 `/ws/events` / fake LLM 답은 문장 틀 / 시계 기본 12-01 06:00·1배
 - `make_sample.py` 수정은 ②에 한해 허용, `tests/snapshots/` 허용, `commands_draft.py` 없이 약속 4절 기준, 가상 시계는 B 가 `api/clock.py` 로
@@ -28,7 +37,7 @@
   - 끝 기준: s1 에 "별의 노래 21:00" 들어감, s1·s3 아침 첫 칸이 기상 후 20분 안에 시작
   - 확인 화면에서 볼 것: s1 표 맨 아래 21:00 별의 노래, s1·s3 표 맨 위 칸 시작 시각 = 기상 시각 근처(LG 콘텐츠)
 
-- [ ] **② 외부 편성표 호환** (장르 여러 개, 출연자 없는 방송, 빠진 칸)
+- [x] **② 외부 편성표 호환** (장르 여러 개, 출연자 없는 방송, 빠진 칸)
   - 고칠 파일: `models/db.py`(programs·watch_logs 에 `genres: list[str]` 추가, 기본 `[]`. 기존 `genre` = 대표 장르로 유지), `engine/preference.py`, `engine/scoring.py`, `engine/rules.py`, `backend/scripts/make_sample.py`(②에 한해 허용, 공통) → 다시 만든 `data/sample/programs.json`·`watch_logs.json`(일부 방송에 장르 2개), `data/sample/genre_map.json`(새 파일), `docs/약속.md` 2·6절, `tests/test_engine.py`
   - 규칙:
     - 방송의 장르 목록 = `genres` 가 비어 있으면 `[genre]`
@@ -36,6 +45,8 @@
     - 취향 추정: 시청 기록 한 건이 장르 목록의 **각 장르에 같은 무게**로 더해짐 (나눠 갖지 않음)
     - 출연자 정보가 없는 방송(빈 목록): 출연자 항목을 빼고 나머지 가중치 합(0.75)으로 나눠 0~1 로 맞춤. LG 콘텐츠도 같음
     - "안 볼래"로 뺀 장르는 장르 목록에 **하나라도** 있으면 막음
+    - (11/26 결정 D) 배치 무게 = **(점수 − 기준점)** × min(길이,60). 출연자 보정으로 기준점을 겨우 넘은 방송 여러 개가 최애를 밀어내던 문제 해결 (A·B·C·D 비교, Codex 도 D 추천)
+    - 테스트 추가: `test_several_shows_just_above_floor_cannot_push_out_a_favorite`, `test_plan_weighs_by_score_above_floor`, `test_show_scoring_exactly_at_floor_is_still_placed_when_free`
   - 호환 테스트(먼저): `test_empty_cast_is_left_out_and_other_weights_rescaled`, `test_unknown_genre_scores_zero_without_error`, `test_missing_is_new_is_live_defaults_to_false`, `test_show_crossing_midnight_is_handled`, `test_series_key_equal_to_title_works`, `test_genre_score_uses_best_liked_of_many`, `test_profile_counts_every_genre_of_a_log`, `test_excluded_genre_blocks_show_with_that_genre_among_many`
   - `genre_map.json` 초안: 표준 장르 12개 안팎 → 동의어 + 제목 키워드. **실제 적용(편성표를 넣을 때 장르 이름 바꾸기)은 A 담당** — 맨 아래 목록에 메모
   - 끝 기준: s1 취향 요약에 장르 여러 개, 하루표 점수가 크게 안 뒤바뀜 (바뀌면 이유 보고 — 예상: 출연자 없는 뉴스·교양 점수가 ÷0.75 로 오름)
@@ -99,9 +110,9 @@
 
 ---
 
-## A 담당용: 실제 편성표 넣을 때 맞출 것 (②에서 확정)
+## A 담당용: 실제 편성표 넣을 때 맞출 것 (② 확정)
 - [ ] `series_key`: 같은 프로그램 회차는 같은 값 (없으면 제목에서 "(재)"·회차 번호 뺀 제목)
-- [ ] `genre` = 대표 장르 1개, `genres` = 전부 (표준 장르 이름으로 — `data/sample/genre_map.json` 의 동의어·제목 키워드로 바꾸기)
+- [ ] `genre` = 대표 장르 1개, `genres` = 전부(대표 장르가 맨 앞). 둘 다 표준 장르 이름으로 — `data/sample/genre_map.json` 의 `synonyms` 로 바꾸고, 장르가 없거나 모르는 이름이면 제목에 `title_keywords` 가 있는지로 추정 (엔진은 모르는 장르를 0점으로 처리할 뿐 오류는 안 남)
 - [ ] `cast`: 모르면 빈 목록 `[]` (엔진이 출연자 항목을 빼고 계산)
 - [ ] `is_new`·`is_live`: 모르면 `false`
 - [ ] `start`·`end`: 한국 시간, 시간대 표기 없이. 자정 넘는 방송은 `end` 를 다음 날로
@@ -112,5 +123,6 @@
 | --- | --- | --- | --- |
 | 2026-11-26 | 계획 작성·승인 (기본값 6개 OK), main 합치기 | ef9bc7e | — |
 | 2026-11-26 | ① 취침 전 시작 허용 + 아침 빈 시간 LG. Codex: 심각한 문제 없음. 변화: s1 20:00 왕중왕(0.806) → 21:00 별의 노래(0.865)로 바뀜(겹쳐서 점수 높은 쪽) | 766769e | /api/schedules/s1/view, s3/view |
+| 2026-11-26 | ② 장르 여러 개·출연자 없음 ÷0.75·배치 무게 (점수−기준점)(결정 D)·옛 DB 안내. Codex: D 추천 / 옛 DB 오류·기준점 예외 문서 누락 지적 → 반영, 재리뷰 심각한 문제 없음 | 9487ea6 | /api/schedules/s1/view (장르 요약 3개, 21:00 별의 노래) |
 
 ## 다음 후보 (⑨에서 채움)
