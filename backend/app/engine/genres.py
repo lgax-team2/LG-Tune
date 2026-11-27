@@ -4,6 +4,14 @@
 from typing import Any
 
 
+def same_episode(a: Any, b: Any) -> bool:
+    """같은 회차인가 (기준표 M4): 시리즈가 같고, 회차가 같거나 둘 중 하나라도 회차를 모르면 같은 것으로 봄(보수적)."""
+    if a.series_key != b.series_key:
+        return False
+    ea, eb = getattr(a, "episode", None), getattr(b, "episode", None)
+    return not ea or not eb or ea == eb
+
+
 def episode_key(item: Any) -> str:
     """같은 '회차'를 가리키는 키 (기준표 M4). 회차 정보(episode)가 있으면 시리즈+회차, 없으면 시리즈."""
     episode = getattr(item, "episode", None)

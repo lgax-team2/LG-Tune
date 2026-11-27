@@ -22,7 +22,7 @@ class Candidate:
     factor: float = 1.0  # 다양성 감점 (넘친 장르·3연속이면 0.7 씩 곱해짐)
     genre: str = ""  # 대표 장르
     series_key: str = ""
-    unit: str = ""  # 회차 키 (같은 회차 하루 1번 — 회차 정보 없으면 시리즈)
+    episode: str | None = None  # 회차 (같은 회차 하루 1번 — genres.same_episode)
     channel_id: str = ""
     payload: Any = None  # (Program, Scored)
 

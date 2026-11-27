@@ -26,8 +26,10 @@ HowStarted = Literal[
     "chosen", "continued", "plan"
 ]  # 직접 고름(말·리모컨) / 앞 방송에서 이어짐 / 하루표 추천으로
 RuleKind = Literal[
-    "exclude", "pin", "skip_today", "rest_day"
-]  # 앞으로 빼기 / 항상 챙기기 / 오늘만 넘기기 / 오늘은 그만
+    "exclude", "pin", "skip_today", "rest_day", "unpause"
+]  # 앞으로 빼기 / 항상 챙기기 / 오늘만 넘기기 / 오늘은 그만 / 쉬어가기 되돌리기(그날까지의 반복 거절은 잊음)
+EndReason = Literal["completed", "skipped", "help_cancel", "channel_change", "power_off"]  # 시청이 끝난 이유
+CastRole = Literal["host", "lead", "regular", "guest"]  # 진행자·주연 / 고정 출연 / 손님
 PrefSource = Literal[
     "child", "self", "none"
 ]  # 첫날 관심사 출처: 자녀가 설치 때 고름 > 본인이 고름 > 없음 (기본 장르는 두지 않음)
@@ -57,6 +59,10 @@ class Program(Base):
     start: Mapped[datetime] = mapped_column(DateTime)
     end: Mapped[datetime] = mapped_column(DateTime)
     cast: Mapped[list[str]] = mapped_column(default=list)  # 출연자 이름
+    cast_roles: Mapped[dict[str, Any]] = mapped_column(default=dict)  # {이름: CastRole}, 없으면 역할 무게 1.0
+    episode: Mapped[str | None] = mapped_column(
+        String, nullable=True
+    )  # 회차 (같은 회차는 하루 1번). 모르면 None
     is_new: Mapped[bool] = mapped_column(default=False)  # 새 회차 (재방송 아님)
     is_live: Mapped[bool] = mapped_column(default=False)  # 생방송
 
@@ -73,6 +79,9 @@ class Senior(Base):
     # 첫날 정보: {"series": [...], "cast": [...], "genres": [...]}
     seed_prefs: Mapped[dict[str, Any]] = mapped_column(default=dict)
     family_picks: Mapped[list[str]] = mapped_column(default=list)  # 가족이 추천한 series_key
+    fixed_breaks: Mapped[list[str]] = mapped_column(
+        default=list
+    )  # 매일 비우는 시간 ["12:00-12:30"] (식사·약, 가족 입력)
 
 
 class WatchLog(Base):
@@ -90,6 +99,9 @@ class WatchLog(Base):
     feedback: Mapped[str] = mapped_column(String, default="none")  # Feedback
     how_started: Mapped[str] = mapped_column(String, default="chosen")  # HowStarted
     cancelled: Mapped[bool] = mapped_column(default=False)  # "방금 거 취소" → 학습에서 제외
+    end_reason: Mapped[str | None] = mapped_column(
+        String, nullable=True, default="completed"
+    )  # EndReason (없으면 끝까지 봄)
 
 
 class LgContent(Base):

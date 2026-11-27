@@ -30,13 +30,17 @@ def _score(
     when: datetime,
     fresh: bool,
     family: bool,
+    roles: dict | None = None,
 ) -> Scored:
-    top_cast = _best_liked(cast, profile.cast)
+    liked_cast = {
+        n: profile.cast.get(n, 0.0) * config.CAST_ROLE_WEIGHT.get((roles or {}).get(n), 1.0) for n in cast
+    }
+    top_cast = _best_liked(cast, liked_cast)  # 역할 무게 반영 (진행·주연 1.0 / 고정 0.6 / 손님 0.3)
     top_genre = _best_liked(genres, profile.genre)
     w = config.WEIGHTS
     parts = {
         "series": w["series"] * (profile.series.get(series_key, 0.0) if series_key else 0.0),
-        "cast": w["cast"] * (profile.cast[top_cast] if top_cast else 0.0),
+        "cast": w["cast"] * (liked_cast[top_cast] if top_cast else 0.0),
         "genre": w["genre"] * (profile.genre[top_genre] if top_genre else 0.0),
         "timeslot": w["timeslot"] * profile.timeslot_score(when),
         "fresh": w["fresh"] * (1.0 if fresh else 0.0),
@@ -61,6 +65,7 @@ def score_program(p: Program, profile: Profile, family_picks: list[str]) -> Scor
         cast=p.cast or [],
         genres=genres_of(p),
         when=p.start,
+        roles=getattr(p, "cast_roles", None),
         fresh=bool(p.is_new or p.is_live),
         family=p.series_key in (family_picks or []),
     )

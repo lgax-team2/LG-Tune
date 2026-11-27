@@ -26,7 +26,7 @@ from ..engine.plan import Plan
 from ..engine.quality import Report, check_plan
 from ..engine.rules import RuleSet
 from ..engine.service import DayInputs, SeniorNotFound, load_inputs, make_schedule, save_and_respond
-from ..models.db import Base, Program, Senior, init_db, make_engine, make_session_factory
+from ..models.db import Base, Program, Senior, UserRule, init_db, make_engine, make_session_factory
 from ..models.sample import load_sample
 from ..settings import settings
 
@@ -107,6 +107,28 @@ LABELS = {  # 기준표 v3 (backend/app/engine/QUALITY.md)
     "S5": "새로 추천 1칸",
     "S6": "첫 칸 30분 안",
 }
+
+
+@router.post("/{senior_id}/unpause", include_in_schema=False)
+def unpause_series(
+    senior_id: str,
+    series: str,
+    session: Annotated[Session, Depends(get_session)],
+    day: Annotated[date | None, Query(alias="date")] = None,
+) -> dict:
+    """개발용(약속 밖): 반복 거절로 쉬어가는 시리즈 되돌리기 — 그날까지의 거절은 잊고 다시 후보로 (user_rules unpause)."""
+    if session.get(Senior, senior_id) is None:
+        raise HTTPException(404, f"없는 어르신이에요: {senior_id}")
+    rule = UserRule(
+        senior_id=senior_id,
+        kind="unpause",
+        target_type="series",
+        target=series,
+        date=(day or DEMO_DATE).isoformat(),
+    )
+    session.add(rule)
+    session.commit()
+    return {"ok": True}
 
 
 @router.get("/{senior_id}/view", response_class=HTMLResponse, include_in_schema=False)
@@ -191,6 +213,11 @@ def build_view_data(
         "hint": "관심사를 고르면 더 잘 맞춰요" if not plan.knows_taste else "",
         "items": [i.model_dump(mode="json") for i in schedule.items],
         "roles": {e.program_id: e.role for e in plan.entries},
+        "paused": [
+            {"series_key": k, "title": series_title.get(k, k), "until": until.isoformat()}
+            for k, until in sorted(profile.paused.items())
+        ],
+        "fixed_breaks": list(senior.fixed_breaks or []),
         "missed": find_missed(inputs, plan, limit),
     }
 
@@ -255,6 +282,9 @@ def _detail(why: str, p: Program, inputs: DayInputs, plan: Plan) -> str:
     return {
         P.NO_TASTE: "취향을 몰라 새 회차·생방송만 골라요",
         P.NO_NUMBER: "리모컨 채널 번호가 없는 채널이라 틀어 드릴 수 없음",
+        P.FIXED_BREAK: "매일 비우는 시간: " + ", ".join(inputs.senior.fixed_breaks or []),
+        P.PAUSED: f"최근 {P.config.REJECT_WINDOW_DAYS}일에 {P.config.REJECT_COUNT}번 건너뛰셔서 "
+        f"{inputs.profile.paused.get(p.series_key, inputs.day):%m/%d} 전까지 쉬어 가요",
         P.LEFT_ON: "평소 틀어만 두시는 방송 — 집중 시청 말고 배경 편성 후보",
         P.SAME_SERIES: "같은 시리즈가 이미 하루표에 있어요",
         P.BUDGET: f"하루 시간 상한 {plan.budget_min:.0f}분",

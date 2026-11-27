@@ -170,6 +170,7 @@ SENIORS = [
             "genres": ["트로트", "드라마"],
         },
         "family_picks": ["kbs1-life"],
+        "fixed_breaks": ["12:00-12:30"],  # 점심 (가족 입력)
     },
     {
         "id": "s2",
@@ -180,6 +181,7 @@ SENIORS = [
         "pref_source": "self",  # 본인이 카드 고르기
         "seed_prefs": {"series": ["kbs1-king"], "cast": ["정대현"], "genres": ["뉴스", "사극", "시사"]},
         "family_picks": [],
+        "fixed_breaks": ["12:00-13:00"],  # 점심·약 (가족 입력)
     },
     {
         "id": "s3",
@@ -190,6 +192,7 @@ SENIORS = [
         "pref_source": "child",  # 설치 때 자녀가 관심사 2~3개만 고름, 시청 기록은 거의 없음 (콜드 스타트)
         "seed_prefs": {"series": [], "cast": [], "genres": ["건강", "교양", "요리"]},
         "family_picks": ["ebs-doctor"],
+        "fixed_breaks": [],
     },
 ]
 
@@ -200,7 +203,12 @@ SENIORS = [
 # - left_on: (채널, 시작, 끝) — 이 시간엔 TV 를 켜 둔 채 그 채널을 이어서 틂 (continued, 85% 의 날)
 HABITS = {
     "s1": {  # 하루 종일 켜 두는 분: 낮에 KBS1 을 켜 두고(약 4시간), 저녁에 드라마·트로트 몇 편을 골라 봄 → 켜짐 6~8시간
-        "like": {"kbs1-haetsal": 6, "kbs2-season": 4, "kbs1-songclass": 3, "tvc-star": 1},
+        "like": {
+            "kbs1-haetsal": 10,
+            "kbs2-season": 4,
+            "kbs1-songclass": 3,
+            "tvc-star": 1,
+        },  # 별의 노래는 하루 2번 편성이라 뽑힐 기회도 2번
         "dislike": {"kbs1-debate": "next", "mbc-current": "next"},
         "per_day": (6, 8),  # 좋아하는 4편 중 거의 다 (같은 편이 뽑히면 한 번)
         "focus_how": (7, 3, 0),  # 골라 본 방송은 직접 고름·추천으로 끝까지 (틀어만 놓기는 낮 시간에)
@@ -220,6 +228,26 @@ def _dt(d: date, hhmm: str) -> datetime:
     return datetime(d.year, d.month, d.day) + timedelta(hours=h, minutes=m)
 
 
+LEAD_GENRES = {
+    "드라마",
+    "사극",
+}  # 첫 출연자 = 주연(lead), 그 밖 장르는 첫 출연자 = 진행자(host), 나머지는 고정 출연(regular)
+EPISODE_BASE = date(2026, 11, 1)
+
+
+def _episode(d: date, flag: str) -> str:
+    """회차: 새 회차는 그날 번호, 재방송은 전날 회차(같은 회차를 다시), 생방송은 날짜."""
+    n = (d - EPISODE_BASE).days + 1
+    if flag == L:
+        return d.isoformat()
+    return f"{n if flag == N else n - 1}회"
+
+
+def _roles(genre: str, cast: list[str]) -> dict[str, str]:
+    first = "lead" if genre in LEAD_GENRES else "host"
+    return {name: (first if i == 0 else "regular") for i, name in enumerate(cast)}
+
+
 def day_programs(d: date) -> list[dict]:
     out = []
     for ch, rows in LINEUP.items():
@@ -236,6 +264,8 @@ def day_programs(d: date) -> list[dict]:
                     "start": _dt(d, start).isoformat(),
                     "end": end.isoformat(),
                     "cast": cast,
+                    "cast_roles": _roles(genre, cast),
+                    "episode": _episode(d, flag),
                     "is_new": flag == N,
                     "is_live": flag == L,
                 }
@@ -278,7 +308,9 @@ def _day_logs(sid: str, h: dict, progs: list[dict], rng: random.Random) -> list[
             else rng.choices(["chosen", "plan", "continued"], h.get("focus_how", (6, 2, 2)))[0]
         )
         full = h.get("fixed") or "focus_how" in h  # 정해 두고 보는 분은 거의 끝까지
-        out.append(_log(sid, p, rng.uniform(0.8 if full else 0.6, 1.0) * _minutes(p), "none", how))
+        frac = rng.uniform(0.9 if full else 0.6, 1.0)  # 정해 두고 보는 분은 끝까지
+        ended = "completed" if frac >= 0.9 else rng.choice(["power_off", "channel_change"])
+        out.append(_log(sid, p, frac * _minutes(p), "none", how, ended))
     # 켜 둔 시간: 그 채널을 이어서 틂 (틀어만 놓기 → 취향엔 약하게, TV 켜짐 패턴엔 그대로)
     for ch, frm, to in h.get("left_on", []):
         if rng.random() < 0.85:
@@ -289,15 +321,19 @@ def _day_logs(sid: str, h: dict, progs: list[dict], rng: random.Random) -> list[
     for key, fb in h["dislike"].items():
         if rng.random() < 0.3:
             p = next(p for p in progs if p["series_key"] == key)
-            out.append(_log(sid, p, rng.uniform(1, 4), fb, "continued"))
+            out.append(
+                _log(sid, p, rng.uniform(1, 4), fb, "continued", "skipped" if fb == "next" else "help_cancel")
+            )
     # 채널 돌리다 잠깐 (5분 미만 → 취향·켜짐 계산에서 무시돼야 함)
     if rng.random() < 0.5:
         p = rng.choice(progs)
-        out.append(_log(sid, p, rng.uniform(0.5, 4.5), "none", "chosen"))
+        out.append(_log(sid, p, rng.uniform(0.5, 4.5), "none", "chosen", "channel_change"))
     return out
 
 
-def _log(senior_id: str, p: dict, minutes: float, feedback: str, how_started: str) -> dict:
+def _log(
+    senior_id: str, p: dict, minutes: float, feedback: str, how_started: str, end_reason: str = "completed"
+) -> dict:
     return {
         "senior_id": senior_id,
         "channel_id": p["channel_id"],
@@ -310,6 +346,7 @@ def _log(senior_id: str, p: dict, minutes: float, feedback: str, how_started: st
         "feedback": feedback,
         "how_started": how_started,
         "cancelled": False,
+        "end_reason": end_reason,  # completed / skipped / help_cancel / channel_change / power_off
     }
 
 

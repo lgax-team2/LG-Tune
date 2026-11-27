@@ -21,6 +21,9 @@
     },
     "family_picks": [
       "kbs1-life"
+    ],
+    "fixed_breaks": [
+      "12:00-12:30"
     ]
   },
   {
@@ -43,7 +46,10 @@
         "시사"
       ]
     },
-    "family_picks": []
+    "family_picks": [],
+    "fixed_breaks": [
+      "12:00-13:00"
+    ]
   },
   {
     "id": "s3",
@@ -63,6 +69,7 @@
     },
     "family_picks": [
       "ebs-doctor"
-    ]
+    ],
+    "fixed_breaks": []
   }
 ]

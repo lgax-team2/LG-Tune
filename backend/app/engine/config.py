@@ -10,6 +10,24 @@ WEIGHTS = {
     "family": 0.05,  # 가족 추천
 }
 
+# 규칙 2-1. 완주 추정 가중치 (시청이 끝난 이유 별) — 시리즈 점수 = 신호 세기 × 이 값 × 반감기 (출연자·장르엔 안 씀)
+END_REASON_WEIGHT = {
+    "completed": 1.0,
+    "power_off": 0.7,
+    "channel_change": 0.4,
+    "skipped": 0.2,
+    "help_cancel": 0.1,
+}
+# 출연자 역할 무게 (역할 정보가 없으면 1.0)
+CAST_ROLE_WEIGHT = {"host": 1.0, "lead": 1.0, "regular": 0.6, "guest": 0.3}
+# 반복 거절 → 쉬어가기: 최근 14일에 같은 시리즈를 건너뜀·"됐다"로 3번 끝내면 세 번째부터 7일 쉼 (되돌리기 = user_rules unpause)
+REJECT_REASONS = ("skipped", "help_cancel")
+REJECT_WINDOW_DAYS = 14
+REJECT_COUNT = 3
+PAUSE_DAYS = 7
+# 시간대 습관은 1시간 단위. 그 시각 기록의 반감기 무게 합이 이보다 적으면 4구간(아침·낮·저녁·밤) 값으로
+TIMESLOT_HOUR_MIN_WEIGHT = 3.0
+
 # 규칙 2. 신호 세기 (how_started 별)
 SIGNAL = {
     "chosen": 1.0,  # 직접 고름 (말·리모컨)

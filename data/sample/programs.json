@@ -11,6 +11,8 @@
     "start": "2026-12-01T05:00:00",
     "end": "2026-12-01T06:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -26,6 +28,8 @@
     "start": "2026-12-01T06:00:00",
     "end": "2026-12-01T08:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -45,6 +49,11 @@
       "박미숙",
       "이철호"
     ],
+    "cast_roles": {
+      "박미숙": "host",
+      "이철호": "regular"
+    },
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -63,6 +72,10 @@
     "cast": [
       "강민수"
     ],
+    "cast_roles": {
+      "강민수": "host"
+    },
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -81,6 +94,10 @@
     "cast": [
       "이철호"
     ],
+    "cast_roles": {
+      "이철호": "host"
+    },
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -96,6 +113,8 @@
     "start": "2026-12-01T11:30:00",
     "end": "2026-12-01T12:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -111,6 +130,8 @@
     "start": "2026-12-01T12:00:00",
     "end": "2026-12-01T13:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -130,6 +151,11 @@
       "송미란",
       "김태호"
     ],
+    "cast_roles": {
+      "송미란": "host",
+      "김태호": "regular"
+    },
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -145,6 +171,8 @@
     "start": "2026-12-01T14:30:00",
     "end": "2026-12-01T15:30:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -160,6 +188,8 @@
     "start": "2026-12-01T15:30:00",
     "end": "2026-12-01T16:30:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -178,6 +208,10 @@
     "cast": [
       "송미란"
     ],
+    "cast_roles": {
+      "송미란": "host"
+    },
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -196,6 +230,10 @@
     "cast": [
       "이철호"
     ],
+    "cast_roles": {
+      "이철호": "host"
+    },
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -211,6 +249,8 @@
     "start": "2026-12-01T19:00:00",
     "end": "2026-12-01T20:30:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -229,6 +269,11 @@
       "한지수",
       "오민재"
     ],
+    "cast_roles": {
+      "한지수": "lead",
+      "오민재": "regular"
+    },
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -248,6 +293,11 @@
       "정대현",
       "윤서아"
     ],
+    "cast_roles": {
+      "정대현": "lead",
+      "윤서아": "regular"
+    },
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -263,6 +313,8 @@
     "start": "2026-12-01T22:40:00",
     "end": "2026-12-01T23:40:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -278,6 +330,8 @@
     "start": "2026-12-01T23:40:00",
     "end": "2026-12-02T00:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -295,6 +349,10 @@
     "cast": [
       "한지수"
     ],
+    "cast_roles": {
+      "한지수": "lead"
+    },
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -310,6 +368,8 @@
     "start": "2026-12-01T06:30:00",
     "end": "2026-12-01T08:30:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -327,6 +387,10 @@
     "cast": [
       "이은정"
     ],
+    "cast_roles": {
+      "이은정": "lead"
+    },
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -342,6 +406,8 @@
     "start": "2026-12-01T09:10:00",
     "end": "2026-12-01T10:30:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -359,6 +425,10 @@
     "cast": [
       "한지수"
     ],
+    "cast_roles": {
+      "한지수": "lead"
+    },
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -377,6 +447,10 @@
     "cast": [
       "최영자"
     ],
+    "cast_roles": {
+      "최영자": "host"
+    },
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -392,6 +466,8 @@
     "start": "2026-12-01T13:00:00",
     "end": "2026-12-01T15:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -411,6 +487,11 @@
       "김태호",
       "송미란"
     ],
+    "cast_roles": {
+      "김태호": "host",
+      "송미란": "regular"
+    },
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -426,6 +507,8 @@
     "start": "2026-12-01T17:00:00",
     "end": "2026-12-01T18:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -441,6 +524,8 @@
     "start": "2026-12-01T18:00:00",
     "end": "2026-12-01T19:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -456,6 +541,8 @@
     "start": "2026-12-01T19:00:00",
     "end": "2026-12-01T20:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -475,6 +562,11 @@
       "김태호",
       "송미란"
     ],
+    "cast_roles": {
+      "김태호": "host",
+      "송미란": "regular"
+    },
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -492,6 +584,10 @@
     "cast": [
       "오민재"
     ],
+    "cast_roles": {
+      "오민재": "lead"
+    },
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -507,6 +603,8 @@
     "start": "2026-12-01T22:50:00",
     "end": "2026-12-02T00:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -522,6 +620,8 @@
     "start": "2026-12-01T05:00:00",
     "end": "2026-12-01T06:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -537,6 +637,8 @@
     "start": "2026-12-01T06:00:00",
     "end": "2026-12-01T08:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -554,6 +656,10 @@
     "cast": [
       "윤서아"
     ],
+    "cast_roles": {
+      "윤서아": "lead"
+    },
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -572,6 +678,10 @@
     "cast": [
       "강민수"
     ],
+    "cast_roles": {
+      "강민수": "host"
+    },
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -590,6 +700,10 @@
     "cast": [
       "최영자"
     ],
+    "cast_roles": {
+      "최영자": "host"
+    },
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -605,6 +719,8 @@
     "start": "2026-12-01T11:00:00",
     "end": "2026-12-01T12:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -620,6 +736,8 @@
     "start": "2026-12-01T12:00:00",
     "end": "2026-12-01T13:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -638,6 +756,10 @@
     "cast": [
       "정대현"
     ],
+    "cast_roles": {
+      "정대현": "lead"
+    },
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -656,6 +778,10 @@
     "cast": [
       "송미란"
     ],
+    "cast_roles": {
+      "송미란": "host"
+    },
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -671,6 +797,8 @@
     "start": "2026-12-01T16:30:00",
     "end": "2026-12-01T17:30:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -689,6 +817,10 @@
     "cast": [
       "최영자"
     ],
+    "cast_roles": {
+      "최영자": "host"
+    },
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -704,6 +836,8 @@
     "start": "2026-12-01T18:30:00",
     "end": "2026-12-01T19:30:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -719,6 +853,8 @@
     "start": "2026-12-01T19:30:00",
     "end": "2026-12-01T20:30:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -736,6 +872,10 @@
     "cast": [
       "이은정"
     ],
+    "cast_roles": {
+      "이은정": "lead"
+    },
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -751,6 +891,8 @@
     "start": "2026-12-01T21:30:00",
     "end": "2026-12-01T22:40:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -766,6 +908,8 @@
     "start": "2026-12-01T22:40:00",
     "end": "2026-12-01T23:40:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -781,6 +925,8 @@
     "start": "2026-12-01T23:40:00",
     "end": "2026-12-02T00:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -796,6 +942,8 @@
     "start": "2026-12-01T05:00:00",
     "end": "2026-12-01T06:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -811,6 +959,8 @@
     "start": "2026-12-01T06:00:00",
     "end": "2026-12-01T08:30:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -828,6 +978,10 @@
     "cast": [
       "이은정"
     ],
+    "cast_roles": {
+      "이은정": "lead"
+    },
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -843,6 +997,8 @@
     "start": "2026-12-01T09:10:00",
     "end": "2026-12-01T10:20:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -858,6 +1014,8 @@
     "start": "2026-12-01T10:20:00",
     "end": "2026-12-01T12:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -873,6 +1031,8 @@
     "start": "2026-12-01T12:00:00",
     "end": "2026-12-01T13:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -888,6 +1048,8 @@
     "start": "2026-12-01T13:00:00",
     "end": "2026-12-01T14:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -903,6 +1065,8 @@
     "start": "2026-12-01T14:00:00",
     "end": "2026-12-01T16:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -921,6 +1085,10 @@
     "cast": [
       "김태호"
     ],
+    "cast_roles": {
+      "김태호": "host"
+    },
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -936,6 +1104,8 @@
     "start": "2026-12-01T17:30:00",
     "end": "2026-12-01T19:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -951,6 +1121,8 @@
     "start": "2026-12-01T19:00:00",
     "end": "2026-12-01T20:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -966,6 +1138,8 @@
     "start": "2026-12-01T20:00:00",
     "end": "2026-12-01T21:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -983,6 +1157,10 @@
     "cast": [
       "한지수"
     ],
+    "cast_roles": {
+      "한지수": "lead"
+    },
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -998,6 +1176,8 @@
     "start": "2026-12-01T22:20:00",
     "end": "2026-12-01T23:30:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -1013,6 +1193,8 @@
     "start": "2026-12-01T23:30:00",
     "end": "2026-12-02T00:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -1028,6 +1210,8 @@
     "start": "2026-12-01T05:00:00",
     "end": "2026-12-01T06:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -1043,6 +1227,8 @@
     "start": "2026-12-01T06:00:00",
     "end": "2026-12-01T07:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -1058,6 +1244,8 @@
     "start": "2026-12-01T07:00:00",
     "end": "2026-12-01T08:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -1076,6 +1264,10 @@
     "cast": [
       "강민수"
     ],
+    "cast_roles": {
+      "강민수": "host"
+    },
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -1091,6 +1283,8 @@
     "start": "2026-12-01T09:00:00",
     "end": "2026-12-01T11:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -1107,6 +1301,8 @@
     "start": "2026-12-01T11:00:00",
     "end": "2026-12-01T12:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -1122,6 +1318,8 @@
     "start": "2026-12-01T12:00:00",
     "end": "2026-12-01T13:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -1140,6 +1338,10 @@
     "cast": [
       "강민수"
     ],
+    "cast_roles": {
+      "강민수": "host"
+    },
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -1155,6 +1357,8 @@
     "start": "2026-12-01T14:00:00",
     "end": "2026-12-01T15:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -1171,6 +1375,8 @@
     "start": "2026-12-01T15:00:00",
     "end": "2026-12-01T16:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -1186,6 +1392,8 @@
     "start": "2026-12-01T16:00:00",
     "end": "2026-12-01T17:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -1201,6 +1409,8 @@
     "start": "2026-12-01T17:00:00",
     "end": "2026-12-01T19:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -1216,6 +1426,8 @@
     "start": "2026-12-01T19:00:00",
     "end": "2026-12-01T20:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -1231,6 +1443,8 @@
     "start": "2026-12-01T20:00:00",
     "end": "2026-12-01T21:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -1249,6 +1463,10 @@
     "cast": [
       "강민수"
     ],
+    "cast_roles": {
+      "강민수": "host"
+    },
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -1264,6 +1482,8 @@
     "start": "2026-12-01T22:00:00",
     "end": "2026-12-01T23:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -1279,6 +1499,8 @@
     "start": "2026-12-01T23:00:00",
     "end": "2026-12-02T00:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -1294,6 +1516,8 @@
     "start": "2026-12-01T05:00:00",
     "end": "2026-12-01T07:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -1309,6 +1533,8 @@
     "start": "2026-12-01T07:00:00",
     "end": "2026-12-01T09:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -1328,6 +1554,11 @@
       "송미란",
       "김태호"
     ],
+    "cast_roles": {
+      "송미란": "host",
+      "김태호": "regular"
+    },
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -1346,6 +1577,10 @@
     "cast": [
       "강민수"
     ],
+    "cast_roles": {
+      "강민수": "host"
+    },
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -1361,6 +1596,8 @@
     "start": "2026-12-01T12:30:00",
     "end": "2026-12-01T13:30:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -1380,6 +1617,11 @@
       "송미란",
       "김태호"
     ],
+    "cast_roles": {
+      "송미란": "host",
+      "김태호": "regular"
+    },
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -1395,6 +1637,8 @@
     "start": "2026-12-01T15:30:00",
     "end": "2026-12-01T16:30:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -1414,6 +1658,11 @@
       "김태호",
       "송미란"
     ],
+    "cast_roles": {
+      "김태호": "host",
+      "송미란": "regular"
+    },
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   },
@@ -1429,6 +1678,8 @@
     "start": "2026-12-01T18:00:00",
     "end": "2026-12-01T19:30:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -1444,6 +1695,8 @@
     "start": "2026-12-01T19:30:00",
     "end": "2026-12-01T21:00:00",
     "cast": [],
+    "cast_roles": {},
+    "episode": "2026-12-01",
     "is_new": false,
     "is_live": true
   },
@@ -1463,6 +1716,11 @@
       "김태호",
       "송미란"
     ],
+    "cast_roles": {
+      "김태호": "host",
+      "송미란": "regular"
+    },
+    "episode": "31회",
     "is_new": true,
     "is_live": false
   },
@@ -1482,6 +1740,11 @@
       "송미란",
       "김태호"
     ],
+    "cast_roles": {
+      "송미란": "host",
+      "김태호": "regular"
+    },
+    "episode": "30회",
     "is_new": false,
     "is_live": false
   }

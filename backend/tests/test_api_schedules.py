@@ -264,3 +264,19 @@ def test_view_top_shows_quality_table_and_value_metrics(client):
         "novelty",
         "background",
     }
+
+
+def test_view_lists_paused_series_and_unpause_brings_it_back(client):
+    """확인 화면: 반복 거절로 '쉬어가는 중'인 시리즈 목록 + 되돌리기(개발용 POST) 하면 다음 계산부터 다시 후보."""
+    data = _view_data(client.get("/api/schedules/s1/view").text)
+    paused = data["paused"]
+    assert paused and all({"series_key", "title", "until"} <= set(p) for p in paused)
+    key = paused[0]["series_key"]
+    r = client.post("/api/schedules/s1/unpause", params={"series": key})
+    assert r.status_code == 200
+    again = _view_data(client.get("/api/schedules/s1/view").text)
+    assert key not in [p["series_key"] for p in again["paused"]]
+    assert data["fixed_breaks"] == ["12:00-12:30"]
+    assert not any(path.endswith("/unpause") for path in app.openapi()["paths"]), (
+        "개발용이라 약속(openapi) 밖"
+    )

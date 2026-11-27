@@ -4,15 +4,17 @@
 - 본 날 기준 반감기: 최근 본 날부터 세어 14번째 본 날의 기록은 절반 (달력 날짜가 아님 — 띄엄띄엄 보는 분도 공평)
 - 기록이 적으면 첫날 정보(seed_prefs)를 더 믿음: 기록 비중 = n / (n + 10)
 - 장르가 여러 개인 기록은 각 장르에 같은 무게로 더함 (나눠 갖지 않음)
+- 시리즈 점수엔 완주 추정 가중치(끝난 이유 별)도 곱함. 같은 시리즈를 자꾸 건너뛰면 7일 쉬어가기 (출연자 점수는 그대로)
+- 시간대 습관은 1시간 단위, 그 시각 기록이 적으면 4구간(아침·낮·저녁·밤) 값
 - 하루 틀(시청 시간대·하루 총 시간)은 신호 세기와 상관없이 TV 켜짐 패턴으로 (tv_pattern.py)
 - 장르별 실제 시청 비율은 직접 고른 시청으로
 """
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
-from ..models.db import Senior, WatchLog
+from ..models.db import Senior, UserRule, WatchLog
 from . import config
 from .genres import genres_of
 from .tv_pattern import LOW, daily_on_minutes, on_ratio_by_hour, tier_of, usual_channel_by_hour
@@ -47,6 +49,11 @@ class Profile:
     on_ratio: dict[int, float] = field(default_factory=dict)  # 시각(0~23) → TV 켜짐 비율. 비면 패턴 모름
     usual_channel: dict[int, str] = field(default_factory=dict)  # 시각 → 평소 켜 두는 채널
     left_on_series: set[str] = field(default_factory=set)  # '틀어만 놓기' 기록만 있는 시리즈 → 배경 편성 후보
+    timeslot_hour: dict[int, float] = field(default_factory=dict)  # 시각(0~23) → 시간대 습관 0~1
+    hour_weight: dict[int, float] = field(
+        default_factory=dict
+    )  # 시각별 기록 무게 합(반감기만) — 적으면 4구간 값
+    paused: dict[str, date] = field(default_factory=dict)  # 쉬어가는 시리즈 → 이 날짜 전까지
     genre_watch_share: dict[str, float] = field(
         default_factory=dict
     )  # 대표 장르별 실제 시청 비율 (직접 고른 시청)
@@ -55,6 +62,9 @@ class Profile:
     )  # 장르 목록 기준, 시청 시간 중 그 장르가 든 비율
 
     def timeslot_score(self, dt: datetime) -> float:
+        """그 시각의 시간대 습관: 1시간 단위 기록이 충분하면 그 시각 값, 아니면 4구간 값."""
+        if self.hour_weight.get(dt.hour, 0.0) >= config.TIMESLOT_HOUR_MIN_WEIGHT:
+            return self.timeslot_hour.get(dt.hour, 0.0)
         return self.timeslot.get(band_of(dt), 0.0)
 
     def tier(self, hour: int) -> str:
@@ -148,6 +158,46 @@ def genre_seen_share(logs: list[WatchLog], today: date) -> dict[str, float]:
     return {g: m / total for g, m in minutes.items()} if total else {}
 
 
+def paused_series(logs: list[WatchLog], today: date, rules: list[UserRule] | None = None) -> dict[str, date]:
+    """반복 거절 쉬어가기: REJECT_WINDOW_DAYS 일 안에 같은 시리즈를 건너뜀·"됐다"(REJECT_REASONS)로
+    REJECT_COUNT 번 끝내면, 그 거절 날부터 PAUSE_DAYS 일 동안 쉼 → 지금 쉬는 시리즈 {시리즈: 쉬기 끝나는 날}.
+    5분 미만 기록도 세지만 "방금 거 취소"(cancelled) 기록은 안 셈. unpause 규칙이 있으면 그 날까지의 거절은 잊음."""
+    forgiven: dict[str, date] = {}
+    for r in rules or []:
+        if r.active and r.kind == "unpause" and r.target_type == "series" and r.date:
+            d = date.fromisoformat(r.date)
+            forgiven[r.target] = max(d, forgiven.get(r.target, d))
+    rejections: dict[str, list[date]] = defaultdict(list)
+    for log in logs:
+        d = log.started_at.date()
+        if (
+            not log.cancelled
+            and (log.end_reason or "completed") in config.REJECT_REASONS
+            and 0
+            < (today - d).days
+            <= config.MAX_AGE_DAYS  # 자르는 곳에 따라 "3번 묶음"이 바뀌지 않게 취향 기록 범위(60일) 전체
+            and d > forgiven.get(log.series_key, date.min)
+        ):
+            rejections[log.series_key].append(d)
+    out = {}
+    for key, days in rejections.items():
+        until = _last_pause_end(sorted(days))
+        if until is not None and today < until:
+            out[key] = until
+    return out
+
+
+def _last_pause_end(days: list[date]) -> date | None:
+    """거절 날짜들을 시간 순으로 세다가 REJECT_COUNT 번이 되면 그날부터 PAUSE_DAYS 일 쉬고, 그때까지의 거절은 잊고 다시 셈.
+    마지막 쉬어가기가 끝나는 날 (한 번도 안 쉬면 None)."""
+    count, until = [], None
+    for d in days:
+        count = [x for x in count if (d - x).days < config.REJECT_WINDOW_DAYS] + [d]
+        if len(count) >= config.REJECT_COUNT:
+            until, count = d + timedelta(days=config.PAUSE_DAYS), []
+    return until
+
+
 def _normalize(d: dict[str, float]) -> dict[str, float]:
     top = max(d.values(), default=0.0)
     return {k: v / top for k, v in d.items()} if top > 0 else {}
@@ -166,12 +216,19 @@ def _left_on_only(weighted: list[WeightedLog], seed: dict) -> set[str]:
     return {k for k, h in hows.items() if h == {"continued"}} - set(seed.get("series") or [])
 
 
-def build_profile(logs: list[WatchLog], senior: Senior, today: date) -> Profile:
+def build_profile(
+    logs: list[WatchLog], senior: Senior, today: date, rules: list[UserRule] | None = None
+) -> Profile:
     """시청 기록과 첫날 관심사(seed_prefs)를 섞어 취향표를 만든다. 관심사를 바꾸면 다음 계산에 바로 반영된다."""
     weighted = weigh_logs(logs, today)
     series, cast, genre, slot = defaultdict(float), defaultdict(float), defaultdict(float), defaultdict(float)
+    slot_hour, hour_weight = defaultdict(float), defaultdict(float)
     for w in weighted:
-        series[w.log.series_key] += w.weight
+        series[w.log.series_key] += w.weight * config.END_REASON_WEIGHT.get(
+            w.log.end_reason or "completed", 1.0
+        )
+        slot_hour[w.log.started_at.hour] += w.weight
+        hour_weight[w.log.started_at.hour] += w.weight / config.SIGNAL[w.log.how_started]  # 반감기만
         for g in genres_of(w.log):
             genre[g] += w.weight
         slot[band_of(w.log.started_at)] += w.weight
@@ -193,6 +250,11 @@ def build_profile(logs: list[WatchLog], senior: Senior, today: date) -> Profile:
         daily_budget_min=daily_budget_min(logs, today),
         focus_budget_min=focus_budget_min(logs, today),
         on_ratio=on_ratio_by_hour(logs, today),
+        timeslot_hour={
+            h: share * v + (1 - share) * config.NEUTRAL_TIMESLOT for h, v in _normalize(slot_hour).items()
+        },
+        hour_weight=dict(hour_weight),
+        paused=paused_series(logs, today, rules),
         usual_channel=usual_channel_by_hour(logs, today),
         left_on_series=_left_on_only(weighted, seed),
         genre_watch_share=genre_watch_share(logs, today),

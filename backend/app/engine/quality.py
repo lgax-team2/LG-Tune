@@ -10,9 +10,10 @@ from datetime import date, timedelta
 
 from ..models.db import LgContent, Program, Senior
 from . import config
+from .breaks import in_break, parse_breaks
 from .diversity import genre_cap, genre_minutes_share
 from .gaps import first_high_moment
-from .genres import episode_key, genres_of
+from .genres import genres_of, same_episode
 from .plan import NOVELTY, PIN, REPRESENTATIVE, Entry, Plan
 from .planner import build_plan, starts_in_day, wake_and_sleep
 from .preference import Profile
@@ -81,7 +82,7 @@ def evaluate(
     r = Report()
     r.must["M1"] = _no_overlap(plan.entries)
     r.must["M2"] = _rules_kept(plan, programs, senior, profile, rules, wake, sleep, numbered_channels)
-    r.must["M3"] = _inside_hours(plan, wake, sleep)
+    r.must["M3"] = _inside_hours(plan, wake, sleep, parse_breaks(senior))
     r.must["M4"] = _series_once(plan.entries)
     r.must["M5"] = _reasons_true(plan, senior, profile, rules)
     r.must["M6"] = Check(
@@ -134,21 +135,24 @@ def _rules_kept(plan, programs, senior, profile, rules, wake, sleep, numbered=No
         and rules.allows_start(p.start)
         and not rules.blocks(p.series_key, genres_of(p))
         and (numbered is None or p.channel_id in numbered)  # 채널 번호 없는 방송은 넣지 않음 (M8 이 먼저)
+        and not in_break(p.start, parse_breaks(senior))  # 고정 비움 시간 시작도 넣지 않음 (M3 가 먼저)
     ]
     planned = {e.program_id for e in plan.entries}
     in_plan = [p for p in pinned if p.id in planned]
     for p in pinned:
         if p.id in planned:
             continue
-        same_episode = any(episode_key(q) == episode_key(p) and rank(q) < rank(p) for q in in_plan)
+        same_ep = any(same_episode(q, p) and rank(q) < rank(p) for q in in_plan)
         beaten = any(q.start < p.end and p.start < q.end and rank(q) < rank(p) for q in in_plan)
-        if not (same_episode or beaten):
+        if not (same_ep or beaten):
             return Check(False, f"'챙겨 줘' 빠짐: {p.title} {p.start:%H:%M}")
     return Check(True, f"챙겨 줘 {len(in_plan)}개 포함")
 
 
-def _inside_hours(plan: Plan, wake, sleep) -> Check:
+def _inside_hours(plan: Plan, wake, sleep, breaks=()) -> Check:
     for e in plan.entries:
+        if in_break(e.start, list(breaks)):
+            return Check(False, f"고정 비움 시간에 시작: {e.title} {e.start:%H:%M}")
         if not (wake <= e.start < sleep):
             return Check(False, f"기상~취침 밖 시작: {e.title} {e.start:%H:%M}")
         if e.role != PIN and e.start.hour not in plan.hours:
@@ -157,15 +161,14 @@ def _inside_hours(plan: Plan, wake, sleep) -> Check:
 
 
 def _series_once(entries: list[Entry]) -> Check:
-    """같은 회차 하루 1번 (회차 정보가 없으면 같은 시리즈 1번)."""
-    seen: set[str] = set()
+    """같은 회차 하루 1번 (회차를 모르면 같은 시리즈 1번 — genres.same_episode)."""
+    seen: list = []
     for e in entries:
         if getattr(e.source, "series_key", None) is None:
             continue
-        key = episode_key(e.source)
-        if key in seen:
+        if any(same_episode(e.source, s) for s in seen):
             return Check(False, f"같은 회차 두 번: {e.title}")
-        seen.add(key)
+        seen.append(e.source)
     return Check(True)
 
 

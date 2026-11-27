@@ -104,6 +104,7 @@
     <div class="q-list" id="q-must"></div><div class="q-list" id="q-goals"></div>
   </section>
   <section class="card metrics" id="metrics"></section>
+  <section class="card metrics" id="paused" hidden></section>
 
   <section class="card profile" id="profile"></section>
 
@@ -202,6 +203,28 @@
     var d = el("div"); d.appendChild(document.createTextNode(kv[0] + " ")); d.appendChild(el("b", null, kv[1]));
     $("metrics").appendChild(d);
   });
+
+  // ── 쉬어가는 중 (반복 거절) · 고정 비움 시간 ──
+  if (data.paused.length || data.fixed_breaks.length) {
+    $("paused").hidden = false;
+    if (data.fixed_breaks.length) {
+      var fb = el("div"); fb.appendChild(document.createTextNode("매일 비우는 시간 ")); fb.appendChild(el("b", null, data.fixed_breaks.join(", ")));
+      $("paused").appendChild(fb);
+    }
+    data.paused.forEach(function (pz) {
+      var d = el("div");
+      d.appendChild(document.createTextNode("쉬어가는 중 "));
+      d.appendChild(el("b", null, pz.title));
+      d.appendChild(document.createTextNode(" (" + pz.until.slice(5) + " 전까지) "));
+      var btn = el("button", null, "되돌리기");
+      btn.addEventListener("click", function () {
+        fetch("/api/schedules/" + encodeURIComponent(data.senior.id) + "/unpause?date=" + data.date + "&series=" + encodeURIComponent(pz.series_key), { method: "POST" })
+          .then(function () { location.reload(); });
+      });
+      d.appendChild(btn);
+      $("paused").appendChild(d);
+    });
+  }
 
   // ── 취향 요약 (build_profile 상위 3개) ──
   [["series", "시리즈"], ["cast", "출연자"], ["genre", "장르"], ["timeslot", "시간대"]].forEach(function (g) {
