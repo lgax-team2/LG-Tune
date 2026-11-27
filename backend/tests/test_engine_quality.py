@@ -1,6 +1,7 @@
-"""좋은 하루표 기준표 v3 (backend/app/engine/QUALITY.md) 테스트.
+"""좋은 하루표 기준표 v4 (backend/app/engine/QUALITY.md) 테스트.
 
-- 반드시(M1~M7): 샘플 3명 + 테스트 페르소나 6명 모두 통과해야 함
+- 반드시(M1~M8): 샘플 3명 + 테스트 페르소나 19명(예외형 8명 포함) 모두 통과해야 함
+- 무작위 검사는 test_engine_random.py, 두 버전 비교는 `uv run python -m app.engine.compare`
 - 목표(S1~S9): 규칙별 작은 예제로 확인
 - 페르소나는 샘플 파일이 아니라 여기서 만든다 (편성표만 샘플 programs.json·lg_contents.json 을 씀)
 """
@@ -124,6 +125,7 @@ def logs_for(
     by_key = {}
     for p in sample_programs() + SERIAL:
         by_key.setdefault(p.series_key, p)
+    by_key.update({p.series_key: p for p in EXTRA_PROGRAMS})
     out = []
     for d in range(1, days + 1):
         for key in series_keys:
@@ -181,6 +183,33 @@ def programs_with_serial() -> list[Program]:
     return [
         p for p in sample_programs() if not (p.channel_id == "EBS1" and p.start.hour in (20, 21))
     ] + SERIAL
+
+
+# 자정 넘는 방송 페르소나용: SBS 23:30 밤 뉴스 자리를 다음 날 01:10 까지 하는 심야 영화로
+MIDNIGHT_MOVIE = Program(
+    id="SBS-20261201-2330-MOVIE",
+    channel_id="SBS",
+    title="심야 영화",
+    series_key="sbs-midnight-movie",
+    genre="영화",
+    genres=["영화"],
+    start=at("23:30"),
+    end=at("01:10", DAY + timedelta(days=1)),
+    cast=["배우B"],
+    is_new=True,
+    is_live=False,
+)
+EXTRA_PROGRAMS = [MIDNIGHT_MOVIE]
+
+
+def programs_with_midnight_movie() -> list[Program]:
+    return [p for p in sample_programs() if p.series_key != "sbs-news-night"] + [MIDNIGHT_MOVIE]
+
+
+def few_programs() -> list[Program]:
+    """그날 편성 데이터가 5개 미만 (4개)."""
+    keep = {"kbs1-news-pm", "kbs2-king-of-song", "kbs1-haetsal", "ebs-doctor"}
+    return [p for p in sample_programs() if p.series_key in keep]
 
 
 def logs_on_both_episodes(days: int = 14) -> list[WatchLog]:
@@ -261,7 +290,52 @@ PERSONAS = {
         "logs": logs_for(["kbs1-haetsal", "kbs1-hometown", "sbs-garden"]),
         "rules": [],
     },
+    # 예외형 (E-eval): 데이터가 모자라거나 규칙이 부딪치는 경우
+    "기록 0일": {
+        "s": senior(genres=["드라마", "트로트"], series=["kbs1-haetsal"]),  # 관심사는 있고 기록만 없음
+        "logs": [],
+        "rules": [],
+    },
+    "기록 3일": {
+        "s": senior(genres=["드라마", "교양"]),
+        "logs": logs_for(["kbs1-haetsal", "kbs1-hometown"], days=3),  # 켜짐 패턴 기준(7일) 미만
+        "rules": [],
+    },
+    "틀어만 두는 분만": {
+        "s": senior(source="none"),
+        "logs": logs_for(["kbs1-news-noon", "kbs1-trot-party", "kbs1-docu", "kbs1-news-pm"], how="continued"),
+        "rules": [],
+    },
+    "관심 장르 전부 안 볼래": {
+        "s": senior(genres=["트로트", "사극"]),
+        "logs": logs_for(["tvc-star", "kbs1-king"]),
+        "rules": [rule("exclude", "트로트", "genre"), rule("exclude", "사극", "genre")],
+    },
+    "LG 콘텐츠 0개": {
+        "s": senior(genres=["드라마", "교양"]),
+        "logs": logs_for(["kbs1-haetsal", "kbs1-hometown", "sbs-garden"]),
+        "rules": [],
+        "lgs": [],
+    },
+    "자정 넘는 방송": {
+        "s": senior(wake="09:00", sleep="01:00", genres=["예능", "영화"]),  # 새벽 1시에 주무심
+        "logs": logs_for(["kbs2-laugh", "ebs-movie", "sbs-midnight-movie"]),
+        "rules": [],
+        "programs": programs_with_midnight_movie(),
+    },
+    "'챙겨 줘' 3개 겹침": {
+        "s": senior(genres=["드라마"]),
+        "logs": logs_for(["kbs1-haetsal", "mbc-bluesea", "sbs-garden"]),
+        "rules": [rule("pin", k) for k in ("kbs1-haetsal", "mbc-bluesea", "sbs-garden")],  # 20:30~22:20 겹침
+    },
+    "편성 5개 미만": {
+        "s": senior(genres=["드라마", "뉴스"]),
+        "logs": logs_for(["kbs1-haetsal", "kbs1-news-pm"]),
+        "rules": [],
+        "programs": few_programs(),
+    },
 }
+EDGE_PERSONAS = list(PERSONAS)[-8:]
 
 
 def sample_numbers() -> set[str]:
@@ -278,7 +352,7 @@ def persona_plan(name):
     prof = build_profile(p["logs"], p["s"], DAY)
     return check_plan(
         programs=p.get("programs") or sample_programs(),
-        lg_contents=sample_lg(),
+        lg_contents=p["lgs"] if "lgs" in p else sample_lg(),
         senior=p["s"],
         profile=prof,
         rules=RuleSet(p["rules"], DAY),
@@ -1049,6 +1123,26 @@ def test_m8_is_not_marked_passed_without_a_channel_number_table():
         [prog("a", "10:00", "11:00")], [], senior(), profile(series={"a": 1.0}), RuleSet([], DAY), DAY
     )
     assert report.must["M8"].ok is None
+
+
+def test_taste_match_leaves_out_novelty_and_channel_keep_slots():
+    """취향 일치율 분모에서 '새로 추천'·'채널 유지' 칸은 뺀다 (취향으로 고른 칸이 아니라서, E2 메모)."""
+    from app.engine.plan import NOVELTY, Entry, Plan
+    from app.engine.quality import metrics
+
+    def entry(p, kind, basis, role="normal"):
+        return Entry(p.id, p.channel_id, p.title, p.start, p.end, 0.5, kind, source=p, role=role, basis=basis)
+
+    show, keep, new = prog("a", "10:00", "11:00"), prog("k", "11:00", "11:10"), prog("n", "12:00", "13:00")
+    entries = [
+        entry(show, "pick", "series"),
+        entry(keep, "fill", "fill"),
+        entry(new, "pick", "novelty:다큐", NOVELTY),
+    ]
+    p = Plan(entries, floor=0.35, budget_min=240, hours=set(range(24)), knows_taste=True)
+    assert metrics(p)["taste_match"] == 1.0
+    p.entries.append(entry(prog("x", "14:00", "15:00"), "pick", "new"))  # 취향 근거 아닌 방송 칸은 그대로 셈
+    assert metrics(p)["taste_match"] == 0.5
 
 
 def test_persona_with_fixed_meal_times_gets_nothing_starting_then():
