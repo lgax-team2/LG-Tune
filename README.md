@@ -1,19 +1,17 @@
 # 마이모드 (LG TUNE) — 시니어 TV 하루표 + 추천 에이전트
 
 > TV를 켜면 내 취향에 맞춘 하루표가 있고, 궁금한 걸 물어보면 답해 주는 TV.
-> 최신 결정은 [`docs/DECISIONS.md`](docs/DECISIONS.md), 데이터·API 약속은 [`docs/약속.md`](docs/약속.md), 누가 어느 폴더인지는 [`AGENTS.md`](AGENTS.md).
+> 문서는 3개뿐: [`docs/기획.md`](docs/기획.md) (무엇을·언제) · [`docs/명세.md`](docs/명세.md) (DB·API·엔진 규칙) · [`docs/협업.md`](docs/협업.md) (Git·팀·응급처치). 누가 어느 폴더인지는 [`AGENTS.md`](AGENTS.md).
 
 ---
 
-## 역할별 시작하기
-| 누구 | 먼저 읽을 문서 |
+## 문서 안내
+| 언제 | 문서 |
 | --- | --- |
-| **GitHub이 처음이면** | [`docs/협업_흐름.md`](docs/협업_흐름.md) — 브랜치·PR·Merge 비유로 이해하기 |
-| 전원 (첫날) | [`docs/onboarding/00_공통_첫날.md`](docs/onboarding/00_공통_첫날.md) — 설치 + 첫 PR 연습 |
-| 프론트 | [`docs/onboarding/01_프론트.md`](docs/onboarding/01_프론트.md) |
-| AI 학습 | [`docs/onboarding/02_AI.md`](docs/onboarding/02_AI.md) |
-| 회의 진행 | [`docs/onboarding/03_킥오프_회의.md`](docs/onboarding/03_킥오프_회의.md) |
-| 꼬였을 때 | [`docs/onboarding/04_꼬였을때.md`](docs/onboarding/04_꼬였을때.md) — 안전장치와 응급처치 |
+| 무엇을 만드는지·일정 | [`docs/기획.md`](docs/기획.md) |
+| DB·API 모양, 하루표 엔진 규칙 | [`docs/명세.md`](docs/명세.md) |
+| GitHub이 처음이거나 꼬였을 때 | [`docs/협업.md`](docs/협업.md) |
+| AI 코딩 도구 규칙·담당 폴더 | [`AGENTS.md`](AGENTS.md) |
 
 ## 처음 오신 분: 10분 시작 가이드
 
@@ -21,8 +19,8 @@
 | 도구 | 설치 |
 | --- | --- |
 | Git | https://git-scm.com |
-| Node 20+ / pnpm | Node 설치 후 터미널에서 `npm i -g pnpm` |
-| Python 도구 uv (백엔드·ML만) | PowerShell: `powershell -c "irm https://astral.sh/uv/install.ps1 \| iex"` |
+| Node 22.12+ / pnpm | Node 설치 후 터미널에서 `npm i -g pnpm` |
+| Python 도구 uv (백엔드) | PowerShell: `powershell -c "irm https://astral.sh/uv/install.ps1 \| iex"` |
 | VS Code | 권장 |
 
 ### 2. 내려받기
@@ -36,11 +34,31 @@ pnpm setup              # 백엔드 + 프론트 의존성 설치
 ### 3. 실행
 | 명령 | 언제 |
 | --- | --- |
-| `pnpm dev:mock` | **프론트 담당**: 백엔드 없이 가짜 서버 + 화면 (http://localhost:5173) |
-| `pnpm dev` | 백엔드 + 화면 같이 |
+| `pnpm dev` | 백엔드 + 화면 같이 (http://localhost:5173) |
+| `pnpm dev:mock` | 백엔드 없이 가짜 서버 + 화면 (옛 시나리오 재생, 하루표 기준 아님) |
 | `pnpm gen` | 계약(스키마)이 바뀌었을 때 → 프론트 타입 다시 생성 |
 | `pnpm test` | 올리기 전에 검사 |
 | `pnpm sample` | 공통 샘플을 개발 DB(`backend/data/mymode.db`)에 새로 넣기 |
+
+### 4. 첫날 체크리스트 (전원 · 약 30분)
+| # | 할 일 | 확인 |
+| --- | --- | --- |
+| 1 | GitHub 초대 수락 | 저장소가 보임 |
+| 2 | 위 1~3 설치·실행 | `pnpm dev` 로 화면이 뜸 |
+| 3 | **첫 PR 연습** (아래) | PR이 main에 합쳐짐 |
+| 4 | `docs/기획.md` → `docs/명세.md` 읽기 | |
+
+```bash
+git switch -c common/team-내이름          # 1. 내 브랜치 만들기
+# 2. docs/협업.md 의 "팀" 표에 내 줄 추가하고 저장
+git add docs/협업.md
+git commit -m "chore: 팀원 추가 (내이름)"
+git push -u origin common/team-내이름     # 3. GitHub에 올리기
+```
+4. GitHub 저장소 페이지의 **Compare & pull request** → 생성 → 자동 검사 초록불이면 **Squash and merge**
+5. 내 컴퓨터 최신화: `git switch main && git pull`
+
+> 막히면 에러 메시지 전체를 단톡이나 Claude/Codex에 붙여넣기. **API 키·비밀번호는 절대 붙여넣지 않기.**
 
 ---
 
@@ -73,7 +91,7 @@ main  ●──────────●──────────●
 {"program_id":"KBS1-20261201-2030", "channel_number":9, "title":"일일드라마 햇살 가득", "start":"2026-12-01T20:30:00", "reason":"매일 보시는 드라마 새 회차예요", "kind":"pick"}
 ```
 - 원본: `backend/app/contracts/*.py` → 자동 생성: `contracts/*.json` → 프론트 타입: `frontend/src/shared/api/*.ts`
-- 전체 약속: [`docs/약속.md`](docs/약속.md) · 공통 샘플: `data/sample/`
+- 전체 명세: [`docs/명세.md`](docs/명세.md) · 공통 샘플: `data/sample/`
 
 ## AI 코딩 도구 (Claude Code / Codex / Gemini)
-규칙 원본은 `AGENTS.md` 하나. `CLAUDE.md`·`GEMINI.md` 는 그걸 불러오기만 합니다. 이슈 1개 = 브랜치 1개 = AI 세션 1개.
+규칙 원본은 `AGENTS.md` 하나 (폴더별 규칙도 그 안에). `CLAUDE.md`·`GEMINI.md` 는 그걸 불러오기만 합니다. PR 리뷰는 CodeRabbit이 `.coderabbit.yaml` 설정대로 자동으로 봅니다 (스타 10개 미만이면 PR에 `@coderabbitai review` 댓글). 이슈 1개 = 브랜치 1개 = AI 세션 1개.

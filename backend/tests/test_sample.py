@@ -1,4 +1,4 @@
-"""공통 샘플·DB 구조 테스트: 샘플이 약속(docs/약속.md)대로 생겼는지, DB에 잘 들어가는지."""
+"""공통 샘플·DB 구조 테스트: 샘플이 명세(docs/명세.md)대로 생겼는지, DB에 잘 들어가는지."""
 
 import json
 from collections import defaultdict
