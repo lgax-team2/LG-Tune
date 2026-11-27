@@ -20,7 +20,7 @@ from datetime import date, datetime, time, timedelta
 from ..models.db import LgContent, Program, Senior
 from . import config
 from .breaks import in_break, parse_breaks
-from .diversity import long_runs, over_share_genres, streak_breakers
+from .diversity import genre_cap, genre_minutes_share, long_runs, over_share_genres, streak_breakers
 from .gaps import fill_gaps, first_high_moment, first_viewing_moment
 from .genres import genres_of, same_episode
 from .novelty import novelty_choices, novelty_genres
@@ -28,7 +28,7 @@ from .plan import NORMAL, NOVELTY, PIN, REPRESENTATIVE, Entry, Plan
 from .preference import Profile
 from .reason import explain
 from .rules import RuleSet
-from .scoring import Scored, score_program
+from .scoring import Scored, score_lg, score_program
 from .selection import Candidate, overlaps, select_best
 from .tv_pattern import HIGH
 
@@ -36,6 +36,7 @@ from .tv_pattern import HIGH
 OUT_OF_DAY = "기상 전·취침 후"
 BY_RULE = "규칙으로 제외"
 OFF_HOURS = "시청 시간대 밖"
+GENRE_SWAP = "장르 상한 → 다른 장르 LG"
 FIXED_BREAK = "고정 비움 시간"
 PAUSED = "쉬어가는 중"
 NO_NUMBER = "채널 번호 없음"
@@ -53,6 +54,7 @@ DROP_REASONS = (
     OUT_OF_DAY,
     BY_RULE,
     OFF_HOURS,
+    GENRE_SWAP,
     FIXED_BREAK,
     PAUSED,
     NO_NUMBER,
@@ -202,6 +204,9 @@ def build_plan(
     chosen = _place_with_diversity(pool, fixed, d)
     chosen = _prefer_same_channel(chosen, pool, fixed, d)
     _record_unchosen(pool, chosen, fixed, d)
+    chosen, swapped = _swap_over_cap(
+        chosen, fixed, d
+    )  # 그래도 장르 상한을 넘으면 그 칸은 다른 장르 LG 자리로
 
     # 6) 새로 추천: 남은 시간·빈자리에 들어가는 방송 (우선순위가 낮아 배치가 끝난 뒤에)
     novel_genres = novelty_genres(profile, rules)
@@ -232,6 +237,7 @@ def build_plan(
         [_entry(c, role) for c, role in fixed] + [_entry(c, NORMAL) for c in chosen], key=lambda e: e.start
     )
     need_lg_novelty = novel_genres if (knows_taste and not novel) else []
+    preset_lg = _lg_for_swapped(swapped, lg_contents, picks, profile, rules, floor)
     filled = fill_gaps(
         picks,
         [p for p, _ in usable],
@@ -244,6 +250,8 @@ def build_plan(
         sleep,
         first_high_moment(wake, sleep, profile),
         breaks,
+        preset_lg,
+        {c.key for c, _ in swapped},
     )
     if filled.novelty_note and "S5" not in d.notes:
         d.notes["S5"] = filled.novelty_note
@@ -281,6 +289,88 @@ def _novelty_keeping_diversity(
 
 def _minute(dt: datetime) -> int:
     return dt.hour * 60 + dt.minute
+
+
+def _swap_over_cap(
+    chosen: list[Candidate], fixed: list[tuple[Candidate, str]], d: _Day
+) -> tuple[list[Candidate], list[tuple[Candidate, str]]]:
+    """(E2) 다시 배치로도 장르 상한(S2)을 못 맞추면, 넘기는 장르의 칸을 하나씩 뺀다 — 빼면 상한 안으로 들어오는 칸 중
+    가장 약한 것 (없으면 그 장르의 가장 약한 칸). 뺀 자리는 다른 장르 LG 로 채운다 (_lg_for_swapped).
+    LG 가 있든 없든 똑같이 빼므로 'LG 가 방송을 밀어낸 것'이 아님 (기준표 M7)."""
+    swapped: list[tuple[Candidate, str]] = []
+    if not config.SWAP_OVER_CAP_TO_LG:
+        return chosen, swapped
+    for _ in range(len(chosen)):
+        over = _violations(chosen, fixed, d).over
+        if not over:
+            break
+        g = over[0]
+        counted = chosen + [c for c, role in fixed if role == NOVELTY]
+        options = [c for c in chosen if c.genre == g]
+        if not options:
+            break
+
+        def fixes(c: Candidate, counted=counted, g=g) -> bool:
+            rest = [x for x in counted if x is not c]
+            return genre_minutes_share(rest).get(g, 0.0) <= genre_cap(g, d.profile) + 1e-9
+
+        target = min(
+            [c for c in options if fixes(c)] or options, key=lambda c: (c.base_weight, c.start, c.key)
+        )
+        chosen = [c for c in chosen if c is not target]
+        swapped.append((target, g))
+        d.dropped[target.key] = GENRE_SWAP
+    if swapped:
+        d.notes["S2"] = "다시 배치해도 상한을 못 맞춰 넘기는 칸을 다른 장르 LG 자리로 바꿈"
+    return chosen, swapped
+
+
+def _lg_for_swapped(
+    swapped: list[tuple[Candidate, str]],
+    lg_contents: list[LgContent],
+    picks: list[Entry],
+    profile: Profile,
+    rules: RuleSet,
+    floor: float,
+) -> list[Entry]:
+    """뺀 칸 자리마다 다른 장르 LG 1개 (그 자리에 들어가는 길이, 취향 하한 = 기준점 × LG_SCORE_RATIO 이상, 점수 최고).
+    LG 칸 수 < 방송 칸 수(S10)를 지킨다. 맞는 LG 가 없으면 그 자리는 빈 시간 채우기에 맡김."""
+    out: list[Entry] = []
+    used: set[str] = set()
+    n_picks = len(picks)
+    pick_minutes = sum(e.minutes for e in picks)
+
+    def free(start: datetime, minutes: int) -> bool:
+        """다른 칸(새로 추천 등)과 안 겹침."""
+        end = start + timedelta(minutes=minutes)
+        return not any(e.start < end and start < e.end for e in picks + out)
+
+    def share_ok(minutes: int) -> bool:
+        """S9: LG 비율 ≤ LG_SHARE_MAX (방송 칸 기준 — 채우기 전이라 보수적으로)."""
+        lg_min = sum(e.minutes for e in out) + minutes
+        return lg_min / (pick_minutes + lg_min) <= config.LG_SHARE_MAX + 1e-9
+
+    for c, g in sorted(swapped, key=lambda cg: cg[0].start):
+        if len(out) + 1 >= n_picks:
+            break
+        fits = [
+            (score_lg(lg, profile, c.start), lg)
+            for lg in lg_contents
+            if lg.genre != g
+            and lg.id not in used
+            and lg.duration_min <= c.minutes
+            and not rules.blocks(None, genres_of(lg))
+            and free(c.start, lg.duration_min)
+            and share_ok(lg.duration_min)
+        ]
+        fits = [(s, lg) for s, lg in fits if s.score >= floor * config.LG_SCORE_RATIO]
+        if not fits:
+            continue
+        s, lg = max(fits, key=lambda x: (x[0].score, x[1].duration_min, x[1].id))
+        used.add(lg.id)
+        end = c.start + timedelta(minutes=lg.duration_min)
+        out.append(Entry(lg.id, lg.source, lg.title, c.start, end, 0.0, "lg", scored=s, source=lg))
+    return out
 
 
 def _candidate(p: Program, s: Scored, floor: float) -> Candidate:

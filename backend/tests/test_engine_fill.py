@@ -48,6 +48,12 @@ def senior():
     )
 
 
+def late_morning_only(prof: Profile) -> Profile:
+    """10~14시만 TV 켜짐 '높음' — 아침 빈 시간(첫 '높음' 자리, S6)이 LG 를 먼저 가져가지 않게."""
+    prof.on_ratio = {h: (1.0 if 10 <= h < 14 else 0.0) for h in range(24)}
+    return prof
+
+
 def profile(series=None, cast=None, genre=None, timeslot=None, budget=600.0, focus=60.0):
     return Profile(
         series=series or {},
@@ -211,3 +217,219 @@ def test_version_records_an_end_time_change(tmp_path):
         save_and_respond(session, "s1", DAY, one("11:00"))
         assert record_version(session, "s1", DAY, one("10:45"), "끝 바뀜") is not None
     engine.dispose()
+
+
+# ───────── E2: LG 0분 해결 + 장르 쏠림 (결정 LG, S2) ─────────
+
+
+def lg(cid, genre, minutes, cast=("x",)):
+    return LgContent(id=cid, title=cid, genre=genre, cast=list(cast), duration_min=minutes, source="LG채널")
+
+
+def test_gap_with_no_show_above_floor_gets_lg_content():
+    """빈칸에 하는 방송이 기준점 미만이면 그 칸은 LG 콘텐츠 중 점수 최고 1개."""
+    progs = [
+        prog("a", "10:00", "11:00", key="a", cast=["x"]),
+        prog("weak", "11:00", "13:00", key="w", genre="다큐", ch="SBS"),  # 장르만 조금 맞음 → 기준점 미만
+        prog("b", "13:00", "14:00", key="b", cast=["x"], ch="MBC"),
+    ]
+    prof = late_morning_only(
+        profile(series={"a": 1.0, "b": 1.0}, cast={"x": 1.0}, genre={"다큐": 0.5, "교양": 1.0}, focus=120)
+    )
+    p = build_plan(
+        progs,
+        [lg("lg-best", "교양", 40), lg("lg-other", "교양", 30, cast=())],
+        senior(),
+        prof,
+        RuleSet([], DAY),
+        DAY,
+    )
+    first_gap = next(e for e in p.entries if e.kind != "pick")
+    assert (first_gap.program_id, first_gap.kind) == ("lg-best", "lg")
+    assert "weak" not in [e.program_id for e in p.entries if e.start < at("11:40")]
+
+
+def test_genre_over_cap_is_swapped_to_other_genre_lg():
+    """다시 배치로도 장르 상한(50%)을 못 맞추면, 넘기는 칸을 '다른 장르' LG 로 바꿈 — LG 가 방송을 밀어낸 게 아님(M7 유지)."""
+    from app.engine.quality import check_plan
+
+    progs = [
+        prog("cult1", "06:30", "08:30", key="c1", genre="교양", cast=["x"]),
+        prog("cult2", "19:00", "20:00", key="c2", genre="교양", cast=["x"], ch="MBC"),
+        prog("health", "21:00", "22:00", key="h", genre="건강", cast=["x"], ch="EBS1"),
+    ]
+    prof = profile(
+        series={"c1": 1.0, "c2": 1.0, "h": 1.0}, cast={"x": 1.0}, genre={"교양": 1.0, "건강": 1.0}, focus=240
+    )
+    lgs = [lg("lg-health", "건강", 40), lg("lg-cult", "교양", 40)]
+    p, report = check_plan(progs, lgs, senior(), prof, RuleSet([], DAY), DAY)
+    pick_genres = [e.source.genre for e in p.entries if e.kind == "pick"]
+    assert pick_genres.count("교양") <= pick_genres.count("건강"), pick_genres
+    swapped = [e for e in p.entries if e.kind == "lg" and e.source.genre != "교양"]
+    assert swapped and swapped[0].start == at("06:30")
+    assert all(report.must[c].ok is not False for c in report.must), {
+        c: v.detail for c, v in report.must.items()
+    }
+
+
+def test_lg_fill_keeps_channel_when_score_gap_within_0_1():
+    """LG 와 채널 그대로(앞 채널의 다음 방송) 점수 차가 0.1 이내면 채널 그대로."""
+    progs = [
+        prog("a", "10:00", "11:00", key="a", cast=["x"]),
+        prog("keep", "11:00", "12:00", key="k", cast=["y"], ch="KBS1"),  # 0.30 (기준점 미만)
+        prog("b", "13:00", "14:00", key="b", cast=["x"], ch="MBC"),
+    ]
+    prof = late_morning_only(
+        profile(
+            series={"a": 1.0, "b": 1.0, "k": 0.5},
+            cast={"x": 1.0},
+            genre={"교양": 1.0, "다큐": 0.87},
+            focus=120,
+        )
+    )
+    p = build_plan(progs, [lg("lg-close", "다큐", 40)], senior(), prof, RuleSet([], DAY), DAY)  # LG 0.38
+    first_gap = next(e for e in p.entries if e.kind != "pick")
+    assert first_gap.program_id == "keep"
+
+
+def test_lg_reason_mentions_liked_genre():
+    progs = [
+        prog("a", "10:00", "11:00", key="a", cast=["x"]),
+        prog("b", "13:00", "14:00", key="b", cast=["x"], ch="MBC"),
+    ]
+    prof = profile(
+        series={"a": 1.0, "b": 1.0}, cast={"x": 1.0}, genre={"교양": 1.0}, timeslot={"낮": 1.0}, focus=120
+    )  # 출연자 없는 LG 도 취향 하한(S9)을 넘게 시간대 습관
+    p = build_plan(progs, [lg("lg-genre", "교양", 40, cast=())], senior(), prof, RuleSet([], DAY), DAY)
+    item = next(e for e in p.entries if e.kind == "lg")
+    assert "좋아하시는 교양 장르" in item.reason and item.basis.endswith("genre:교양")
+
+
+def test_gap_with_only_weak_shows_stays_one_slot_for_lg():
+    """기준점 미만 방송만 이어지는 빈 시간은 한 자리로 합쳐서 LG 를 넣음 (방송 시작마다 잘게 쪼개지 않음)."""
+    progs = [
+        prog("a", "10:00", "11:00", key="a", cast=["x"]),
+        prog("weak1", "11:00", "11:10", key="w1", genre="다큐", ch="SBS"),
+        prog("weak2", "11:10", "13:00", key="w2", genre="다큐", ch="SBS"),
+        prog("b", "13:00", "14:00", key="b", cast=["x"], ch="MBC"),
+    ]
+    prof = late_morning_only(
+        profile(series={"a": 1.0, "b": 1.0}, cast={"x": 1.0}, genre={"다큐": 0.5, "교양": 1.0}, focus=120)
+    )
+    p = build_plan(progs, [lg("lg-best", "교양", 40)], senior(), prof, RuleSet([], DAY), DAY)
+    item = next(e for e in p.entries if e.kind == "lg")
+    assert item.start == at("11:00")
+
+
+def test_channel_tie_rule_skipped_when_channel_show_does_not_fit_day_budget():
+    """'채널 그대로' 방송이 하루 시간에 안 들어가면 0.1 이내라도 LG 를 넣음 (빈칸으로 두지 않음)."""
+    progs = [
+        prog("a", "10:00", "11:00", key="a", cast=["x"]),
+        prog("keep", "11:00", "13:00", key="k", cast=["y"], ch="KBS1"),  # 120분 — 남은 하루 시간보다 김
+        prog("b", "13:00", "14:00", key="b", cast=["x"], ch="MBC"),
+    ]
+    prof = late_morning_only(
+        profile(
+            series={"a": 1.0, "b": 1.0, "k": 0.5},
+            cast={"x": 1.0},
+            genre={"교양": 1.0, "다큐": 0.87},
+            budget=180.0,
+            focus=120,
+        )
+    )
+    p = build_plan(progs, [lg("lg-close", "다큐", 40)], senior(), prof, RuleSet([], DAY), DAY)
+    assert [e.program_id for e in p.entries if e.kind == "lg"] == ["lg-close"]
+
+
+# --- E2 Codex 리뷰 반영 ---
+
+
+def _cand(start, end, genre="교양"):
+    from app.engine.selection import Candidate
+
+    return Candidate(key="swapped", start=at(start), end=at(end), score=0.6, genre=genre)
+
+
+def _pick(pid, start, end, ch="KBS1", genre="교양"):
+    from app.engine.plan import Entry
+
+    p = prog(pid, start, end, genre=genre, ch=ch)
+    return Entry(pid, ch, pid, p.start, p.end, 0.6, "pick", source=p)
+
+
+def test_swapped_lg_minutes_count_against_day_budget_before_gap_fill():
+    """미리 넣은 LG 시간도 빈 시간 채우기 전에 하루 시간에서 뺌 (합계 ≤ 하루 상한)."""
+    from app.engine.gaps import fill_gaps
+    from app.engine.plan import Entry
+
+    prof = late_morning_only(profile(cast={"y": 1.0}, budget=100.0))
+    c = lg("lg-pre", "건강", 20)
+    preset = [Entry(c.id, c.source, c.title, at("11:00"), at("11:20"), 0.0, "lg", source=c)]
+    usable = [prog("liked", "11:20", "12:00", key="l", cast=["y"], ch="SBS")]
+    out = fill_gaps(
+        [_pick("a", "10:00", "11:00")],
+        usable,
+        [],
+        prof,
+        RuleSet([], DAY),
+        at("10:00"),
+        0.0,
+        [],
+        at("13:00"),
+        preset_lg=preset,
+    )
+    assert sum(e.minutes for e in out.entries) <= 100
+
+
+def test_swapped_lg_does_not_overlap_other_picks():
+    from app.engine.planner import _lg_for_swapped
+
+    prof = profile(genre={"건강": 1.0}, timeslot={"낮": 1.0})
+    picks = [_pick("p1", "08:00", "08:30"), _pick("p2", "08:30", "09:00"), _pick("nov", "09:00", "09:30")]
+    out = _lg_for_swapped(
+        [(_cand("09:00", "10:00"), "교양")],
+        [lg("lg-h", "건강", 30, cast=())],
+        picks,
+        prof,
+        RuleSet([], DAY),
+        0.35,
+    )
+    assert all(not (e.start < p.end and p.start < e.end) for e in out for p in picks)
+
+
+def test_swapped_lg_respects_lg_share_cap():
+    """미리 넣는 LG 도 LG 비율 상한(S9 30%)을 지킴."""
+    from app.engine.planner import _lg_for_swapped
+
+    prof = profile(genre={"건강": 1.0}, timeslot={"낮": 1.0})
+    picks = [_pick("p1", "08:00", "08:10"), _pick("p2", "08:10", "08:20"), _pick("p3", "08:20", "08:30")]
+    out = _lg_for_swapped(
+        [(_cand("09:00", "10:00"), "교양")],
+        [lg("lg-long", "건강", 60, cast=())],
+        picks,
+        prof,
+        RuleSet([], DAY),
+        0.35,
+    )
+    assert out == []
+
+
+def test_lg_skipped_for_channel_tie_leaves_slot_to_same_channel():
+    """LG 가 '채널 그대로'와 0.1 이내라 빠졌으면 그 자리는 채널 그대로 (다른 채널의 기준점 미만 방송 아님)."""
+    progs = [
+        prog("a", "10:00", "11:00", key="a", cast=["x"]),
+        prog("keep", "11:00", "12:00", key="k", cast=["y"], ch="KBS1"),  # 0.30
+        prog("other", "11:00", "12:00", key="o", cast=["z"], ch="SBS"),  # 좋아하는 출연자, 기준점 미만
+        prog("b", "13:00", "14:00", key="b", cast=["x"], ch="MBC"),
+    ]
+    prof = late_morning_only(
+        profile(
+            series={"a": 1.0, "b": 1.0, "k": 0.5},
+            cast={"x": 1.0, "z": 0.3},
+            genre={"교양": 1.0, "다큐": 0.87},
+            focus=120,
+        )
+    )
+    p = build_plan(progs, [lg("lg-close", "다큐", 40)], senior(), prof, RuleSet([], DAY), DAY)
+    first_gap = next(e for e in p.entries if e.kind != "pick")
+    assert first_gap.program_id == "keep"

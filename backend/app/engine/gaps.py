@@ -35,6 +35,8 @@ class Slot:
     tier: str
     first: bool  # 하루 첫 시청 구간 (S6)
     room: float  # 이 자리에 더 넣을 수 있는 분 ('중간'은 MID_FILL_MAX_MIN 까지)
+    keep_channel: str | None = None  # '채널 그대로'일 때 이어 갈 채널
+    prefer_keep: bool = False  # LG 가 '채널 그대로'와 0.1 이내라 빠짐 → 이 자리는 채널 그대로 먼저
 
     @property
     def minutes(self) -> float:
@@ -82,21 +84,27 @@ def fill_gaps(
     sleep: datetime | None = None,
     first_high: datetime | None = None,
     breaks: list[Break] | None = None,
+    preset_lg: list[Entry] | None = None,
+    blocked_ids: set[str] | None = None,
 ) -> Filled:
+    """preset_lg: 장르 상한 때문에 뺀 칸 자리에 미리 넣은 다른 장르 LG. blocked_ids: 뺀 방송 (채우기로 다시 안 넣음)."""
     breaks = breaks or []  # 고정 비움 시간: 그 안에서 시작하는 칸 없음
+    preset_lg = preset_lg or []
+    usable = [p for p in usable if p.id not in (blocked_ids or set())]
     used = [e.source for e in picks if isinstance(e.source, Program)]  # 이미 나온 회차들
     planned_series = {e.source.series_key for e in picks if isinstance(e.source, Program)}
     left = [
-        profile.daily_budget_min - sum(e.minutes for e in picks)
+        profile.daily_budget_min - sum(e.minutes for e in picks + preset_lg)
     ]  # 하루 총 시간 중 남은 분 (함께 줄여 감)
     fills: list[Entry] = []
     slots: list[Slot] = []
-    keep_later: list[tuple[Slot, str | None]] = []  # LG 뒤에도 남은 '높음' 자리 → 채널 유지
+    keep_later: list[tuple[Slot, str | None]] = []  # LG 뒤에도 남은 자리 → 채널 유지
     rests: list[tuple[datetime, datetime]] = []
-    for start, end, before in _gaps(picks, viewing_start, sleep):
+    anchors = sorted(picks + preset_lg, key=lambda e: e.start)
+    for start, end, before in _gaps(anchors, viewing_start, sleep):
         if not rules.allows_start(start):
             continue  # "오늘은 그만 볼래" 뒤
-        channel = before.channel_id if before else None
+        channel = before.channel_id if before and before.kind != "lg" else None
         for seg_start, seg_end, tier in _segments(start, end, profile):
             if not rules.allows_start(seg_start):
                 break  # "오늘은 그만 볼래" 뒤 구간은 채우지도, 쉬는 시간으로 표시하지도 않음
@@ -107,22 +115,36 @@ def fill_gaps(
             if tier == HIGH:
                 channel = channel or profile.usual_channel.get(seg_start.hour)
                 chosen, holes, channel = _taste_fill(
-                    seg_start, seg_end, channel, usable, used, planned_series, profile, rules, breaks, left
+                    seg_start,
+                    seg_end,
+                    channel,
+                    usable,
+                    used,
+                    planned_series,
+                    profile,
+                    rules,
+                    breaks,
+                    left,
+                    floor,
                 )
                 fills += chosen
                 for hole_start, hole_end in holes:  # 건너뛴 틈 → LG 자리, 그래도 남으면 채널 유지
                     hs = after_breaks(hole_start, breaks)
                     if hs < hole_end:
                         first = first_high is not None and hs <= first_high < hole_end
-                        slot = Slot(hs, hole_end, tier, first, float("inf"))
+                        slot = Slot(hs, hole_end, tier, first, float("inf"), keep_channel=channel)
                         slots.append(slot)
                         keep_later.append((slot, channel))
                 continue
-            else:  # 중간: 앞 방송에 바로 붙은 구간만, 채널 이어서 MID_FILL_MAX_MIN 분까지
+            else:  # 중간: 앞 방송에 바로 붙은 구간만, MID_FILL_MAX_MIN 분까지 — 방송(기준점 이상) → LG → 채널 그대로
                 prev = channel if seg_start == start else None
                 limit = min(seg_end, seg_start + timedelta(minutes=config.MID_FILL_MAX_MIN))
-                chosen = _keep_channel(
-                    prev, seg_start, limit, usable, used, rules, breaks, left, NORMAL, one=True
+                nxt = _on_channel(prev, seg_start, usable, used)
+                good = nxt is not None and score_program(nxt, profile, []).score >= floor
+                chosen = (
+                    _keep_channel(prev, seg_start, limit, usable, used, rules, breaks, left, NORMAL, one=True)
+                    if good
+                    else []
                 )
                 room = config.MID_FILL_MAX_MIN - sum(e.minutes for e in chosen)
             fills += chosen
@@ -132,21 +154,70 @@ def fill_gaps(
                     first_high is not None and t <= first_high < seg_end
                 )  # 켜짐 '높음'이 처음 시작되는 자리 (S6)
                 slot = Slot(t, seg_end, tier, first, room)
+                slot.keep_channel = channel if tier == HIGH else (channel if seg_start == start else None)
                 slots.append(slot)
-                if tier == HIGH:
-                    keep_later.append((slot, channel))
-    base = picks + fills
+                keep_later.append((slot, slot.keep_channel))
+    base = picks + preset_lg + fills
+
+    def keep_score(slot: Slot) -> float | None:
+        """그 자리에서 '채널 그대로'일 때 이어질 방송의 점수 (없으면 None) — LG 와 0.1 이내면 채널 그대로."""
+        ch = slot.keep_channel or (profile.usual_channel.get(slot.start.hour) if slot.tier == HIGH else None)
+        p = _on_channel(ch, slot.start, usable, used)
+        if p is None or (min(p.end, slot.end) - slot.start).total_seconds() / 60 > left[0]:
+            return (
+                None  # 이어 볼 방송이 없거나 하루 시간에 안 들어가면 '채널 그대로'가 못 됨 → LG 그대로 검토
+            )
+        return score_program(p, profile, []).score
+
     lgs, note = _choose_lg(
-        slots, lg_contents, profile, rules, floor, base, left[0], novelty_lg_genres, breaks
+        slots, lg_contents, profile, rules, floor, base, left[0], novelty_lg_genres, breaks, keep_score
     )
     left[0] -= sum(e.minutes for e in lgs)
-    for slot, channel in keep_later:  # 순서 마지막: 채널 유지 (LG 뒤에도 남은 '높음' 자리)
-        if slot.start < slot.end:
-            ch = channel or profile.usual_channel.get(slot.start.hour)
-            fills += _keep_channel(
-                ch, slot.start, slot.end, usable, used, rules, breaks, left, BACKGROUND, one=False
-            )
-    return Filled(sorted(picks + fills + lgs, key=lambda e: e.start), rests, note)
+    for slot, channel in keep_later:  # LG 뒤에도 남은 자리
+        if slot.start < slot.end and slot.room > 0:
+            ch = channel or (profile.usual_channel.get(slot.start.hour) if slot.tier == HIGH else None)
+            if slot.tier == HIGH:
+                if slot.prefer_keep:  # LG 가 '채널 그대로'와 0.1 이내라 빠진 자리 → 채널 그대로 먼저
+                    kept = _keep_channel(
+                        ch, slot.start, slot.end, usable, used, rules, breaks, left, BACKGROUND, one=False
+                    )
+                    fills += kept
+                    if kept:
+                        slot.start = kept[-1].end
+                    if slot.start >= slot.end:
+                        continue
+                # 맞는 LG 가 없으면 기준점 미만 방송이라도 취향 순서로 (결정 D42) → 그래도 빈 틈은 채널 그대로
+                weak, holes, _ = _taste_fill(
+                    slot.start, slot.end, ch, usable, used, planned_series, profile, rules, breaks, left
+                )
+                fills += weak
+                for hole_start, hole_end in holes:
+                    fills += _keep_channel(
+                        ch, hole_start, hole_end, usable, used, rules, breaks, left, BACKGROUND, one=False
+                    )
+                continue
+            end = min(slot.end, slot.start + timedelta(minutes=slot.room))
+            fills += _keep_channel(ch, slot.start, end, usable, used, rules, breaks, left, NORMAL, one=True)
+    return Filled(sorted(picks + preset_lg + fills + lgs, key=lambda e: e.start), rests, note)
+
+
+def _on_channel(
+    channel: str | None, t: datetime, usable: list[Program], used: list[Program]
+) -> Program | None:
+    """그 채널에서 t 에 이어 볼 수 있는 방송 (이미 시작했으면 남은 시간 규칙, 이미 나온 회차 제외)."""
+    if channel is None:
+        return None
+    return next(
+        (
+            p
+            for p in usable
+            if p.channel_id == channel
+            and p.start <= t < p.end
+            and can_join(p, t)
+            and not any(same_episode(p, u) for u in used)
+        ),
+        None,
+    )
 
 
 def can_join(p: Program, t: datetime) -> bool:
@@ -169,12 +240,14 @@ def _taste_fill(
     rules: RuleSet,
     breaks: list[Break],
     left: list[float],
+    floor: float = 0.0,
 ) -> tuple[list[Entry], list[tuple[datetime, datetime]], str | None]:
     """'높음' 빈 시간 채우기 1단계: 그 시각에 하는 방송 중 순서대로 — 같은 시리즈 다른 회차 → 좋아하는 출연자
     → 좋아하는 장르 → 그 시간대 습관. 같은 순서 안에선 점수 높은 것, 단 지금 채널이 0.1 이내면 지금 채널.
     그 시각에 맞는 방송이 없으면 다음 방송이 시작하는 시각으로 넘어가며, 건너뛴 틈은 (LG·채널 유지용) 빈자리로 돌려줌."""
     out: list[Entry] = []
     holes: list[tuple[datetime, datetime]] = []
+    hole: datetime | None = None  # 지금 이어지는 틈의 시작 (맞는 방송이 없는 시각이 이어지면 한 틈으로 합침)
     t = start
     while t < end and rules.allows_start(t):
         if in_break(t, breaks):
@@ -186,17 +259,24 @@ def _taste_fill(
             if p.start <= t < p.end and can_join(p, t) and not any(same_episode(p, u) for u in used)
         ]
         found = _by_fill_order(on_air, t, channel, planned_series, profile)
+        if found is not None and found[2].score < floor:
+            found = (
+                None  # 기준점 미만 방송은 안 넣음 → 이 칸은 LG(취향 하한 통과) → 그래도 없으면 채널 그대로
+            )
         if found is None:
-            nxt = min((p.start for p in usable if t < p.start < end), default=end)
-            holes.append((t, nxt))
-            t = nxt
+            hole = hole or t
+            t = min((p.start for p in usable if t < p.start < end), default=end)
             continue
         p, why, s = found
         stop = min(p.end, end)
         minutes = (stop - t).total_seconds() / 60
-        if minutes > left[0]:
-            holes.append((t, end))
+        if minutes > left[0]:  # 하루 시간이 모자람 → 여기서부터 끝까지 틈
+            hole = hole or t
+            t = end
             break
+        if hole is not None:
+            holes.append((hole, t))
+            hole = None
         role = BACKGROUND if why == "habit" else NORMAL  # 평소 켜 두는 채널 = 배경 편성
         out.append(
             Entry(
@@ -206,6 +286,8 @@ def _taste_fill(
         used.append(p)
         left[0] -= minutes
         t, channel = stop, p.channel_id
+    if hole is not None:
+        holes.append((hole, min(max(t, hole), end)))
     return out, holes, channel
 
 
@@ -334,15 +416,17 @@ def _choose_lg(
     budget: float,
     novelty_genres: list[str],
     breaks: list[Break],
+    keep_score=None,
 ) -> tuple[list[Entry], str | None]:
     min_score = floor * config.LG_SCORE_RATIO
     n_picks = sum(1 for e in base if e.kind == "pick")
-    base_minutes = sum(e.minutes for e in base)
+    preset = [e for e in base if e.kind == "lg"]  # 장르 상한 때문에 미리 넣은 LG
+    base_minutes = sum(e.minutes for e in base if e.kind != "lg")
     chosen: list[Entry] = []
-    used: set[str] = set()
+    used: set[str] = {e.program_id for e in preset}
 
     def lg_minutes() -> float:
-        return sum(e.minutes for e in chosen)
+        return sum(e.minutes for e in preset + chosen)
 
     def allowed(c: LgContent, slot: Slot) -> bool:
         total = base_minutes + lg_minutes() + c.duration_min
@@ -352,10 +436,18 @@ def _choose_lg(
             and not in_break(slot.start, breaks)  # 고정 비움 시간에 시작하지 않게
             and c.duration_min <= slot.minutes
             and not rules.blocks(None, genres_of(c))
-            and len(chosen) + 1 < n_picks  # S10: LG 칸 수 < 방송 칸 수
-            and lg_minutes() + c.duration_min <= budget  # 하루 총 시간
+            and len(preset) + len(chosen) + 1 < n_picks  # S10: LG 칸 수 < 방송 칸 수
+            and sum(e.minutes for e in chosen) + c.duration_min
+            <= budget  # 하루 총 시간 (미리 넣은 LG 는 이미 뺌)
             and (lg_minutes() + c.duration_min) / total <= config.LG_SHARE_MAX + 1e-9  # S9 비율
         )
+
+    def keeps_channel(s: Scored, slot: Slot) -> bool:
+        """채널 그대로 이어질 방송이 LG 와 점수 차 0.1 이내면 LG 대신 채널 그대로 (새로 추천은 예외)."""
+        ks = keep_score(slot) if keep_score else None
+        tie = ks is not None and s.score <= ks + config.CHANNEL_TIE_SCORE
+        slot.prefer_keep = slot.prefer_keep or tie
+        return tie
 
     def options(score_rule: bool) -> list[tuple[Scored, Slot, LgContent]]:
         out = []
@@ -363,7 +455,7 @@ def _choose_lg(
             for c in lg_contents:
                 if allowed(c, slot):
                     s = score_lg(c, profile, slot.start)
-                    if not score_rule or s.score >= min_score:
+                    if not score_rule or (s.score >= min_score and not keeps_channel(s, slot)):
                         out.append((s, slot, c))
         return sorted(out, key=lambda o: (-o[0].score, o[1].start, o[2].id))
 
@@ -374,6 +466,7 @@ def _choose_lg(
         used.add(c.id)
         slot.start = end
         slot.room -= c.duration_min
+        slot.prefer_keep = False  # 자리가 옮겨졌으니 다시 판단
 
     def tier_role(slot: Slot) -> str:
         return BACKGROUND if slot.tier == HIGH else NORMAL
@@ -383,7 +476,7 @@ def _choose_lg(
         novel = [o for o in options(not config.NOVELTY_LG_SKIPS_SCORE_RULE) if o[2].genre in novelty_genres]
         if novel:
             take(*novel[0], NOVELTY)
-        elif not _has_room(slots, lg_contents, n_picks, len(chosen), budget):
+        elif not _has_room(slots, lg_contents, n_picks, len(preset) + len(chosen), budget):
             note = "해당 없음: 켜짐 '높음·중간' 구간에 새로 추천을 넣을 여유가 없음 (자리·하루 시간·LG 칸 수)"
         else:
             note = "새로 추천할 장르의 콘텐츠가 남은 빈자리·LG 조건에 맞지 않음"

@@ -84,10 +84,10 @@ def _lg_reason(e: Entry, genre: str) -> Reason:
         what, basis = f"{cast} 님이 나오는 {e.channel_id} 콘텐츠", f"cast:{cast}"
     else:
         top_genre = e.scored.top_genre
-        what, basis = f"좋아하시는 {top_genre} {e.channel_id} 콘텐츠", f"genre:{top_genre}"
+        what, basis = f"좋아하시는 {top_genre} 장르 {e.channel_id} 콘텐츠", f"genre:{top_genre}"
     if e.role == BACKGROUND:
         return Reason(f"{KEEP_ON} {what}를 이어서 틀어 드려요", f"background+{basis}")
-    return Reason("빈 시간에 " + ieyo(what), basis)
+    return Reason(ieyo(what), basis)
 
 
 def _from_score(e: Entry) -> Reason:

@@ -82,6 +82,8 @@ MAX_REPLANS = 20  # 다시 배치 최대 횟수 (그래도 못 지키면 규칙 
 # 기준표 S9. LG 콘텐츠
 LG_SCORE_RATIO = 0.8  # LG 콘텐츠는 취향 점수 ≥ 기준점 × 0.8 인 것만
 LG_SHARE_MAX = 0.3  # 하루표 전체 시간 중 LG 콘텐츠 비율 상한
+# (E2) 빈칸 후보 방송이 기준점(THRESHOLD) 미만이면 그 칸은 LG 콘텐츠로. 다시 배치로도 장르 상한을 못 맞추면 넘기는 칸을 다른 장르 LG 로
+SWAP_OVER_CAP_TO_LG = True
 
 # 기준표 S8. 채널 전환 줄이기 (동점 규칙): 점수 차가 이 이내면 지금 채널의 다음 방송
 CHANNEL_TIE_SCORE = 0.1
