@@ -1,0 +1,22 @@
+# 저장소 스타가 10개 미만이면 CodeRabbit 이 PR 을 자동으로 리뷰하지 않아서,
+# PR 을 열거나 초안(Draft)을 "Ready for review" 로 바꿀 때 리뷰 요청 댓글을 대신 달아 준다.
+# 스타가 10개를 넘으면 이 파일은 지워도 된다 (리뷰가 두 번 돌지 않게).
+# 새 커밋을 올린 뒤 다시 리뷰받고 싶으면 PR 에 직접 `@coderabbitai review` 댓글을 단다.
+name: CodeRabbit 리뷰 요청
+
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  trigger:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: "@coderabbitai review 댓글 달기"
+        env:
+          GH_TOKEN: ${{ secrets.CODERABBIT_TRIGGER_TOKEN || secrets.GITHUB_TOKEN }}
+        run: gh pr comment "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --body "@coderabbitai review"

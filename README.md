@@ -106,7 +106,7 @@ PR을 열면 CodeRabbit이 `AGENTS.md`·`docs/명세.md` 기준으로 리뷰를 
 
 | PR 댓글로 쓰는 명령 | 하는 일 |
 | --- | --- |
-| `@coderabbitai review` | 최신 변경분 리뷰 (**저장소 스타가 10개 미만이면 자동으로 안 돌아서 이걸로 시작**) |
+| `@coderabbitai review` | 최신 변경분 리뷰. PR 을 열 때는 GitHub Action(`coderabbit-trigger.yml`)이 대신 달아 줌. **새 커밋을 올린 뒤에는 직접 달기** |
 | `@coderabbitai full review` | PR 전체를 처음부터 다시 리뷰 |
 | `@coderabbitai 질문` | 리뷰 댓글에 답글로 물어보기 (예: "이거 왜 문제야?") |
 
