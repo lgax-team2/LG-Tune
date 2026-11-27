@@ -1,14 +1,16 @@
 """무작위 검사 (E-eval): 시청 기록·편성표·설정을 무작위로 만들어 기준표 반드시(M1~M8)를 판정한다.
 
-- hypothesis 로 예시 200개. derandomize=True 라 매번 같은 예시 → 같은 결과 (기준표 M6 과 같은 뜻)
+- hypothesis 로 예시 200개. 시드(SEED) 고정이라 테스트·보고·전후 비교 모두 매번 같은 예시 → 같은 결과 (기준표 M6 과 같은 뜻)
 - 판정은 quality.check_plan 을 그대로 씀. 실패하면 hypothesis 가 가장 작은 예시로 줄여서 보여 준다
 - 보고용: `cd backend && uv run python -m tests.test_engine_random` → M 코드별 실패 개수 + 가장 작게 줄인 실패 예시
 """
 
 import sys
+from collections.abc import Callable
 from datetime import date, datetime, timedelta
+from random import Random
 
-from hypothesis import HealthCheck, find, given, settings
+from hypothesis import HealthCheck, find, given, seed, settings
 from hypothesis import strategies as st
 from hypothesis.errors import NoSuchExample
 
@@ -21,6 +23,7 @@ from app.models.db import LgContent, Program, Senior, UserRule, WatchLog
 DAY = date(2026, 12, 1)
 MUST = ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"]
 EXAMPLES = 200
+SEED = 20261201  # 무작위 예시를 만드는 시드 (바꾸면 다른 200개)
 
 NUMBERED = ["KBS1", "KBS2", "MBC", "SBS", "EBS1", "TVC"]
 
@@ -30,7 +33,6 @@ CAST = ["가수A", "가수B", "배우A", "배우B"]
 
 RANDOM_SETTINGS = settings(
     max_examples=EXAMPLES,
-    derandomize=True,  # 시드 고정: 매번 같은 예시
     database=None,  # 지난 실패를 기억해 두지 않음 (매번 같은 결과)
     deadline=None,
     suppress_health_check=[HealthCheck.too_slow, HealthCheck.data_too_large],
@@ -210,8 +212,12 @@ def failed_must(report: Report) -> dict[str, str]:
     return {c: report.must[c].detail for c in MUST if report.must[c].ok is False}
 
 
-@RANDOM_SETTINGS
-@given(day_cases())
+def on_random_days(fn: Callable[[dict], None]) -> Callable[[], None]:
+    """fn(case) 를 무작위 예시 200개로 돌리는 함수로 (같은 시드 → 어디서 불러도 같은 200개)."""
+    return seed(SEED)(RANDOM_SETTINGS(given(day_cases())(fn)))
+
+
+@on_random_days
 def test_random_days_pass_every_must_rule(case):
     assert not failed_must(run_case(case))
 
@@ -223,8 +229,7 @@ def count_failures() -> dict[str, int]:
     """예시 200개(테스트와 같은 예시) 중 M 코드별 실패 개수."""
     counts = dict.fromkeys(MUST, 0)
 
-    @RANDOM_SETTINGS
-    @given(day_cases())
+    @on_random_days
     def collect(case):
         for code in failed_must(run_case(case)):
             counts[code] += 1
@@ -236,7 +241,12 @@ def count_failures() -> dict[str, int]:
 def smallest_failure(code: str) -> tuple[dict, Report] | None:
     """그 M 코드를 어기는 예시 중 가장 작게 줄인 것 (없으면 None)."""
     try:
-        case = find(day_cases(), lambda c: code in failed_must(run_case(c)), settings=RANDOM_SETTINGS)
+        case = find(
+            day_cases(),
+            lambda c: code in failed_must(run_case(c)),
+            settings=RANDOM_SETTINGS,
+            random=Random(SEED),
+        )
     except NoSuchExample:
         return None
     return case, run_case(case)

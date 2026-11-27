@@ -47,8 +47,6 @@ def run_version(engine_root: Path, cases_root: Path) -> dict:
     """engine_root 의 엔진(app/)으로 cases_root 의 사례를 돌린 결과."""
     from datetime import date
 
-    from hypothesis import given
-
     import app.models.sample as sample_module
 
     # 입력을 같게: 두 버전 모두 지금 작업 폴더의 샘플을 읽음 (페르소나 모듈이 import 할 때 이 값을 가져감)
@@ -66,8 +64,7 @@ def run_version(engine_root: Path, cases_root: Path) -> dict:
 
     must_fail, goal_fail = dict.fromkeys(MUST, 0), dict.fromkeys(GOALS, 0)
 
-    @rnd.RANDOM_SETTINGS
-    @given(rnd.day_cases())
+    @rnd.on_random_days  # 테스트와 같은 시드 → 같은 200개
     def collect(case):
         report = rnd.run_case(case)
         for fails, checks in ((must_fail, report.must), (goal_fail, report.goals)):
