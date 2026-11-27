@@ -1,6 +1,6 @@
 """DB 구조 (공통 약속 · SQLite + SQLAlchemy).
 
-표 7개:
+표 8개:
 | 표 | 한 줄 = | 누가 채우나 |
 | channels | 채널 하나 (번호·이름) | A |
 | programs | 편성표의 방송 한 편 | A |
@@ -9,6 +9,7 @@
 | watch_logs | 시청 기록 한 건 | C(TV 화면) / 샘플 |
 | user_rules | 음성 명령으로 생긴 규칙 (빼기·챙기기·오늘만·쉬기) | B(음성 명령 API) |
 | plan_items | 엔진이 만든 하루표의 한 칸 | B |
+| plan_versions | 하루표 변경 기록 (버전·바뀐 칸·이유) | B |
 
 바꾸면 docs/명세.md 도 같이 고치고 3명 모두 확인.
 """
@@ -143,6 +144,26 @@ class PlanItem(Base):
     score: Mapped[float] = mapped_column(Float)
     reason: Mapped[str] = mapped_column(String)  # 화면에 보여 줄 고른 이유
     kind: Mapped[str] = mapped_column(String, default="pick")  # pick | fill(채널 유지) | lg(LG 콘텐츠)
+    start: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)  # 칸 시작 (변경 기록 비교용)
+    end: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class PlanVersion(Base):
+    """하루표 변경 기록: 하루표가 다시 만들어져 칸이 바뀔 때마다 한 줄 (버전, 이유, 바뀐 칸)."""
+
+    __tablename__ = "plan_versions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    senior_id: Mapped[str] = mapped_column(ForeignKey("seniors.id"), index=True)
+    date: Mapped[str] = mapped_column(String, index=True)  # YYYY-MM-DD
+    version: Mapped[int] = mapped_column(Integer)  # 그날 1, 2, 3 ...
+    reason: Mapped[str] = mapped_column(
+        String, default=""
+    )  # 다시 만든 까닭 (예: "하루표 조회", "음성 명령: 이제 안 볼래")
+    changes: Mapped[list[str]] = mapped_column(
+        default=list
+    )  # [{change: 추가/빠짐, program_id, title, start, why}]
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
 
 
 def make_engine(db_path: str | Path) -> Engine:

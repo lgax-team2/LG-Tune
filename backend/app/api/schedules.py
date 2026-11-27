@@ -26,7 +26,16 @@ from ..engine.plan import Plan
 from ..engine.quality import Report, check_plan
 from ..engine.rules import RuleSet
 from ..engine.service import DayInputs, SeniorNotFound, load_inputs, make_schedule, save_and_respond
-from ..models.db import Base, Program, Senior, UserRule, init_db, make_engine, make_session_factory
+from ..models.db import (
+    Base,
+    PlanVersion,
+    Program,
+    Senior,
+    UserRule,
+    init_db,
+    make_engine,
+    make_session_factory,
+)
 from ..models.sample import load_sample
 from ..settings import settings
 
@@ -152,7 +161,9 @@ def view_schedule(
         day,
         inputs.numbered_channels,
     )
-    schedule = save_and_respond(session, senior_id, day, plan)  # 하루표 API 와 같은 결과·같은 저장
+    schedule = save_and_respond(
+        session, senior_id, day, plan, "확인 화면"
+    )  # 하루표 API 와 같은 결과·같은 저장
     data = build_view_data(session, inputs, plan, report, schedule, limit)
     # JSON 안의 "<" 를 \u003c 로 바꿔 </script> 가 데이터 중간에서 태그를 닫지 못하게 함
     blob = json.dumps(data, ensure_ascii=False).replace("<", r"\u003c")
@@ -218,6 +229,20 @@ def build_view_data(
             for k, until in sorted(profile.paused.items())
         ],
         "fixed_breaks": list(senior.fixed_breaks or []),
+        "versions": [
+            {
+                "version": v.version,
+                "at": v.created_at.isoformat(timespec="seconds"),
+                "reason": v.reason,
+                "changes": v.changes,
+            }
+            for v in session.scalars(
+                select(PlanVersion)
+                .where(PlanVersion.senior_id == senior.id, PlanVersion.date == inputs.day.isoformat())
+                .order_by(PlanVersion.version.desc())
+                .limit(10)
+            )
+        ],
         "missed": find_missed(inputs, plan, limit),
     }
 

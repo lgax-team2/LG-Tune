@@ -37,6 +37,8 @@ def wa(word: str) -> str:
 def explain(e: Entry, knows_taste: bool = True, favorite: str | None = None) -> Reason:
     """칸의 역할·종류·점수 내역에서 이유와 근거를 만든다."""
     genre = getattr(e.source, "genre", "")
+    if e.kind == "fill" and e.fill_why and e.fill_why != "habit":
+        return _fill_reason(e)
     if e.kind == "fill":
         if e.role == BACKGROUND:
             return Reason(f"{KEEP_ON} {e.channel_id} 이어서 틀어 드려요", "background")
@@ -56,6 +58,17 @@ def explain(e: Entry, knows_taste: bool = True, favorite: str | None = None) -> 
     if not knows_taste:
         return Reason(UNKNOWN_TASTE, "unknown_taste")
     return _from_score(e)
+
+
+def _fill_reason(e: Entry) -> Reason:
+    """빈 시간을 취향으로 채운 방송의 이유 (gaps 채우는 순서)."""
+    if e.fill_why == "series":
+        return Reason("하루표에 있는 프로그램의 다른 " + ieyo("회차"), "more_episode")
+    if e.fill_why == "cast":
+        return Reason(f"{e.scored.top_cast} 님이 나와요", f"cast:{e.scored.top_cast}")
+    if e.fill_why == "genre":
+        return Reason(f"좋아하시는 {e.scored.top_genre} " + ieyo("방송"), f"genre:{e.scored.top_genre}")
+    return Reason("이 시간에 자주 보시는 " + ieyo("방송"), "timeslot")  # (habit 은 배경 편성 이유로)
 
 
 def _lg_reason(e: Entry, genre: str) -> Reason:

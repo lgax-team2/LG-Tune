@@ -11,7 +11,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from ..contracts.rest import ScheduleItem, ScheduleResponse
-from ..models.db import Channel, LgContent, PlanItem, Program, Senior, UserRule, WatchLog
+from ..models.db import Channel, LgContent, PlanItem, PlanVersion, Program, Senior, UserRule, WatchLog
 from .plan import Plan
 from .planner import build_plan
 from .preference import Profile, build_profile
@@ -70,14 +70,19 @@ def plan_day(session: Session, senior_id: str, day: date) -> tuple[Plan, Report]
     return check_plan(i.programs, i.lg_contents, i.senior, i.profile, i.rules, i.day, i.numbered_channels)
 
 
-def make_schedule(session: Session, senior_id: str, day: date) -> ScheduleResponse:
+def make_schedule(
+    session: Session, senior_id: str, day: date, reason: str = "하루표 조회"
+) -> ScheduleResponse:
     """하루표 API 응답을 만들고 plan_items 에 저장한다 (같은 날 것은 새로 덮어씀)."""
     i = load_inputs(session, senior_id, day)
     plan = build_plan(i.programs, i.lg_contents, i.senior, i.profile, i.rules, i.day, i.numbered_channels)
-    return save_and_respond(session, senior_id, day, plan)
+    return save_and_respond(session, senior_id, day, plan, reason)
 
 
-def save_and_respond(session: Session, senior_id: str, day: date, plan: Plan) -> ScheduleResponse:
+def save_and_respond(
+    session: Session, senior_id: str, day: date, plan: Plan, reason: str = "하루표 조회"
+) -> ScheduleResponse:
+    """하루표 응답을 만들고 plan_items 를 새로 덮어씀. 칸이 바뀌었으면 변경 기록(plan_versions)에 한 줄."""
     numbers = {c.id: c.number for c in session.scalars(select(Channel))}
     items = [
         ScheduleItem(
@@ -93,6 +98,7 @@ def save_and_respond(session: Session, senior_id: str, day: date, plan: Plan) ->
         )
         for e in plan.entries
     ]
+    record_version(session, senior_id, day, plan, reason)
     session.execute(delete(PlanItem).where(PlanItem.senior_id == senior_id, PlanItem.date == day.isoformat()))
     session.add_all(
         PlanItem(
@@ -102,8 +108,80 @@ def save_and_respond(session: Session, senior_id: str, day: date, plan: Plan) ->
             score=i.score,
             reason=i.reason,
             kind=i.kind,
+            start=i.start,
+            end=i.end,
         )
         for i in items
     )
     session.commit()
     return ScheduleResponse(senior_id=senior_id, date=day.isoformat(), items=items)
+
+
+def record_version(
+    session: Session, senior_id: str, day: date, plan: Plan, reason: str
+) -> PlanVersion | None:
+    """지난 저장본(plan_items)과 비교해 칸이 바뀌었으면 새 버전을 남긴다 (처음이면 버전 1). 안 바뀌었으면 None.
+    같은 방송이라도 시작·끝 시각이나 종류(pick/fill/lg)가 바뀌면 '바뀜'."""
+    old = {
+        i.program_id: (i.kind, i.start, i.end)
+        for i in session.scalars(
+            select(PlanItem).where(PlanItem.senior_id == senior_id, PlanItem.date == day.isoformat())
+        )
+    }
+    new = {e.program_id: e for e in plan.entries}
+    last = session.scalars(
+        select(PlanVersion)
+        .where(PlanVersion.senior_id == senior_id, PlanVersion.date == day.isoformat())
+        .order_by(PlanVersion.version.desc())
+    ).first()
+    added = [e for pid, e in new.items() if pid not in old]
+    removed = sorted(old.keys() - new.keys())
+    moved = [e for pid, e in new.items() if pid in old and old[pid] != (e.kind, e.start, e.end)]
+    if last is not None and not added and not removed and not moved:
+        return None
+    changes = (
+        [
+            {
+                "change": "추가",
+                "program_id": e.program_id,
+                "title": e.title,
+                "start": e.start.isoformat(),
+                "why": e.reason,
+            }
+            for e in added
+        ]
+        + [
+            {
+                "change": "바뀜",
+                "program_id": e.program_id,
+                "title": e.title,
+                "start": e.start.isoformat(),
+                "why": e.reason,
+            }
+            for e in moved
+        ]
+        + [
+            {
+                "change": "빠짐",
+                "program_id": pid,
+                "title": _title(session, pid),
+                "start": "",
+                "why": plan.dropped.get(pid, "다시 계산하며 다른 칸으로 바뀜"),
+            }
+            for pid in removed
+        ]
+    )
+    version = PlanVersion(
+        senior_id=senior_id,
+        date=day.isoformat(),
+        version=(last.version + 1) if last else 1,
+        reason=reason,
+        changes=changes,
+    )
+    session.add(version)
+    return version
+
+
+def _title(session: Session, program_id: str) -> str:
+    p = session.get(Program, program_id) or session.get(LgContent, program_id)
+    return p.title if p else program_id

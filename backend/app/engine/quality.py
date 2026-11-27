@@ -202,6 +202,9 @@ def _basis_holds(b: str, e: Entry, plan: Plan, senior: Senior, profile: Profile,
         "cast": lambda: arg in (src.cast or []) and profile.cast.get(arg, 0) > 0,
         "genre": lambda: arg in genres_of(src) and profile.genre.get(arg, 0) > 0,
         "timeslot": lambda: profile.timeslot_score(e.start) > 0,
+        "more_episode": lambda: any(
+            q.source.series_key == series and not same_episode(q.source, src) for q in plan.picks()
+        ),
         "family": lambda: series in (senior.family_picks or []),
         "pin": lambda: rules.is_pinned(series),
         "representative": lambda: (
