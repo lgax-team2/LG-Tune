@@ -329,11 +329,14 @@ def metrics(plan: Plan) -> dict:
     entries = plan.entries
     total = sum(e.minutes for e in entries)
     lg_min = sum(e.minutes for e in entries if e.kind == "lg")
-    taste = [e for e in entries if any(b.startswith(TASTE_BASIS) for b in e.basis.split("+"))]
+    chosen = [
+        e for e in entries if e.kind != "fill" and e.role != NOVELTY
+    ]  # 새로 추천·채널 유지는 분모에서 뺌
+    taste = [e for e in chosen if any(b.startswith(TASTE_BASIS) for b in e.basis.split("+"))]
     nov = plan.with_role(NOVELTY)
     share = lambda items: {g: round(s, 3) for g, s in genre_minutes_share(items).items()}
     return {
-        "taste_match": round(len(taste) / len(entries), 3) if entries else 0.0,
+        "taste_match": round(len(taste) / len(chosen), 3) if chosen else 0.0,
         "new_genre": nov[0].source.genre if nov else None,
         "lg_minutes": lg_min,
         "lg_share": round(lg_min / total, 3) if total else 0.0,
