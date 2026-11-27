@@ -235,7 +235,7 @@ def test_view_data_escapes_script_tags_in_titles(client, tmp_path):
 def test_view_top_shows_quality_table_and_value_metrics(client):
     """확인 화면 맨 위: 기준표 v3 의 반드시 7개·목표 9개 판정 + 가치 지표."""
     data = _view_data(client.get("/api/schedules/s1/view").text)
-    assert [q["code"] for q in data["quality"]["must"]] == ["M1", "M2", "M3", "M4", "M5", "M6", "M7"]
+    assert [q["code"] for q in data["quality"]["must"]] == ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"]
     assert [q["code"] for q in data["quality"]["goals"]] == [
         "S1",
         "S2",

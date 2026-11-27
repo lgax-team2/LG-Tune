@@ -27,8 +27,8 @@ def genre_minutes_share(items: list) -> dict[str, float]:
 
 
 def over_share_genres(counted: list[Candidate], profile: Profile) -> list[str]:
-    """비율 상한을 넘은 장르 (이름순). 세는 칸이 2개 미만이면 비율이 의미 없으니 빈 목록."""
-    if len(counted) < 2:
+    """비율 상한을 넘은 장르 (이름순). 세는 칸이 GENRE_SHARE_MIN_COUNT(3) 개 미만이면 '해당 없음' → 빈 목록."""
+    if len(counted) < config.GENRE_SHARE_MIN_COUNT:
         return []
     shares = genre_minutes_share(counted)
     return sorted(g for g, s in shares.items() if s > genre_cap(g, profile) + EPS)

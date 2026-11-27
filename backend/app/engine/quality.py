@@ -11,8 +11,8 @@ from datetime import date, timedelta
 from ..models.db import LgContent, Program, Senior
 from . import config
 from .diversity import genre_cap, genre_minutes_share
-from .gaps import first_viewing_moment
-from .genres import genres_of
+from .gaps import first_high_moment
+from .genres import episode_key, genres_of
 from .plan import NOVELTY, PIN, REPRESENTATIVE, Entry, Plan
 from .planner import build_plan, starts_in_day, wake_and_sleep
 from .preference import Profile
@@ -43,11 +43,15 @@ def check_plan(
     profile: Profile,
     rules: RuleSet,
     day: date,
+    numbered_channels: set[str] | None = None,
 ) -> tuple[Plan, Report]:
     """하루표를 짜고 기준표로 판정한다 (M6·M7 확인을 위해 두 번 더 짠다)."""
-    plan = build_plan(programs, lg_contents, senior, profile, rules, day)
-    again = build_plan(list(reversed(programs)), list(reversed(lg_contents)), senior, profile, rules, day)
-    no_lg = build_plan(programs, [], senior, profile, rules, day)
+    nums = numbered_channels
+    plan = build_plan(programs, lg_contents, senior, profile, rules, day, nums)
+    again = build_plan(
+        list(reversed(programs)), list(reversed(lg_contents)), senior, profile, rules, day, nums
+    )
+    no_lg = build_plan(programs, [], senior, profile, rules, day, nums)
     shape = lambda p: [(e.program_id, e.kind, e.start, e.end, e.reason) for e in p.entries]
     report = evaluate(
         plan,
@@ -57,6 +61,7 @@ def check_plan(
         rules=rules,
         same_when_rebuilt=shape(plan) == shape(again),
         same_without_lg=[e.program_id for e in plan.picks()] == [e.program_id for e in no_lg.picks()],
+        numbered_channels=nums,
     )
     return plan, report
 
@@ -69,12 +74,13 @@ def evaluate(
     rules: RuleSet,
     same_when_rebuilt: bool = True,
     same_without_lg: bool = True,
+    numbered_channels: set[str] | None = None,
 ) -> Report:
     day = plan.day or (plan.entries[0].start.date() if plan.entries else date.today())
     wake, sleep = wake_and_sleep(senior, day)
     r = Report()
     r.must["M1"] = _no_overlap(plan.entries)
-    r.must["M2"] = _rules_kept(plan, programs, senior, profile, rules, wake, sleep)
+    r.must["M2"] = _rules_kept(plan, programs, senior, profile, rules, wake, sleep, numbered_channels)
     r.must["M3"] = _inside_hours(plan, wake, sleep)
     r.must["M4"] = _series_once(plan.entries)
     r.must["M5"] = _reasons_true(plan, senior, profile, rules)
@@ -82,6 +88,7 @@ def evaluate(
         same_when_rebuilt, "" if same_when_rebuilt else "입력 순서만 바꿨는데 하루표가 달라짐"
     )
     r.must["M7"] = Check(same_without_lg, "" if same_without_lg else "LG 콘텐츠 때문에 방송 칸이 바뀜")
+    r.must["M8"] = _numbered(plan, numbered_channels)
 
     r.goals["S1"] = _representative(plan)
     r.goals["S2"] = _genre_share(plan, profile)
@@ -91,7 +98,7 @@ def evaluate(
     r.goals["S8"] = Check(True, f"채널 전환 {_switches(plan.entries)}번")
     r.goals["S4"] = _streak(plan)
     r.goals["S5"] = _novelty(plan)
-    r.goals["S6"] = _first_slot(plan, wake, sleep)
+    r.goals["S6"] = _first_slot(plan, wake, sleep, profile)
     r.metrics = metrics(plan)
     return r
 
@@ -108,14 +115,14 @@ def _no_overlap(entries: list[Entry]) -> Check:
     return Check(True)
 
 
-def _rules_kept(plan, programs, senior, profile, rules, wake, sleep) -> Check:
+def _rules_kept(plan, programs, senior, profile, rules, wake, sleep, numbered=None) -> Check:
     for e in plan.entries:
         series = getattr(e.source, "series_key", None)
         if rules.blocks(series, genres_of(e.source)):
             return Check(False, f"'안 볼래' 위반: {e.title}")
         if not rules.allows_start(e.start):
             return Check(False, f"'오늘은 그만 볼래' 뒤에 시작: {e.title} {e.start:%H:%M}")
-    # '챙겨 줘'는 엔진 함수를 다시 쓰지 않고 규칙대로 직접 확인: 빠진 pin 은 (더 좋은 같은 시리즈 회차가 있거나)
+    # '챙겨 줘'는 엔진 함수를 다시 쓰지 않고 규칙대로 직접 확인: 빠진 pin 은 (같은 회차가 더 좋은 쪽으로 있거나)
     # (겹치는 pin 이 점수가 더 높을 때 — 같으면 이른 시작 → ID)만 허용
     family = senior.family_picks or []
     rank = lambda p: (-score_program(p, profile, family).score, p.start, p.id)
@@ -126,15 +133,16 @@ def _rules_kept(plan, programs, senior, profile, rules, wake, sleep) -> Check:
         and starts_in_day(p, wake, sleep)
         and rules.allows_start(p.start)
         and not rules.blocks(p.series_key, genres_of(p))
+        and (numbered is None or p.channel_id in numbered)  # 채널 번호 없는 방송은 넣지 않음 (M8 이 먼저)
     ]
     planned = {e.program_id for e in plan.entries}
     in_plan = [p for p in pinned if p.id in planned]
     for p in pinned:
         if p.id in planned:
             continue
-        same_series = any(q.series_key == p.series_key and rank(q) < rank(p) for q in in_plan)
+        same_episode = any(episode_key(q) == episode_key(p) and rank(q) < rank(p) for q in in_plan)
         beaten = any(q.start < p.end and p.start < q.end and rank(q) < rank(p) for q in in_plan)
-        if not (same_series or beaten):
+        if not (same_episode or beaten):
             return Check(False, f"'챙겨 줘' 빠짐: {p.title} {p.start:%H:%M}")
     return Check(True, f"챙겨 줘 {len(in_plan)}개 포함")
 
@@ -149,15 +157,24 @@ def _inside_hours(plan: Plan, wake, sleep) -> Check:
 
 
 def _series_once(entries: list[Entry]) -> Check:
+    """같은 회차 하루 1번 (회차 정보가 없으면 같은 시리즈 1번)."""
     seen: set[str] = set()
     for e in entries:
-        key = getattr(e.source, "series_key", None)
-        if key is None:
+        if getattr(e.source, "series_key", None) is None:
             continue
+        key = episode_key(e.source)
         if key in seen:
-            return Check(False, f"같은 시리즈 두 번: {e.title}")
+            return Check(False, f"같은 회차 두 번: {e.title}")
         seen.add(key)
     return Check(True)
+
+
+def _numbered(plan: Plan, numbered: set[str] | None) -> Check:
+    """채널 번호가 없는 방송은 하루표에 없어야 함 (LG 콘텐츠는 상관없음)."""
+    if numbered is None:
+        return Check(None, "확인 안 함: 채널 번호표가 없음")
+    bad = [e.title for e in plan.entries if isinstance(e.source, Program) and e.channel_id not in numbered]
+    return Check(not bad, f"번호 없는 채널 방송: {', '.join(bad)}" if bad else "")
 
 
 def _reasons_true(plan: Plan, senior: Senior, profile: Profile, rules: RuleSet) -> Check:
@@ -214,8 +231,10 @@ def _counted_for_share(plan: Plan) -> list[Entry]:
 
 def _genre_share(plan: Plan, profile: Profile) -> Check:
     counted = _counted_for_share(plan)
-    if len(counted) < 2:
-        return Check(None, "해당 없음: 대표 방송·챙겨 줘 말고 고른 방송이 2개 미만")
+    if len(counted) < config.GENRE_SHARE_MIN_COUNT:
+        return Check(
+            None, f"해당 없음: 대표 방송·챙겨 줘 말고 고른 방송이 {config.GENRE_SHARE_MIN_COUNT}개 미만"
+        )
     shares = genre_minutes_share(counted)
     over = {g: s for g, s in shares.items() if s > genre_cap(g, profile) + 1e-9}
     detail = ", ".join(
@@ -286,14 +305,15 @@ def _novelty(plan: Plan) -> Check:
     return Check(None if note.startswith("해당 없음") else False, note)
 
 
-def _first_slot(plan: Plan, wake, sleep) -> Check:
-    moment = first_viewing_moment(wake, sleep, plan.hours)
-    if moment is None or not plan.entries:
-        return Check(None, "해당 없음: 시청 시간대나 칸이 없음")
-    first = plan.entries[0].start
-    ok = first <= moment + timedelta(minutes=config.FIRST_SLOT_WITHIN_MIN)
-    detail = f"시청 시간대 시작 {moment:%H:%M}, 첫 칸 {first:%H:%M}"
-    return Check(ok, detail if ok else f"{detail} — 빈 시간에 맞는 LG 콘텐츠가 없거나 LG 비율 상한")
+def _first_slot(plan: Plan, wake, sleep, profile: Profile) -> Check:
+    """S6: 켜짐 '높음' 구간이 처음 시작되면 30분 안에 칸 (그때 이미 이어지고 있는 칸이어도 됨)."""
+    moment = first_high_moment(wake, sleep, profile)
+    if moment is None:
+        return Check(None, "해당 없음: 켜짐 '높음' 시각이 없음")
+    limit = moment + timedelta(minutes=config.FIRST_SLOT_WITHIN_MIN)
+    hit = [e for e in plan.entries if e.start <= limit and e.end > moment]
+    detail = f"'높음' 시작 {moment:%H:%M}" + (f", 칸 {hit[0].start:%H:%M}" if hit else "")
+    return Check(bool(hit), detail if hit else f"{detail} — 30분 안에 칸 없음 (빈자리·LG 조건)")
 
 
 # ───────── 가치 지표 ─────────

@@ -96,6 +96,7 @@ LABELS = {  # 기준표 v3 (backend/app/engine/QUALITY.md)
     "M5": "이유 = 실제 근거",
     "M6": "같은 입력 → 같은 하루표",
     "M7": "LG 가 방송을 안 밀어냄",
+    "M8": "채널 번호 없는 방송 없음",
     "S1": "오늘의 대표 방송",
     "S2": "한 장르 비율",
     "S3": "하루 시간 상한",
@@ -121,7 +122,13 @@ def view_schedule(
     except SeniorNotFound:
         raise HTTPException(404, f"없는 어르신이에요: {senior_id}") from None
     plan, report = check_plan(
-        inputs.programs, inputs.lg_contents, inputs.senior, inputs.profile, inputs.rules, day
+        inputs.programs,
+        inputs.lg_contents,
+        inputs.senior,
+        inputs.profile,
+        inputs.rules,
+        day,
+        inputs.numbered_channels,
     )
     schedule = save_and_respond(session, senior_id, day, plan)  # 하루표 API 와 같은 결과·같은 저장
     data = build_view_data(session, inputs, plan, report, schedule, limit)
@@ -247,6 +254,7 @@ def _detail(why: str, p: Program, inputs: DayInputs, plan: Plan) -> str:
         return "겹치는 방송: " + ", ".join(hits) if hits else "배치에서 밀림"
     return {
         P.NO_TASTE: "취향을 몰라 새 회차·생방송만 골라요",
+        P.NO_NUMBER: "리모컨 채널 번호가 없는 채널이라 틀어 드릴 수 없음",
         P.LEFT_ON: "평소 틀어만 두시는 방송 — 집중 시청 말고 배경 편성 후보",
         P.SAME_SERIES: "같은 시리즈가 이미 하루표에 있어요",
         P.BUDGET: f"하루 시간 상한 {plan.budget_min:.0f}분",
