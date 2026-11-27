@@ -60,9 +60,8 @@ def load_inputs(session: Session, senior_id: str, day: date) -> DayInputs:
     )
     lg = list(session.scalars(select(LgContent).order_by(LgContent.id)))
     numbered = {c.id for c in session.scalars(select(Channel)) if c.number is not None}
-    return DayInputs(
-        senior, programs, lg, build_profile(logs, senior, day), RuleSet(rules, day), day, numbered
-    )
+    profile = build_profile(logs, senior, day, rules)  # rules: 쉬어가기 되돌리기(unpause)
+    return DayInputs(senior, programs, lg, profile, RuleSet(rules, day), day, numbered)
 
 
 def plan_day(session: Session, senior_id: str, day: date) -> tuple[Plan, Report]:

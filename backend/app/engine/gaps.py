@@ -15,7 +15,8 @@ from datetime import datetime, time, timedelta
 
 from ..models.db import LgContent, Program
 from . import config
-from .genres import episode_key, genres_of
+from .breaks import Break, after_breaks, in_break
+from .genres import genres_of, same_episode
 from .plan import BACKGROUND, NORMAL, NOVELTY, Entry
 from .preference import Profile
 from .rules import RuleSet
@@ -78,8 +79,10 @@ def fill_gaps(
     novelty_lg_genres: list[str],
     sleep: datetime | None = None,
     first_high: datetime | None = None,
+    breaks: list[Break] | None = None,
 ) -> Filled:
-    used_series = {episode_key(e.source) for e in picks if isinstance(e.source, Program)}
+    breaks = breaks or []  # 고정 비움 시간: 그 안에서 시작하는 칸 없음
+    used_series = [e.source for e in picks if isinstance(e.source, Program)]  # 이미 나온 회차들
     budget = profile.daily_budget_min - sum(e.minutes for e in picks)
     fills: list[Entry] = []
     slots: list[Slot] = []
@@ -96,11 +99,13 @@ def fill_gaps(
             prev = before if seg_start == start else None  # 앞 방송에 바로 붙은 구간만 채널을 이어 감
             usual = profile.usual_channel.get(seg_start.hour) if tier == HIGH else None
             channel = prev.channel_id if prev else usual  # 앞 채널, 없으면 그 시각에 평소 켜 두는 채널
-            chain = _same_channel(channel, seg_start, seg_end, tier, usable, used_series, budget, rules)
+            chain = _same_channel(
+                channel, seg_start, seg_end, tier, usable, used_series, budget, rules, breaks
+            )
             fills += chain
             used = sum(e.minutes for e in chain)
             budget -= used
-            t = chain[-1].end if chain else seg_start
+            t = after_breaks(chain[-1].end if chain else seg_start, breaks)
             room = (config.MID_FILL_MAX_MIN - used) if tier == MID else float("inf")
             if t < seg_end and room > 0:
                 first = (
@@ -108,7 +113,7 @@ def fill_gaps(
                 )  # 켜짐 '높음'이 처음 시작되는 자리 (S6)
                 slots.append(Slot(t, seg_end, tier, first, room))
     base = picks + fills
-    lgs, note = _choose_lg(slots, lg_contents, profile, rules, floor, base, budget, novelty_lg_genres)
+    lgs, note = _choose_lg(slots, lg_contents, profile, rules, floor, base, budget, novelty_lg_genres, breaks)
     return Filled(sorted(base + lgs, key=lambda e: e.start), rests, note)
 
 
@@ -147,9 +152,10 @@ def _same_channel(
     end: datetime,
     tier: str,
     usable: list[Program],
-    used_series: set[str],
+    used_series: list[Program],
     budget: float,
     rules: RuleSet,
+    breaks: list[Break],
 ) -> list[Entry]:
     """그 채널(앞 방송 채널 또는 평소 켜 두는 채널)에서 이어지는 방송들.
     '높음'은 끊길 때까지 이어 붙이고, '중간'은 MID_FILL_MAX_MIN 분까지 한 편."""
@@ -158,12 +164,14 @@ def _same_channel(
         return out
     t = start
     limit = end if tier == HIGH else min(end, start + timedelta(minutes=config.MID_FILL_MAX_MIN))
-    while t < limit and rules.allows_start(t):
+    while t < limit and rules.allows_start(t) and not in_break(t, breaks):
         nxt = next(
             (
                 p
                 for p in usable
-                if p.channel_id == channel and p.start <= t < p.end and episode_key(p) not in used_series
+                if p.channel_id == channel
+                and p.start <= t < p.end
+                and not any(same_episode(p, u) for u in used_series)
             ),
             None,
         )
@@ -174,7 +182,7 @@ def _same_channel(
             break
         role = BACKGROUND if tier == HIGH else NORMAL
         out.append(Entry(nxt.id, nxt.channel_id, nxt.title, t, stop, 0.0, "fill", source=nxt, role=role))
-        used_series.add(episode_key(nxt))
+        used_series.append(nxt)
         t = stop
         if tier == MID:
             break
@@ -203,6 +211,7 @@ def _choose_lg(
     base: list[Entry],
     budget: float,
     novelty_genres: list[str],
+    breaks: list[Break],
 ) -> tuple[list[Entry], str | None]:
     min_score = floor * config.LG_SCORE_RATIO
     n_picks = sum(1 for e in base if e.kind == "pick")
@@ -218,6 +227,7 @@ def _choose_lg(
         return (
             c.id not in used
             and rules.allows_start(slot.start)  # "그만 볼래" 뒤에 시작하지 않게
+            and not in_break(slot.start, breaks)  # 고정 비움 시간에 시작하지 않게
             and c.duration_min <= slot.minutes
             and not rules.blocks(None, genres_of(c))
             and len(chosen) + 1 < n_picks  # S10: LG 칸 수 < 방송 칸 수
