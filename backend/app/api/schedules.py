@@ -307,6 +307,7 @@ def _detail(why: str, p: Program, inputs: DayInputs, plan: Plan) -> str:
     return {
         P.NO_TASTE: "취향을 몰라 새 회차·생방송만 골라요",
         P.NO_NUMBER: "리모컨 채널 번호가 없는 채널이라 틀어 드릴 수 없음",
+        P.GENRE_SWAP: "다시 배치해도 장르 비율이 상한을 넘어서, 이 칸은 다른 장르 LG 콘텐츠로 바꿈",
         P.FIXED_BREAK: "매일 비우는 시간: " + ", ".join(inputs.senior.fixed_breaks or []),
         P.PAUSED: f"최근 {P.config.REJECT_WINDOW_DAYS}일에 {P.config.REJECT_COUNT}번 건너뛰셔서 "
         f"{inputs.profile.paused.get(p.series_key, inputs.day):%m/%d} 전까지 쉬어 가요",
