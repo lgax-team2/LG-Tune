@@ -338,6 +338,18 @@ def _lg_for_swapped(
     out: list[Entry] = []
     used: set[str] = set()
     n_picks = len(picks)
+    pick_minutes = sum(e.minutes for e in picks)
+
+    def free(start: datetime, minutes: int) -> bool:
+        """다른 칸(새로 추천 등)과 안 겹침."""
+        end = start + timedelta(minutes=minutes)
+        return not any(e.start < end and start < e.end for e in picks + out)
+
+    def share_ok(minutes: int) -> bool:
+        """S9: LG 비율 ≤ LG_SHARE_MAX (방송 칸 기준 — 채우기 전이라 보수적으로)."""
+        lg_min = sum(e.minutes for e in out) + minutes
+        return lg_min / (pick_minutes + lg_min) <= config.LG_SHARE_MAX + 1e-9
+
     for c, g in sorted(swapped, key=lambda cg: cg[0].start):
         if len(out) + 1 >= n_picks:
             break
@@ -348,6 +360,8 @@ def _lg_for_swapped(
             and lg.id not in used
             and lg.duration_min <= c.minutes
             and not rules.blocks(None, genres_of(lg))
+            and free(c.start, lg.duration_min)
+            and share_ok(lg.duration_min)
         ]
         fits = [(s, lg) for s, lg in fits if s.score >= floor * config.LG_SCORE_RATIO]
         if not fits:

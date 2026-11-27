@@ -36,6 +36,7 @@ class Slot:
     first: bool  # 하루 첫 시청 구간 (S6)
     room: float  # 이 자리에 더 넣을 수 있는 분 ('중간'은 MID_FILL_MAX_MIN 까지)
     keep_channel: str | None = None  # '채널 그대로'일 때 이어 갈 채널
+    prefer_keep: bool = False  # LG 가 '채널 그대로'와 0.1 이내라 빠짐 → 이 자리는 채널 그대로 먼저
 
     @property
     def minutes(self) -> float:
@@ -93,7 +94,7 @@ def fill_gaps(
     used = [e.source for e in picks if isinstance(e.source, Program)]  # 이미 나온 회차들
     planned_series = {e.source.series_key for e in picks if isinstance(e.source, Program)}
     left = [
-        profile.daily_budget_min - sum(e.minutes for e in picks)
+        profile.daily_budget_min - sum(e.minutes for e in picks + preset_lg)
     ]  # 하루 총 시간 중 남은 분 (함께 줄여 감)
     fills: list[Entry] = []
     slots: list[Slot] = []
@@ -157,7 +158,6 @@ def fill_gaps(
                 slots.append(slot)
                 keep_later.append((slot, slot.keep_channel))
     base = picks + preset_lg + fills
-    left[0] -= sum(e.minutes for e in preset_lg)
 
     def keep_score(slot: Slot) -> float | None:
         """그 자리에서 '채널 그대로'일 때 이어질 방송의 점수 (없으면 None) — LG 와 0.1 이내면 채널 그대로."""
@@ -177,6 +177,15 @@ def fill_gaps(
         if slot.start < slot.end and slot.room > 0:
             ch = channel or (profile.usual_channel.get(slot.start.hour) if slot.tier == HIGH else None)
             if slot.tier == HIGH:
+                if slot.prefer_keep:  # LG 가 '채널 그대로'와 0.1 이내라 빠진 자리 → 채널 그대로 먼저
+                    kept = _keep_channel(
+                        ch, slot.start, slot.end, usable, used, rules, breaks, left, BACKGROUND, one=False
+                    )
+                    fills += kept
+                    if kept:
+                        slot.start = kept[-1].end
+                    if slot.start >= slot.end:
+                        continue
                 # 맞는 LG 가 없으면 기준점 미만 방송이라도 취향 순서로 (결정 D42) → 그래도 빈 틈은 채널 그대로
                 weak, holes, _ = _taste_fill(
                     slot.start, slot.end, ch, usable, used, planned_series, profile, rules, breaks, left
@@ -436,7 +445,9 @@ def _choose_lg(
     def keeps_channel(s: Scored, slot: Slot) -> bool:
         """채널 그대로 이어질 방송이 LG 와 점수 차 0.1 이내면 LG 대신 채널 그대로 (새로 추천은 예외)."""
         ks = keep_score(slot) if keep_score else None
-        return ks is not None and s.score <= ks + config.CHANNEL_TIE_SCORE
+        tie = ks is not None and s.score <= ks + config.CHANNEL_TIE_SCORE
+        slot.prefer_keep = slot.prefer_keep or tie
+        return tie
 
     def options(score_rule: bool) -> list[tuple[Scored, Slot, LgContent]]:
         out = []
@@ -455,6 +466,7 @@ def _choose_lg(
         used.add(c.id)
         slot.start = end
         slot.room -= c.duration_min
+        slot.prefer_keep = False  # 자리가 옮겨졌으니 다시 판단
 
     def tier_role(slot: Slot) -> str:
         return BACKGROUND if slot.tier == HIGH else NORMAL
