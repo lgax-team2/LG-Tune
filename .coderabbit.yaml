@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 # CodeRabbit PR 리뷰 설정 (공통 파일 · 바꾸려면 3명 확인)
-# 리뷰 기준은 docs/명세.md · AGENTS.md (docs/기획.md 는 참고)
+# 리뷰 기준은 AGENTS.md · docs/명세.md (docs/기획.md 는 참고용)
 
 language: ko
 early_access: false
@@ -33,7 +33,7 @@ reviews:
   path_instructions:
     - path: "**"
       instructions: |
-        리뷰 기준: docs/명세.md(구현 기준) · AGENTS.md. docs/기획.md 는 바뀔 수 있는 방향이라 참고만
+        리뷰 기준: AGENTS.md(규칙) · docs/명세.md(모양). docs/기획.md 는 참고용이라 기준으로 쓰지 마세요
 
         (중요)
         - AGENTS.md 담당 폴더표 기준으로 한 담당의 폴더 밖(특히 공통 폴더)을 고쳤으면 알려 주고, 공통 폴더 변경은 3명 확인이 필요하다고 요약에 적어 주세요.
@@ -72,7 +72,6 @@ knowledge_base:
     enabled: true
     filePatterns:
       - "AGENTS.md"
-      - "docs/기획.md"
       - "docs/명세.md"
 
 chat:

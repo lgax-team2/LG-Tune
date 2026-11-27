@@ -1,7 +1,7 @@
 # 마이모드 (LG TUNE) — 시니어 TV 하루표 + 추천 에이전트
 
 > TV를 켜면 내 취향에 맞춘 하루표가 있고, 궁금한 걸 물어보면 답해 주는 TV.
-> 문서는 3개뿐: [`docs/명세.md`](docs/명세.md) (DB·API·엔진 규칙 · 구현 기준) · [`docs/기획.md`](docs/기획.md) (무엇을·언제 · 바뀔 수 있음) · [`docs/협업.md`](docs/협업.md) (Git·팀·응급처치). 누가 어느 폴더인지는 [`AGENTS.md`](AGENTS.md).
+> 문서는 3개뿐: [`docs/명세.md`](docs/명세.md) (DB·API·엔진 규칙 · 구현 기준) · [`docs/기획.md`](docs/기획.md) (무엇을·언제 · 참고용) · [`docs/협업.md`](docs/협업.md) (Git·팀·응급처치). 누가 어느 폴더인지는 [`AGENTS.md`](AGENTS.md).
 
 ---
 
@@ -9,9 +9,9 @@
 | 언제 | 문서 |
 | --- | --- |
 | DB·API 모양, 하루표 엔진 규칙 (**구현 기준**) | [`docs/명세.md`](docs/명세.md) |
-| 무엇을 만드는지·일정 (바뀔 수 있는 방향) | [`docs/기획.md`](docs/기획.md) |
+| 무엇을 만드는지·일정 (참고용 · 계속 바뀜) | [`docs/기획.md`](docs/기획.md) |
 | GitHub이 처음이거나 꼬였을 때 | [`docs/협업.md`](docs/협업.md) |
-| AI 코딩 도구 규칙·담당 폴더 | [`AGENTS.md`](AGENTS.md) |
+| 규칙·담당 폴더 (**AI·사람 공통 기준**) | [`AGENTS.md`](AGENTS.md) |
 
 ## 처음 오신 분: 10분 시작 가이드
 
@@ -97,7 +97,7 @@ main  ●──────────●──────────●
 규칙 원본은 `AGENTS.md` 하나 (폴더별 규칙도 그 안에). `CLAUDE.md`·`GEMINI.md` 는 그걸 불러오기만 합니다. 이슈 1개 = 브랜치 1개 = AI 세션 1개.
 
 ## PR 자동 리뷰 (CodeRabbit)
-PR을 열면 CodeRabbit이 `AGENTS.md`·`docs/기획.md`·`docs/명세.md` 기준으로 리뷰를 달아 줍니다. 설정은 `.coderabbit.yaml` (공통 파일).
+PR을 열면 CodeRabbit이 `AGENTS.md`·`docs/명세.md` 기준으로 리뷰를 달아 줍니다. 설정은 `.coderabbit.yaml` (공통 파일).
 
 | 무엇이 달리나 | 내용 |
 | --- | --- |
