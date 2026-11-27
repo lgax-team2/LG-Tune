@@ -16,6 +16,7 @@ Codex 활용 (항상, 코드는 고치지 말고 의견만 받기)
 
 ## 정한 것 (2026-11-26 승인)
 - 기본값: 장르 여러 개는 각각 같은 무게 / 출연자 없으면 그 항목 빼고 ÷0.75 / 확인 대기는 서버 메모리 / 알림은 `/ws/events` / fake LLM 답은 문장 틀 / 시계 기본 12-01 06:00·1배
+- 11/27: ②-2 다양성은 방식 2(시간 예산 DP + 넘친 장르 무게 깎아 다시 배치), 2시간짜리 최애 새 회차는 "오늘의 대표 방송" 1편 예외(결정 다)
 - `make_sample.py` 수정은 ②에 한해 허용, `tests/snapshots/` 허용, `commands_draft.py` 없이 약속 4절 기준, 가상 시계는 B 가 `api/clock.py` 로
 
 ## 지킬 것 (모든 작업 공통)
@@ -57,8 +58,9 @@ Codex 활용 (항상, 코드는 고치지 말고 의견만 받기)
   - 방식: **시간 예산 DP + 넘친 장르 무게 깎아 다시 배치** (방식 2 — 실험·Codex 비교 결과. 방식 1 "배치 후 빼고 채우기"는 s1 하루표가 0분이 되는 연쇄 삭제가 나서 탈락)
   - 고칠 파일: `engine/planner.py`(배치), `engine/preference.py`(평균 시청 시간·시청 시간대·안 본 장르), `engine/diversity.py`(새로: 장르 비율·연속 검사), `engine/novelty.py`(새로: 새로 추천 1칸), `engine/reason.py`, `engine/config.py`, `api/schedules.py`(빠진 이유), `docs/약속.md` 6절, `tests/test_engine*.py`, `tests/test_api_schedules.py`
   - 순서 (각각 테스트 먼저):
-    - **a. 시청 시간**: 시청 시간대 = 시간대 습관 점수 0.35 이상인 시간대(방송 "시작" 기준, ①과 같음). pick·LG 채우기는 그 안에서만. 총 pick 시간 ≤ 최근 평균 시청 시간(본 날 7일 미만이면 240분). 배치는 1분 단위 시간 예산 DP. pin·새로 추천은 먼저 고정하고 남은 예산으로 배치
+    - [x] **a. 시청 시간** (완료 11b05dd): 시청 시간대 = 시간대 습관 점수 0.35 이상인 시간대(방송 "시작" 기준, ①과 같음). pick·LG 채우기는 그 안에서만. 총 pick 시간 ≤ 최근 평균 시청 시간(본 날 7일 미만이면 240분). 배치는 1분 단위 시간 예산 DP. pin·새로 추천은 먼저 고정하고 남은 예산으로 배치
     - **b. 다양성**: 같은 대표 장르 ≤ pick 시간의 50% (pin 은 분자·분모 모두 제외), 같은 장르 3칸째 연속부터 무게 ×0.7. 넘치면 그 장르 무게 ×0.7 하고 다시 DP (최대 10번). 끝까지 못 지키면 규칙을 지킨 결과 중 최고, 없으면 시간 상한은 지키고 50% 는 완화(확인 화면에 표시)
+    - **b-2. 오늘의 대표 방송 1편** (11/27 결정 "다"): 새 회차(is_new)이면서 시리즈 취향 점수 1위, 시청 시간대 안에서 시작하는 것만. pin 처럼 먼저 넣고 장르 50% 계산에서 빼며, 시간 상한에는 포함. reason = "오늘 꼭 챙겨 보실 ○○ 새 회차예요". 확인 화면 장르 비율은 이 1편 제외/포함 둘 다
     - **c. 새로 추천 1칸**: 가장 좋아하는 장르와 가까운 장르(`config.NEAR_GENRES`) 중 시청 기록상 거의 안 본 장르(기록 점수 < 0.2)의 방송 1개. "안 볼래"로 뺀 시리즈·장르는 절대 안 고름. kind 는 pick 그대로, reason = "새로 추천해 드려요 — …"
     - **d. 빠진 이유**: 확인 화면에 "시청 시간대 밖", "시간 상한", "다양성" 추가 — 엔진이 배치하면서 남긴 기록으로 표시 (따로 다시 계산하지 않음)
   - 테스트(먼저): `test_viewing_hours_are_bands_with_habit_score_over_min`, `test_daily_budget_is_recent_average_or_240_when_few_days`, `test_total_pick_minutes_stay_within_budget`, `test_lg_fill_only_inside_viewing_hours`, `test_one_genre_takes_at_most_half_of_pick_time`, `test_pinned_shows_are_left_out_of_genre_share`, `test_third_same_genre_in_a_row_is_penalized`, `test_novelty_picks_unseen_genre_near_favorite`, `test_novelty_never_picks_excluded_series_or_genre`, `test_view_shows_diversity_and_budget_reasons`
@@ -138,5 +140,6 @@ Codex 활용 (항상, 코드는 고치지 말고 의견만 받기)
 | 2026-11-26 | ① 취침 전 시작 허용 + 아침 빈 시간 LG. Codex: 심각한 문제 없음. 변화: s1 20:00 왕중왕(0.806) → 21:00 별의 노래(0.865)로 바뀜(겹쳐서 점수 높은 쪽) | 766769e | /api/schedules/s1/view, s3/view |
 | 2026-11-26 | ② 장르 여러 개·출연자 없음 ÷0.75·배치 무게 (점수−기준점)(결정 D)·옛 DB 안내. Codex: D 추천 / 옛 DB 오류·기준점 예외 문서 누락 지적 → 반영, 재리뷰 심각한 문제 없음 | 9487ea6 | /api/schedules/s1/view (장르 요약 3개, 21:00 별의 노래) |
 | 2026-11-26 | PR #3(①·②) 합쳐짐 → 새 브랜치 engine/realistic, draft PR #5. ②-2 추가, 방식 비교(방식 2 채택 예정). Codex: 방식 2 추천 + pin 먼저 고정·종료 정책·빠진 이유 정확히 | — | — |
+| 2026-11-27 | ②-2a 시청 시간대·하루 시청 시간 상한(1분 단위 예산 DP)·pin 먼저 고정. s1 510→210분(상한 224), s3 240분. 아직 장르 도배(s1 트로트·s2 뉴스 100%)는 b 에서. Codex: 심각한 문제 없음 | 11b05dd | /api/schedules/s1/view (요약에 하루표 시간/상한·시청 시간대) |
 
 ## 다음 후보 (⑨에서 채움)
