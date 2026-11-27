@@ -445,12 +445,43 @@ def test_first_slot_starts_within_30min_of_viewing_hours():
 # ───────── S7 출연자 공정성 ─────────
 
 
-def test_removing_cast_info_changes_score_by_at_most_002():
-    """출연자 취향과 상관없는 방송에서 출연자 칸을 지워도 점수가 거의 같다."""
+def test_program_without_cast_info_can_reach_full_score():
+    """출연자 정보가 없는 방송도 만점(1.0)에 도달할 수 있다 (출연자 항목을 빼고 나머지 가중치로 비율 계산)."""
+    prof = profile(series={"x": 1.0}, genre={"교양": 1.0}, timeslot={"저녁": 1.0}, cast={})
+    show = prog("x", "20:00", "21:00", cast=[], is_new=True)
+    assert score_program(show, prof, family_picks=["x"]).score == pytest.approx(1.0)
+
+
+def test_missing_cast_info_never_loses_to_unliked_cast():
+    """출연자 정보 없는 방송 vs 같은 조건에 출연자 선호가 0 인 방송: 정보 없는 쪽이 손해 보지 않는다."""
     prof = profile(series={"x": 0.8}, genre={"교양": 0.6}, cast={"좋아하는 가수": 1.0})
-    with_cast = score_program(prog("x", "20:00", "21:00", cast=["모르는 배우"]), prof, []).score
-    without = score_program(prog("x", "20:00", "21:00", cast=[]), prof, []).score
-    assert abs(with_cast - without) <= 0.02
+    no_info = score_program(prog("x", "20:00", "21:00", cast=[]), prof, []).score
+    unliked = score_program(prog("x", "20:00", "21:00", cast=["모르는 배우"]), prof, []).score
+    assert no_info >= unliked
+
+
+def test_equal_scores_prefer_the_earlier_show():
+    """점수가 같고 시간 예산이 한 칸뿐이면 시작이 이른 방송."""
+    progs = [prog("late", "20:00", "21:00", key="late"), prog("early", "10:00", "11:00", key="early")]
+    p = plan(progs, profile(series={"late": 1.0, "early": 1.0}, seen={"교양": 1.0}), lgs=[])
+    assert [e.program_id for e in picks(p)] == ["early"] or len(picks(p)) == 2
+    tight = plan(progs, profile(series={"late": 1.0, "early": 1.0}, budget=60, seen={"교양": 1.0}))
+    assert [e.program_id for e in picks(tight)] == ["early"]
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="샘플 편성상 불가: 상한 171분 − 대표 방송 120분 = 51분인데 s1 시청 시간대에 51분 이하 방송은 '동물 이야기'(30분) 하나뿐",
+)
+def test_sample_s1_has_two_more_shows_besides_representative(sample_session):
+    """상한에 추천으로 본 시청(plan)도 넣으면 s1 은 대표 방송 말고 2칸 이상, 트로트는 대표 제외 50% 이하."""
+    from app.engine.service import plan_day
+
+    p, report = plan_day(sample_session, "s1", DAY)
+    others = [e for e in picks(p) if e.role != "representative"]
+    assert len(others) >= 2
+    trot = sum(e.minutes for e in others if e.source.genre == "트로트")
+    assert report.goals["S2"].ok is not None and trot <= 0.5 * sum(e.minutes for e in others)
 
 
 def test_novelty_lg_is_exempt_from_lg_taste_score_rule():

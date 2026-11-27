@@ -4,7 +4,7 @@
 - 본 날 기준 반감기: 최근 본 날부터 세어 14번째 본 날의 기록은 절반 (달력 날짜가 아님 — 띄엄띄엄 보는 분도 공평)
 - 기록이 적으면 첫날 정보(seed_prefs)를 더 믿음: 기록 비중 = n / (n + 10)
 - 장르가 여러 개인 기록은 각 장르에 같은 무게로 더함 (나눠 갖지 않음)
-- 시청 습관: 시청 시간대, 하루 시청 시간 상한(직접 고른 시청 기준), 장르별 실제 시청 비율
+- 시청 습관: 시청 시간대, 하루 시청 시간 상한(직접 고름 + 추천으로 봄), 장르별 실제 시청 비율(직접 고름)
 """
 
 from collections import defaultdict
@@ -89,21 +89,21 @@ def weigh_logs(logs: list[WatchLog], today: date) -> list[WeightedLog]:
     ]
 
 
-def _recent_chosen(logs: list[WatchLog], today: date) -> list[WatchLog]:
-    """최근 BUDGET_RECENT_DAYS 일 안의, 직접 고른(chosen) 유효 기록."""
+def _recent(logs: list[WatchLog], today: date, signals: tuple[str, ...]) -> list[WatchLog]:
+    """최근 BUDGET_RECENT_DAYS 일 안의 유효 기록 중 how_started 가 signals 인 것."""
     return [
         w.log
         for w in weigh_logs(logs, today)
-        if w.log.how_started in config.BUDGET_SIGNALS
+        if w.log.how_started in signals
         and (today - w.log.started_at.date()).days <= config.BUDGET_RECENT_DAYS
     ]
 
 
 def daily_budget_min(logs: list[WatchLog], today: date) -> float:
-    """하루 시청 시간 상한 = 최근 14일 동안 직접 고른 시청이 있던 날의 평균 시청 시간(분).
-    그런 날이 BUDGET_MIN_DAYS 보다 적으면 기본값(DEFAULT_BUDGET_MIN)."""
+    """하루 시청 시간 상한 = 최근 14일 동안 직접 고르거나 추천으로 본 시청(BUDGET_SIGNALS)이 있던 날의 평균(분).
+    그런 날이 BUDGET_MIN_DAYS 보다 적으면 기본값(DEFAULT_BUDGET_MIN). 틀어만 놓은 시청(continued)은 안 셈."""
     minutes_per_day: dict[date, float] = defaultdict(float)
-    for log in _recent_chosen(logs, today):
+    for log in _recent(logs, today, config.BUDGET_SIGNALS):
         minutes_per_day[log.started_at.date()] += log.watched_min
     if len(minutes_per_day) < config.BUDGET_MIN_DAYS:
         return config.DEFAULT_BUDGET_MIN
@@ -113,7 +113,7 @@ def daily_budget_min(logs: list[WatchLog], today: date) -> float:
 def genre_watch_share(logs: list[WatchLog], today: date) -> dict[str, float]:
     """대표 장르별 실제 시청 비율 (최근 직접 고른 시청 시간 기준). 기준표 S2 상한에 씀."""
     minutes: dict[str, float] = defaultdict(float)
-    for log in _recent_chosen(logs, today):
+    for log in _recent(logs, today, config.WATCH_SHARE_SIGNALS):
         minutes[log.genre] += log.watched_min
     total = sum(minutes.values())
     return {g: m / total for g, m in minutes.items()} if total else {}

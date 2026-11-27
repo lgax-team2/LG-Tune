@@ -421,14 +421,25 @@ def test_unknown_genre_scores_zero_without_error():
     assert s.parts["genre"] == 0.0
 
 
-def test_missing_cast_counts_like_unknown_cast():
-    """출연자 정보가 없으면 출연자 칸 = MISSING_CAST_SCORE(기본 0) — 모르는 출연자가 나오는 방송과 같은 점수 (기준표 S7)."""
+def test_empty_cast_is_left_out_and_other_weights_rescaled():
+    """출연자 정보가 없으면 출연자 항목(0.25)을 빼고 나머지 합(0.75)으로 나눠 0~1 로 맞춘다."""
     profile = flat_profile(series={"news": 1.0}, genre={"교양": 1.0})
     no_cast = score_program(prog("news", "20:00", "21:00"), profile, [])
-    unknown = score_program(prog("news", "20:00", "21:00", cast=["모르는 사람"]), profile, [])
-    assert config.MISSING_CAST_SCORE == 0.0
-    assert no_cast.score == pytest.approx(unknown.score) == pytest.approx(0.30 + 0.15)
+    with_cast = score_program(prog("news", "20:00", "21:00", cast=["모르는 사람"]), profile, [])
+    assert with_cast.score == pytest.approx(0.30 + 0.15)
+    assert no_cast.score == pytest.approx((0.30 + 0.15) / 0.75)
+    assert no_cast.parts["cast"] == 0.0
     assert sum(no_cast.parts.values()) == pytest.approx(no_cast.score)
+
+
+def test_daily_budget_counts_chosen_and_plan_but_not_continued():
+    from app.engine.preference import daily_budget_min
+
+    days = range(1, 8)
+    chosen = [log("a", DAY - timedelta(days=d), minutes=60) for d in days]
+    planned = [log("b", DAY - timedelta(days=d), minutes=40, how="plan") for d in days]
+    left_on = [log("c", DAY - timedelta(days=d), minutes=300, how="continued") for d in days]
+    assert daily_budget_min(chosen + planned + left_on, DAY) == pytest.approx(100)
 
 
 def test_missing_is_new_is_live_defaults_to_false(tmp_path):

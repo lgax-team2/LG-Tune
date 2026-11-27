@@ -4,7 +4,7 @@
 1. 후보 거르기: 기상~취침 사이 시작, "안 볼래"·"그만 볼래" 아님, 시청 시간대 안 ("챙겨 줘" 예외)
 2. 먼저 넣기: "챙겨 줘"(pin) → 오늘의 대표 방송(S1). 넣은 시간만큼 하루 시간 예산에서 뺌
 3. 배치(DP): 남은 예산 안에서 무게 합 최대 (selection.py). 같은 시리즈는 무게가 가장 큰 회차 하나만 후보(M4)
-4. 다양성(S2·S4): 넘친 장르·3연속 칸의 무게를 깎아 다시 배치 (최대 MAX_REPLANS 번, 못 지키면 위반이 가장 적은 결과)
+4. 다양성(S2·S4): 넘친 장르의 가장 약한 칸·3연속 줄의 칸 무게를 깎아 다시 배치 (최대 MAX_REPLANS 번, 못 지키면 위반이 가장 적은 결과)
 5. 채널 유지(S8): 앞 칸과 같은 채널에 거의 비슷한 방송이 있으면 그걸로 바꿈 (다른 기준을 해치지 않을 때만)
 6. 새로 추천(S5): 남은 시간·빈자리에 들어가는 방송 1개 (없으면 7 에서 LG 콘텐츠로)
 7. 빈 시간 채우기(gaps.py) → 8. 이유 붙이기(reason.py)
@@ -244,6 +244,10 @@ def _novelty_keeping_diversity(
     return None
 
 
+def _minute(dt: datetime) -> int:
+    return dt.hour * 60 + dt.minute
+
+
 def _candidate(p: Program, s: Scored, floor: float) -> Candidate:
     return Candidate(
         p.id,
@@ -346,13 +350,14 @@ def _violations(chosen: list[Candidate], fixed: list[tuple[Candidate, str]], d: 
 def _place_with_diversity(
     pool: list[Candidate], fixed: list[tuple[Candidate, str]], d: _Day
 ) -> list[Candidate]:
-    """시간 예산 DP → 다양성을 어기면 넘친 장르·3연속 칸 무게를 REPLAN_PENALTY 배로 깎아 다시 (최대 MAX_REPLANS 번)."""
-    genre_factor: dict[str, float] = {}
+    """시간 예산 DP → 다양성을 어기면 칸 무게를 REPLAN_PENALTY 배로 깎아 다시 (최대 MAX_REPLANS 번).
+    - 비율 넘친 장르: 그 장르에서 고른 칸 중 가장 약한 칸 하나만 (장르 전체를 깎으면 "전부 트로트 ↔ 전부 다큐"로 오락가락함)
+    - 3연속: 그 줄의 칸 전부"""
     key_factor: dict[str, float] = {}
     best, best_rank, best_factors = [], None, {}
     for _ in range(config.MAX_REPLANS):
         for c in pool:
-            c.factor = genre_factor.get(c.genre, 1.0) * key_factor.get(c.key, 1.0)
+            c.factor = key_factor.get(c.key, 1.0)
         chosen = select_best(pool, max(d.budget_left, 0))
         v = _violations(chosen, fixed, d)
         rank = (*v.count(), -sum(c.base_weight for c in chosen))
@@ -361,7 +366,10 @@ def _place_with_diversity(
         if v.count() == (0, 0):
             break
         for g in v.over:
-            genre_factor[g] = genre_factor.get(g, 1.0) * config.REPLAN_PENALTY
+            weakest = min(
+                (c for c in chosen if c.genre == g), key=lambda c: (c.weight, -_minute(c.start), c.key)
+            )
+            key_factor[weakest.key] = key_factor.get(weakest.key, 1.0) * config.REPLAN_PENALTY
         for c in v.breakers:
             key_factor[c.key] = key_factor.get(c.key, 1.0) * config.REPLAN_PENALTY
     v = _violations(best, fixed, d)

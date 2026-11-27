@@ -9,8 +9,6 @@ WEIGHTS = {
     "fresh": 0.10,  # 새 회차·생방송
     "family": 0.05,  # 가족 추천
 }
-# 출연자 정보가 없는 방송의 출연자 칸 값 (0 = 모르는 출연자와 같음). 기준표 S7: 출연자 칸을 지워도 점수 차 ±0.02 이내
-MISSING_CAST_SCORE = 0.0
 
 # 규칙 2. 신호 세기 (how_started 별)
 SIGNAL = {
@@ -44,9 +42,9 @@ SHORT_GAP_MIN = 20  # 이보다 짧은 빈 시간은 앞 채널 그대로(기상
 # 규칙 7. 시청 시간 (평소처럼 보게)
 # 시간대 습관 점수가 이 이상인 시간대 = 시청 시간대. pick·LG 채우기는 이 안에서 "시작"하는 것만
 HABIT_BAND_MIN = 0.35
-BUDGET_SIGNALS = (
-    "chosen",
-)  # 하루 시청 시간 상한은 직접 고른 시청(chosen)만으로 계산 (틀어만 놓기·추천 따라 보기 제외)
+# 하루 시청 시간 상한에 세는 시청: 직접 고름 + 추천으로 봄 (틀어만 놓기 continued 는 제외)
+BUDGET_SIGNALS = ("chosen", "plan")
+WATCH_SHARE_SIGNALS = ("chosen",)  # 장르별 실제 시청 비율(기준표 S2)은 직접 고른 시청만
 BUDGET_RECENT_DAYS = 14  # 하루 시청 시간 상한 = 최근 14일 동안 본 날의 평균 시청 시간
 BUDGET_MIN_DAYS = 7  # 본 날이 이보다 적으면 평균 대신 기본값
 DEFAULT_BUDGET_MIN = 240  # 기록이 적을 때 하루 시청 시간 상한 (4시간)
@@ -59,7 +57,7 @@ REPRESENTATIVE_MIN_SERIES = 0.5
 GENRE_SHARE_MAX = 0.5  # 한 장르 ≤ max(이 값, 그분 실제 시청 비율). 대표 방송·챙겨 줘 제외
 STREAK_MAX = 2  # 같은 장르 연속 허용 칸 수 (3칸째부터 감점)
 REPLAN_PENALTY = 0.7  # 넘친 장르·3연속 칸의 배치 무게에 곱하는 값
-MAX_REPLANS = 10  # 다시 배치 최대 횟수 (그래도 못 지키면 규칙 위반이 가장 적은 결과)
+MAX_REPLANS = 20  # 다시 배치 최대 횟수 (그래도 못 지키면 규칙 위반이 가장 적은 결과)
 
 # 기준표 S9. LG 콘텐츠
 LG_SCORE_RATIO = 0.8  # LG 콘텐츠는 취향 점수 ≥ 기준점 × 0.8 인 것만
