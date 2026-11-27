@@ -32,6 +32,7 @@ class Entry:
     role: str = NORMAL
     reason: str = ""  # 화면에 보여 줄 이유 (reason.py 가 채움)
     basis: str = ""  # 이유의 근거 코드 (예: "cast:송미란") — 기준표 M5 검사용
+    fill_why: str = ""  # 빈 시간 채우기에서 고른 까닭 (series·cast·genre·habit, gaps.FILL_ORDER)
 
     @property
     def minutes(self) -> int:

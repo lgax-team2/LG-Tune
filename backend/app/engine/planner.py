@@ -429,7 +429,7 @@ def _place_with_diversity(
 def _prefer_same_channel(
     chosen: list[Candidate], pool: list[Candidate], fixed: list[tuple[Candidate, str]], d: _Day
 ) -> list[Candidate]:
-    """S8: 앞 칸과 채널이 다르면, 앞 칸 채널에서 같은 자리에 들어가는 후보 중 (무게 + 가산)이 더 큰 것으로 바꾼다.
+    """S8 동점 규칙: 앞 칸과 채널이 다르면, 앞 칸 채널에서 같은 자리에 들어가는 후보 중 점수 차 0.1 이내인 것으로 바꾼다.
     바꾼 뒤 시간 예산·같은 시리즈·다양성이 나빠지면 바꾸지 않음."""
     fixed_keys = {c.key for c, _ in fixed}
     i = 0
@@ -454,9 +454,8 @@ def _prefer_same_channel(
             and not any(same_episode(a, u) for u in used)
             and spent + a.minutes <= max(d.budget_left, 0)
         ]
-        bonus = lambda a: a.base_weight + config.CHANNEL_STAY_BONUS * min(a.minutes, config.LENGTH_CAP_MIN)
-        alt = min(alts, key=lambda a: (-bonus(a), a.start, a.key), default=None)
-        if alt is None or bonus(alt) <= cur.base_weight:
+        alt = min(alts, key=lambda a: (-a.score, a.start, a.key), default=None)
+        if alt is None or alt.score < cur.score - config.CHANNEL_TIE_SCORE:  # 점수 차 0.1 이내면 지금 채널
             continue
         trial = [alt if c is cur else c for c in chosen]
         before, after = _violations(chosen, fixed, d).count(), _violations(trial, fixed, d).count()

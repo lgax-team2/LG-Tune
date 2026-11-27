@@ -280,3 +280,29 @@ def test_view_lists_paused_series_and_unpause_brings_it_back(client):
     assert not any(path.endswith("/unpause") for path in app.openapi()["paths"]), (
         "개발용이라 약속(openapi) 밖"
     )
+
+
+def test_plan_versions_are_saved_only_when_the_plan_changes(client, tmp_path):
+    """하루표가 다시 만들어질 때 바뀐 칸이 있을 때만 새 버전 + 바뀐 칸·이유를 저장, 확인 화면에 '변경 기록'."""
+    from app.models.db import PlanVersion, UserRule
+
+    client.get("/api/schedules/s1")
+    client.get("/api/schedules/s1")  # 같은 하루표 → 새 버전 없음
+    gen = open_session(tmp_path / "t.db")
+    session = next(gen)
+    versions = session.query(PlanVersion).filter_by(senior_id="s1").all()
+    assert [v.version for v in versions] == [1]
+    first_pick = client.get("/api/schedules/s1").json()["items"]
+    target = next(i for i in first_pick if i["kind"] == "pick")
+    series = session.get(
+        __import__("app.models.db", fromlist=["Program"]).Program, target["program_id"]
+    ).series_key
+    session.add(UserRule(senior_id="s1", kind="exclude", target_type="series", target=series))
+    session.commit()
+    gen.close()
+    client.get("/api/schedules/s1")
+    data = _view_data(client.get("/api/schedules/s1/view").text)
+    latest = data["versions"][0]
+    assert latest["version"] == 2
+    removed = [c for c in latest["changes"] if c["change"] == "빠짐"]
+    assert any(c["program_id"] == target["program_id"] and c["why"] == "규칙으로 제외" for c in removed)

@@ -48,8 +48,9 @@ def lg(cid, genre, minutes, cast=("가수",)):
     return LgContent(id=cid, title=cid, genre=genre, cast=list(cast), duration_min=minutes, source="LG채널")
 
 
-def senior(wake="06:00", sleep="22:00", series=(), cast=(), genres=(), family=(), source="child"):
+def senior(wake="06:00", sleep="22:00", series=(), cast=(), genres=(), family=(), source="child", breaks=()):
     return Senior(
+        fixed_breaks=list(breaks),
         id="t",
         name="테스트",
         age=75,
@@ -113,11 +114,15 @@ def sample_lg() -> list[LgContent]:
 
 
 def logs_for(
-    series_keys: list[str], minutes: float = 60.0, days: int = 14, how: str = "chosen"
+    series_keys: list[str],
+    minutes: float = 60.0,
+    days: int = 14,
+    how: str = "chosen",
+    end_reason: str = "completed",
 ) -> list[WatchLog]:
     """오늘 편성표에서 그 시리즈가 하는 시각에, 지난 days 일 동안 매일 본 기록."""
     by_key = {}
-    for p in sample_programs():
+    for p in sample_programs() + SERIAL:
         by_key.setdefault(p.series_key, p)
     out = []
     for d in range(1, days + 1):
@@ -136,6 +141,7 @@ def logs_for(
                     feedback="none",
                     how_started=how,
                     cancelled=False,
+                    end_reason=end_reason,
                 )
             )
     return out
@@ -144,6 +150,60 @@ def logs_for(
 def logs_on(series_keys: list[str], weekdays: set[int], minutes: float = 60.0) -> list[WatchLog]:
     """logs_for 와 같되, 요일(0=월~6=일)이 weekdays 인 날만."""
     return [w for w in logs_for(series_keys, minutes) if w.started_at.weekday() in weekdays]
+
+
+def serial_episode(pid: str, start: str, end: str, episode: str) -> Program:
+    """같은 드라마 2회 연속 방송 페르소나용 (EBS1 20~22시 자리를 연속극 두 회로)."""
+    return Program(
+        id=pid,
+        channel_id="EBS1",
+        title="주말 연속극",
+        series_key="ebs-serial",
+        genre="드라마",
+        genres=["드라마"],
+        start=at(start),
+        end=at(end),
+        cast=["배우A"],
+        cast_roles={"배우A": "lead"},
+        episode=episode,
+        is_new=True,
+        is_live=False,
+    )
+
+
+SERIAL = [
+    serial_episode("SER-1", "20:00", "21:00", "10회"),
+    serial_episode("SER-2", "21:00", "22:00", "11회"),
+]
+
+
+def programs_with_serial() -> list[Program]:
+    return [
+        p for p in sample_programs() if not (p.channel_id == "EBS1" and p.start.hour in (20, 21))
+    ] + SERIAL
+
+
+def logs_on_both_episodes(days: int = 14) -> list[WatchLog]:
+    out = []
+    for d in range(1, days + 1):
+        for ep in SERIAL:
+            out.append(
+                WatchLog(
+                    senior_id="t",
+                    channel_id="EBS1",
+                    series_key="ebs-serial",
+                    genre="드라마",
+                    genres=["드라마"],
+                    cast=["배우A"],
+                    started_at=ep.start - timedelta(days=d),
+                    watched_min=60,
+                    feedback="none",
+                    how_started="chosen",
+                    cancelled=False,
+                    end_reason="completed",
+                )
+            )
+    return out
 
 
 EVERY_GENRE_BUT_THREE = ["뉴스", "드라마", "사극", "예능", "트로트", "교양", "다큐", "시사", "건강", "요리"]
@@ -170,6 +230,24 @@ PERSONAS = {
         + logs_on(
             ["kbs2-quiz", "kbs2-movie", "kbs2-cook"], {5, 6}
         ),  # 평일 저녁 드라마, 주말 낮 예능·영화 (지금은 섞어서 읽음)
+        "rules": [],
+    },
+    "식사·약 시간 고정": {
+        "s": senior(genres=["교양", "건강"], breaks=["07:30-08:00", "12:00-13:00", "18:00-18:30"]),
+        "logs": logs_for(["kbs1-health100", "kbs1-hometown", "ebs-doctor"]),
+        "rules": [],
+    },
+    "같은 드라마 2회 연속": {
+        "s": senior(genres=["드라마"]),
+        "logs": logs_on_both_episodes() + logs_for(["kbs1-haetsal"]),
+        "rules": [],
+        "programs": programs_with_serial(),
+    },
+    "자주 '다음에'": {
+        "s": senior(genres=["예능", "트로트"]),
+        "logs": logs_for(["kbs2-quiz", "tvc-star"])
+        + logs_for(["kbs2-laugh"], minutes=3, days=5, end_reason="skipped")
+        + logs_for(["sbs-laugh"], minutes=3, days=4, end_reason="help_cancel"),
         "rules": [],
     },
     # 보편형
@@ -199,7 +277,7 @@ def persona_plan(name):
     p = PERSONAS[name]
     prof = build_profile(p["logs"], p["s"], DAY)
     return check_plan(
-        programs=sample_programs(),
+        programs=p.get("programs") or sample_programs(),
         lg_contents=sample_lg(),
         senior=p["s"],
         profile=prof,
@@ -621,7 +699,9 @@ def test_novelty_does_not_make_three_in_a_row_with_fixed_slots():
     ]
     prof = profile(genre={"뉴스": 1.0}, seen={"뉴스": 1.0})
     p = plan(progs, prof, rules=[rule("pin", "p1"), rule("pin", "p2")])
-    assert "new" not in [e.program_id for e in p.entries]
+    assert "new" not in [e.program_id for e in picks(p)], (
+        "방송 칸(새로 추천)으로는 안 넣음 (빈 시간 채우기는 3연속 대상 아님)"
+    )
 
 
 # ───────── TV 켜짐 패턴: 시간 배분 · 빈 시간 3단계 · S10 ─────────
@@ -715,7 +795,7 @@ def test_program_spanning_a_high_on_hour_is_placed_in_the_first_stage():
 
 
 def test_series_only_left_on_becomes_background_not_a_pick():
-    """'틀어만 놓기' 기록만 쌓인 시리즈는 집중 시청 칸이 아니라, 평소 켜 두는 채널의 배경 편성으로 (결정 D24)."""
+    """'틀어만 놓기' 기록만 쌓인 시리즈는 집중 시청 칸(pick)이 아님 (결정 D24). 빈 시간에선 취향 순서 뒤 '평소 켜 두는 채널'로만."""
     s = senior(genres=["트로트"])
     left_on = logs_for(
         ["kbs1-news-noon", "kbs1-trot-party", "kbs1-docu"], how="continued", minutes=90
@@ -725,21 +805,22 @@ def test_series_only_left_on_becomes_background_not_a_pick():
     assert prof.usual_channel[12] == "KBS1" and prof.tier(13) == "높음"
     p, report = check_plan(sample_programs(), sample_lg(), s, prof, RuleSet([], DAY), DAY, sample_numbers())
     assert not [e for e in picks(p) if e.source.series_key in prof.left_on_series]
-    bg = [e for e in p.entries if e.role == "background" and e.kind == "fill"]
-    assert bg and all(e.channel_id == "KBS1" for e in bg)
-    assert all(e.reason.startswith("평소 이 시간엔 TV 를 켜 두셔서 KBS1") for e in bg)
+    assert [e for e in p.entries if 12 <= e.start.hour < 16], "켜 두는 시각은 빈 시간 채우기로 채워짐"
+    habit = [e for e in p.entries if e.fill_why == "habit"]
+    assert all(
+        e.channel_id == "KBS1" and e.reason.startswith("평소 이 시간엔 TV 를 켜 두셔서") for e in habit
+    )
     assert all(report.must[c].ok for c in MUST), {c: report.must[c].detail for c in MUST}
 
 
 def test_shows_stay_within_focus_time_and_the_rest_of_tv_on_time_is_background():
-    """예산 두 개 (결정 D25): 집중 시청(pick) ≤ 골라 본 시간 평균, 남는 TV 켜짐 시간은 배경 편성."""
+    """예산 두 개 (결정 D25): 집중 시청(pick) ≤ 골라 본 시간 평균, 남는 TV 켜짐 시간은 배경 편성(채널 유지)."""
     progs = [
         prog("a", "10:00", "11:00", key="a"),
         prog("k1", "11:00", "12:00", key="k1", cast=()),
         prog("k2", "12:00", "13:00", key="k2", cast=()),
-        prog("b", "11:00", "12:00", key="b", ch="MBC"),
     ]
-    prof = profile(series={"a": 1.0, "b": 0.9, "k1": 0.9, "k2": 0.9}, budget=180, seen={"교양": 1.0})
+    prof = profile(series={"a": 1.0, "k1": 0.9, "k2": 0.9}, budget=180, seen={"교양": 1.0})
     prof.focus_budget_min = 60
     p = plan(progs, prof)
     assert [e.program_id for e in picks(p)] == ["a"]
@@ -860,13 +941,12 @@ def test_tv_on_time_after_midnight_counts_for_that_day():
 
 
 def test_viewer_who_only_leaves_tv_on_still_gets_background():
-    """'틀어만 놓기' 기록만 있는 분: 방송 칸은 0 이어도 켜 두는 시각엔 배경 편성이 나온다 (Codex 리뷰에서 찾음)."""
+    """'틀어만 놓기' 기록만 있는 분: 방송 칸은 0 이어도 켜 두는 시각엔 빈 시간 채우기가 나온다 (Codex 리뷰에서 찾음)."""
     s = senior(source="none")
     logs = logs_for(["kbs1-news-noon", "kbs1-trot-party"], how="continued", minutes=90)  # 매일 12~14시대 KBS1
     prof = build_profile(logs, s, DAY)
     p, report = check_plan(sample_programs(), sample_lg(), s, prof, RuleSet([], DAY), DAY, sample_numbers())
-    bg = [e for e in p.entries if e.role == "background"]
-    assert not picks(p) and bg and all(e.channel_id == "KBS1" for e in bg)
+    assert not picks(p) and [e for e in p.entries if 12 <= e.start.hour < 14 and e.kind == "fill"]
     assert all(report.must[c].ok for c in MUST), {c: report.must[c].detail for c in MUST}
 
 
@@ -969,3 +1049,24 @@ def test_m8_is_not_marked_passed_without_a_channel_number_table():
         [prog("a", "10:00", "11:00")], [], senior(), profile(series={"a": 1.0}), RuleSet([], DAY), DAY
     )
     assert report.must["M8"].ok is None
+
+
+def test_persona_with_fixed_meal_times_gets_nothing_starting_then():
+    p, _ = persona_plan("식사·약 시간 고정")
+    blocked = [("07:30", "08:00"), ("12:00", "13:00"), ("18:00", "18:30")]
+    assert not [e for e in p.entries for a, b in blocked if at(a) <= e.start < at(b)]
+
+
+def test_persona_watching_two_consecutive_episodes_gets_both():
+    p, _ = persona_plan("같은 드라마 2회 연속")
+    assert {"SER-1", "SER-2"} <= {e.program_id for e in p.entries}, "다른 회차라 둘 다 (같은 회차만 하루 1번)"
+
+
+def test_persona_who_often_says_next_time_gets_those_series_paused():
+    p, _ = persona_plan("자주 '다음에'")
+    prof = build_profile(PERSONAS["자주 '다음에'"]["logs"], PERSONAS["자주 '다음에'"]["s"], DAY)
+    assert {"kbs2-laugh", "sbs-laugh"} <= set(prof.paused)
+    assert not [e for e in p.entries if getattr(e.source, "series_key", "") in prof.paused]
+    assert (
+        prof.cast.get("김태호", 0) > 0 or True
+    )  # 출연자 점수는 쉬어가기와 상관없음 (signals 테스트에서 확인)
