@@ -27,7 +27,7 @@ Codex 활용 (항상, 코드는 고치지 말고 의견만 받기)
 
 ## 지킬 것 (모든 작업 공통)
 - 고칠 수 있음: `backend/app/engine/*`, `backend/app/api/{schedules,commands,events,clock}.py`, `backend/app/api/views/*`, `backend/tests/test_engine*.py`, `backend/tests/test_api_*.py`
-- 공통 파일은 작업에 적힌 것만 (config 숫자, `docs/약속.md`, `app/models/db.py`, `data/sample/*`, `contracts/rest.py`·`ws.py` 추가만, `pnpm gen` 결과). 고치기 전 `gh pr list` 로 같은 파일 고치는 PR 확인 → 3줄 보고에 "공통 변경 있음, 단톡 알림 필요"
+- 공통 파일은 작업에 적힌 것만 (config 숫자, `docs/명세.md`, `app/models/db.py`, `data/sample/*`, `contracts/rest.py`·`ws.py` 추가만, `pnpm gen` 결과). 고치기 전 `gh pr list` 로 같은 파일 고치는 PR 확인 → 3줄 보고에 "공통 변경 있음, 단톡 알림 필요"
 - `main.py` 는 안 고침 → "main.py 에 넣을 줄"로 보고
 - LLM 은 `app/llm` 의 `make_llm(settings)` 만 사용 (기본 fake, test 프로필은 네트워크 없음)
 - 커밋 전: `pnpm test` + `cd backend && uv run ruff check . && uv run ruff format --check .`
@@ -38,14 +38,14 @@ Codex 활용 (항상, 코드는 고치지 말고 의견만 받기)
 ## 작업 목록
 
 - [x] **① 엔진 규칙 2개 변경** (취침 전 "시작"이면 허용 / 기상~첫 방송 빈 시간 채우기)
-  - 고칠 파일: `engine/planner.py`, `engine/config.py`(필요 시 숫자), `api/schedules.py`(확인 화면의 "빠진 이유" 판정도 같은 규칙으로 — 엔진 함수를 같이 쓰게 해서 중복 제거), `docs/약속.md` 5·6절("기상~취침 안" 문구), `tests/test_engine.py`
+  - 고칠 파일: `engine/planner.py`, `engine/config.py`(필요 시 숫자), `api/schedules.py`(확인 화면의 "빠진 이유" 판정도 같은 규칙으로 — 엔진 함수를 같이 쓰게 해서 중복 제거), `docs/명세.md` 5·6절("기상~취침 안" 문구), `tests/test_engine.py`
   - 규칙: 후보 = `기상 ≤ 시작 < 취침` (끝나는 시간 무관). 기상~첫 칸 사이 빈 시간: 20분 미만 비움(앞 채널이 없으니 fill 안 함), 20분 이상 LG채널·VOD 중 점수 최고 1개
   - 테스트(먼저): `test_show_starting_before_sleep_is_allowed_even_if_it_ends_after`, `test_show_starting_at_or_after_sleep_is_not_allowed`, `test_morning_gap_of_20min_or_more_gets_lg_content_at_wake_time`, `test_morning_gap_under_20min_stays_empty`
   - 끝 기준: s1 에 "별의 노래 21:00" 들어감, s1·s3 아침 첫 칸이 기상 후 20분 안에 시작
   - 확인 화면에서 볼 것: s1 표 맨 아래 21:00 별의 노래, s1·s3 표 맨 위 칸 시작 시각 = 기상 시각 근처(LG 콘텐츠)
 
 - [x] **② 외부 편성표 호환** (장르 여러 개, 출연자 없는 방송, 빠진 칸)
-  - 고칠 파일: `models/db.py`(programs·watch_logs 에 `genres: list[str]` 추가, 기본 `[]`. 기존 `genre` = 대표 장르로 유지), `engine/preference.py`, `engine/scoring.py`, `engine/rules.py`, `backend/scripts/make_sample.py`(②에 한해 허용, 공통) → 다시 만든 `data/sample/programs.json`·`watch_logs.json`(일부 방송에 장르 2개), `data/sample/genre_map.json`(새 파일), `docs/약속.md` 2·6절, `tests/test_engine.py`
+  - 고칠 파일: `models/db.py`(programs·watch_logs 에 `genres: list[str]` 추가, 기본 `[]`. 기존 `genre` = 대표 장르로 유지), `engine/preference.py`, `engine/scoring.py`, `engine/rules.py`, `backend/scripts/make_sample.py`(②에 한해 허용, 공통) → 다시 만든 `data/sample/programs.json`·`watch_logs.json`(일부 방송에 장르 2개), `data/sample/genre_map.json`(새 파일), `docs/명세.md` 2·6절, `tests/test_engine.py`
   - 규칙:
     - 방송의 장르 목록 = `genres` 가 비어 있으면 `[genre]`
     - 장르 점수 = 장르 목록 중 **가장 좋아하는 것** 하나
@@ -81,8 +81,8 @@ Codex 활용 (항상, 코드는 고치지 말고 의견만 받기)
 - [x] **②-3 신호** (11/27): 끝난 이유(완주 추정 가중치)·회차·출연자 역할·고정 비움 시간·반복 거절 7일 쉬어가기(되돌리기)·1시간 단위 시간대 습관 — 공통 변경(DB·샘플·약속)
 
 - [ ] **③ 음성 명령 API** (`POST /api/commands`, 약속 4절) + 확인 화면에 말하기 칸
-  - 고칠 파일: `api/commands.py`(새로: 요청 받기·응답), `engine/commands.py`(새로: 말 해석 + 규칙 저장/취소), `contracts/rest.py`(`CommandRequest`·`CommandResponse` 추가만) → `pnpm gen`, `docs/약속.md` 4·5절, `api/views/schedule_view.html`(말하기 칸), `tests/test_api_commands.py`, `tests/test_engine_commands.py`
-  - 참고 초안 없이 `docs/약속.md` 4절 기준으로 만듦
+  - 고칠 파일: `api/commands.py`(새로: 요청 받기·응답), `engine/commands.py`(새로: 말 해석 + 규칙 저장/취소), `contracts/rest.py`(`CommandRequest`·`CommandResponse` 추가만) → `pnpm gen`, `docs/명세.md` 4·5절, `api/views/schedule_view.html`(말하기 칸), `tests/test_api_commands.py`, `tests/test_engine_commands.py`
+  - 참고 초안 없이 `docs/명세.md` 4절 기준으로 만듦
   - 요청: `senior_id, text, program_id?`(지금 보는 방송, 없으면 지금 시각의 하루표 칸) / 응답: `intent, reply, needs_confirm, done, schedule_changed, channel_id?`
   - 말 해석 순서: ① LLM 에게 명령 7개(`skip_today, exclude, pin, rest_day, undo, change_channel, question`) 중 **한 단어만** 고르게 함 (기본 fake) → ② 못 고르거나 오류면 단어 규칙 → ③ `exclude`·`pin` 은 바로 저장 안 하고 확인 질문
   - 확인 질문 대기: 서버 메모리에 어르신별 "대기 중인 명령" 1개. 다음 말이 "응/네/그래"면 저장, "아니"면 취소, 다른 말이면 대기 버리고 새 명령으로 처리
@@ -110,7 +110,7 @@ Codex 활용 (항상, 코드는 고치지 말고 의견만 받기)
   - main.py 에 넣을 줄: `from .api.events import router as events_router` / `app.include_router(events_router)` (C 의 `/ws` 에 합칠지는 C 와 상의)
 
 - [ ] **⑥ 가상 시계** (`GET/POST /api/clock`)
-  - 고칠 파일: `api/clock.py`(새로: 지금 가상 시각 = 기준 시각 + 흐른 실제 시간 × 속도), `api/commands.py`·`api/schedules.py`(시각·날짜를 시계에서), `contracts/rest.py`(`ClockState{now, speed}`·`ClockSetRequest{now?, speed?}` 추가만) → `pnpm gen`, `docs/약속.md` 5절 + 한 줄 "가상 시계: 서버 `/api/clock` 이 기준, C 화면은 이걸 사용"(공통), `api/views/schedule_view.html`(시계 칸), `tests/test_api_clock.py`
+  - 고칠 파일: `api/clock.py`(새로: 지금 가상 시각 = 기준 시각 + 흐른 실제 시간 × 속도), `api/commands.py`·`api/schedules.py`(시각·날짜를 시계에서), `contracts/rest.py`(`ClockState{now, speed}`·`ClockSetRequest{now?, speed?}` 추가만) → `pnpm gen`, `docs/명세.md` 5절 + 한 줄 "가상 시계: 서버 `/api/clock` 이 기준, C 화면은 이걸 사용"(공통), `api/views/schedule_view.html`(시계 칸), `tests/test_api_clock.py`
   - 시계 값의 주인은 서버(B). C 화면은 이 API 를 보여 주고 조작만
   - 기본값: 2026-12-01 06:00, 속도 1. `date` 없이 하루표를 부르면 시계의 날짜
   - 테스트(먼저): `test_clock_moves_with_speed`(가짜 실제 시계 주입), `test_set_clock_changes_now`, `test_rest_day_uses_clock_time`
