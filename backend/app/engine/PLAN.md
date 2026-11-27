@@ -13,7 +13,7 @@
 main (최종본) ← main-copy = jinhyeok (B 통합본) ← 작업 브랜치 (작업마다 새로, engine/내용)
 ```
 - `jinhyeok` = main-copy 역할. **삭제·force push 금지**. main 은 직접 건드리지 않음
-- 작업마다: GitHub 이슈 → `jinhyeok` 에서 작업 브랜치(`engine/...`) → PR (base: `jinhyeok`, 본문 `Closes #이슈`) → CI 초록불 + 기준표 M 전부 통과면 squash merge → 작업 브랜치 삭제
+- 작업마다: GitHub 이슈 → `jinhyeok` 에서 작업 브랜치(`engine/...`) → PR (base: `jinhyeok`, 본문 `Closes #이슈`) → CI 초록불 + 기준표 M 전부 통과면 **AI 가 squash merge 해도 됨** (11/27 사람 허락, `jinhyeok` 대상만 — main 쪽 merge 는 금지) → 작업 브랜치 삭제
 - 작업 시작 전: `origin/main` 을 `jinhyeok` 에 merge 해서 팀원 변경 받기 (충돌 나면 멈추고 보고)
 - main 으로 가는 최종 PR 은 사람이 요청할 때만 만들고, merge 는 사람이 "Create a merge commit" 으로
 - 공통 폴더(`models/`, `contracts/`, `docs/`, `data/sample/`, `main.py`)를 바꾸는 건 main 으로 갈 때 3명 확인 (AGENTS.md)
@@ -232,10 +232,11 @@ Codex 활용 (항상, 코드는 고치지 말고 의견만 받기)
 | 2026-11-27 | ②-2 b~f 기준표 v3 (대표 방송·다양성·LG 기준·채널 유지·새로 추천·첫 칸·첫날 정보) — 공통 변경. 샘플 3명·페르소나 6명 M1~M7 통과. Codex: 결정 15개 비교(갈림 2: D1·D10), 리뷰 4회(pin 충돌·같은 시리즈 pin·새로 추천의 S2·S4 위반 → 반영), 구간 전체 리뷰 심각한 문제 없음 | a0c849b | /api/schedules/s1/view (맨 위 기준표·가치 지표) |
 | 2026-11-27 | ②-2 g TV 켜짐 패턴 (배경 편성·쉬는 시간·예산 두 개·S10) — 공통 변경. Codex: 결정 D18~D25 비교(갈림 없음), 리뷰에서 그만 볼래 이후 채우기·자정 넘김·방송 0칸 배경 없음 → 반영, 최종 심각한 문제 없음 | 63089c4 | /api/schedules/s1/view (배경·쉬는 시간 줄) |
 | 2026-11-27 | 브랜치 정리: backend/dev → `jinhyeok`(main-copy), 원격 backend/dev 삭제, origin/main 이미 반영, docs/명세.md 는 팀원 정리본으로 되돌리고 B 변경은 `명세_반영대기.md` 로 (이슈 #10) | (이 PR) | — |
-| 2026-11-27 | E2 LG 0분 해결 + s3 교양 쏠림 (D42~D47). M1~M8 샘플 3 + 페르소나 11 통과, s1 LG 70분·s2 30분, s3 교양 75%→33%(S2 ✔), S5 샘플 3명 모두 ✔ (전엔 해당 없음). Codex 리뷰 4건 모두 맞아서 반영 (미리 넣은 LG 의 하루 시간 늦게 뺌·새로 추천과 겹침·S9 비율 우회·0.1 동점 뒤 다른 채널 방송) | engine/lg-fill (PR #15) | /api/schedules/s3/view |
+| 2026-11-27 | E2 LG 0분 해결 + s3 교양 쏠림 (D42~D47). M1~M8 샘플 3 + 페르소나 11 통과, s1 LG 70분·s2 30분, s3 교양 75%→33%(S2 ✔), S5 샘플 3명 모두 ✔ (전엔 해당 없음). Codex 리뷰 4건 모두 맞아서 반영 (미리 넣은 LG 의 하루 시간 늦게 뺌·새로 추천과 겹침·S9 비율 우회·0.1 동점 뒤 다른 채널 방송) | PR #15 squash merge (D42·D44·D47 사람 동의) | /api/schedules/s3/view |
 
 ## 시연 후 (지금 안 함)
 - 평일·주말 시청 패턴 분리 (지금은 섞어서 읽음 — 페르소나 테스트로 에러 없는 것만 확인)
 - 부부 공동 시청 (두 분 취향·켜짐 패턴 합치기)
 
 ## 다음 후보 (⑨에서 채움)
+- (다음 작업 때 같이) 취향 일치율(taste_match) 분모에서 "새로 추천"·"채널 유지" 칸 빼기 — E2 뒤 s1 86→71%, s3 100→50% 로 떨어진 건 이 칸들이 분모에 들어가서
