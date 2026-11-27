@@ -2,7 +2,7 @@
 # 1) main 에서 바로 커밋하는 실수 방지  2) API 키·.env 커밋 방지
 branch=$(git symbolic-ref --short HEAD 2>/dev/null)
 if [ "$branch" = "main" ] && [ "$ALLOW_MAIN_PUSH" != "1" ]; then
-  echo "  ✋ main 에서 바로 커밋하지 말고 브랜치를 먼저 만드세요:  git switch -c feat/작업이름"
+  echo "  ✋ main 에서 바로 커밋하지 말고 브랜치를 먼저 만드세요:  git switch -c 영역/내용  (예: engine/scoring)"
   echo "     (지금 고친 내용은 그대로 따라옵니다)"
   exit 1
 fi

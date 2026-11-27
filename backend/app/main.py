@@ -1,7 +1,7 @@
 """LG TUNE 백엔드 진입점.
 
 지금은 뼈대: 상태 점검, 편성 조회(가짜), WebSocket(시계 송신).
-기능은 docs/DECISIONS.md 순서대로 하나씩 채운다.
+기능은 docs/기획.md 순서대로 하나씩 채운다.
 """
 
 import asyncio

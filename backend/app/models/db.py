@@ -10,7 +10,7 @@
 | user_rules | 음성 명령으로 생긴 규칙 (빼기·챙기기·오늘만·쉬기) | B(음성 명령 API) |
 | plan_items | 엔진이 만든 하루표의 한 칸 | B |
 
-바꾸면 docs/약속.md 도 같이 고치고 3명 모두 확인.
+바꾸면 docs/명세.md 도 같이 고치고 3명 모두 확인.
 """
 
 from datetime import datetime
