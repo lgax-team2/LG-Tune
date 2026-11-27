@@ -11,10 +11,11 @@ import pytest
 from sqlalchemy import select
 
 from app.engine import config
-from app.engine.planner import Candidate, build_plan, select_best
+from app.engine.planner import build_plan
 from app.engine.preference import Profile, build_profile, weigh_logs
 from app.engine.rules import RuleSet
 from app.engine.scoring import score_program
+from app.engine.selection import Candidate, select_best
 from app.models.db import LgContent, Program, Senior, UserRule, WatchLog
 
 DAY = date(2026, 12, 1)
@@ -82,7 +83,9 @@ def rule(kind, target="", target_type="series", d=None, from_time=None, active=T
     )
 
 
-def lg(cid, genre, minutes, cast=()):
+def lg(
+    cid, genre, minutes, cast=("가수",)
+):  # 기본 출연자 "가수" = 아래 plan() 기본 취향이 좋아하는 사람 (S9 점수 기준)
     return LgContent(id=cid, title=cid, genre=genre, cast=list(cast), duration_min=minutes, source="LG채널")
 
 
@@ -189,14 +192,18 @@ def test_dp_beats_greedy():
 
 
 def plan(programs, profile=None, s=None, rules=(), lgs=()):
+    """하루표 칸 목록 (Plan.entries)."""
     return build_plan(
         programs=programs,
         lg_contents=list(lgs),
         senior=s or senior(),
-        profile=profile or flat_profile(series={p.series_key: 1.0 for p in programs}, genre={"교양": 1.0}),
+        profile=profile
+        or flat_profile(
+            series={p.series_key: 1.0 for p in programs}, genre={"교양": 1.0}, cast={"가수": 1.0}
+        ),
         rules=RuleSet(list(rules), DAY),
         day=DAY,
-    )
+    ).entries
 
 
 def test_plan_skips_shows_before_wake_and_below_threshold():
@@ -223,7 +230,7 @@ def test_show_starting_at_or_after_sleep_is_not_allowed():
 
 def test_morning_gap_of_20min_or_more_gets_lg_content_at_wake_time():
     """기상(06:00)~첫 방송(09:00) 사이도 빈 시간: 20분 이상이면 LG 콘텐츠를 기상 시각부터."""
-    progs = [prog("first", "09:00", "10:00")]
+    progs = [prog("first", "09:00", "11:00")]  # LG 비율 30% 안에 들게 방송을 2시간으로
     entries = plan(progs, lgs=[lg("morning", "교양", 30)])
     assert [(e.program_id, e.kind) for e in entries] == [("morning", "lg"), ("first", "pick")]
     assert entries[0].start == at("06:00") and entries[0].end == at("06:30")
@@ -256,8 +263,9 @@ def test_excluded_series_never_appears_anywhere():
 def test_excluded_genre_blocks_lg_contents_too():
     progs = [prog("a", "10:00", "11:00"), prog("b", "12:00", "13:00")]
     lgs = [lg("lg-trot", "트로트", 30)]
-    assert "lg-trot" in [e.program_id for e in plan(progs, lgs=lgs)], "규칙이 없으면 들어감"
-    entries = plan(progs, rules=[rule("exclude", "트로트", target_type="genre")], lgs=lgs)
+    p = flat_profile(series={"a": 1, "b": 1}, genre={"교양": 1, "트로트": 1}, cast={"가수": 1})
+    assert "lg-trot" in [e.program_id for e in plan(progs, profile=p, lgs=lgs)], "규칙이 없으면 들어감"
+    entries = plan(progs, profile=p, rules=[rule("exclude", "트로트", target_type="genre")], lgs=lgs)
     assert all(e.program_id != "lg-trot" for e in entries)
 
 
@@ -302,7 +310,10 @@ def test_short_gap_keeps_same_channel():
 
 def test_long_gap_gets_best_fitting_lg_content():
     progs = [prog("a", "10:00", "11:00"), prog("b", "12:00", "13:00")]
-    p = flat_profile(series={"a": 1, "b": 1}, genre={"교양": 1, "트로트": 1.0, "다큐": 0.2})
+    p = flat_profile(
+        series={"a": 1, "b": 1}, genre={"교양": 1, "트로트": 1.0, "다큐": 0.2}, cast={"가수": 1.0}
+    )
+    p.genre_seen_share = {"다큐": 1.0, "건강": 1.0, "요리": 1.0}  # 새로 추천(S5)할 안 본 장르가 없게
     lgs = [lg("too-long", "트로트", 90), lg("trot", "트로트", 30), lg("docu", "다큐", 45)]
     entries = plan(progs, profile=p, lgs=lgs, s=senior(wake="10:00"))  # 아침 빈 시간 없이 방송 사이만 봄
     middle = [e for e in entries if e.kind == "lg"]
@@ -367,7 +378,7 @@ def test_long_show_does_not_push_out_favorite():
 
 def test_same_lg_content_is_used_once_a_day():
     progs = [prog("a", "10:00", "11:00"), prog("b", "12:00", "13:00"), prog("c", "14:00", "15:00")]
-    lgs = [lg("best", "교양", 30), lg("second", "교양", 30, cast=())]
+    lgs = [lg("best", "교양", 30), lg("second", "교양", 30)]
     entries = [e.program_id for e in plan(progs, lgs=lgs) if e.kind == "lg"]
     assert len(entries) == len(set(entries)) == 2
 
@@ -410,14 +421,13 @@ def test_unknown_genre_scores_zero_without_error():
     assert s.parts["genre"] == 0.0
 
 
-def test_empty_cast_is_left_out_and_other_weights_rescaled():
-    """출연자 정보가 없으면 출연자 항목(0.25)을 빼고 나머지 합(0.75)으로 나눠 0~1 로 맞춘다."""
+def test_missing_cast_counts_like_unknown_cast():
+    """출연자 정보가 없으면 출연자 칸 = MISSING_CAST_SCORE(기본 0) — 모르는 출연자가 나오는 방송과 같은 점수 (기준표 S7)."""
     profile = flat_profile(series={"news": 1.0}, genre={"교양": 1.0})
     no_cast = score_program(prog("news", "20:00", "21:00"), profile, [])
-    with_cast = score_program(prog("news", "20:00", "21:00", cast=["모르는 사람"]), profile, [])
-    assert with_cast.score == pytest.approx(0.30 + 0.15)
-    assert no_cast.score == pytest.approx((0.30 + 0.15) / 0.75)
-    assert no_cast.parts["cast"] == 0.0
+    unknown = score_program(prog("news", "20:00", "21:00", cast=["모르는 사람"]), profile, [])
+    assert config.MISSING_CAST_SCORE == 0.0
+    assert no_cast.score == pytest.approx(unknown.score) == pytest.approx(0.30 + 0.15)
     assert sum(no_cast.parts.values()) == pytest.approx(no_cast.score)
 
 
@@ -463,8 +473,9 @@ def test_series_key_equal_to_title_works():
 
 def test_excluded_genre_blocks_show_with_that_genre_among_many():
     progs = [prog("star", "20:00", "21:00", genre="트로트", genres=["트로트", "예능"])]
-    assert [e.program_id for e in plan(progs)] == ["star"], "규칙이 없으면 들어감"
-    assert plan(progs, rules=[rule("exclude", "예능", target_type="genre")]) == []
+    p = flat_profile(series={"star": 1.0}, genre={"트로트": 1.0})
+    assert [e.program_id for e in plan(progs, profile=p)] == ["star"], "규칙이 없으면 들어감"
+    assert plan(progs, profile=p, rules=[rule("exclude", "예능", target_type="genre")]) == []
 
 
 def test_reason_names_the_liked_genre_among_many():
@@ -635,3 +646,13 @@ def test_morning_gap_outside_viewing_hours_stays_empty():
     progs = [prog("noon", "12:00", "13:00")]
     profile = flat_profile(series={"noon": 1}, genre={"교양": 1}, timeslot={"아침": 0.1, "낮": 0.9})
     assert [e.kind for e in plan(progs, profile=profile, lgs=[lg("x", "교양", 30)])] == ["pick"]
+
+
+def test_sample_s3_is_child_picked_interests_with_few_logs(sample_session):
+    """샘플 s3: 자녀가 고른 관심사 2~3개 + 기록 거의 없음. 나이대 기본값(age_default)은 없다."""
+    s3 = sample_session.get(Senior, "s3")
+    assert s3.pref_source == "child"
+    assert 2 <= len(s3.seed_prefs["genres"]) <= 3
+    logs = sample_session.scalars(select(WatchLog).where(WatchLog.senior_id == "s3")).all()
+    assert 0 < len(logs) < 10
+    assert {s.pref_source for s in sample_session.scalars(select(Senior))} <= {"child", "self", "none"}

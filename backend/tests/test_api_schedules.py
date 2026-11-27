@@ -3,6 +3,7 @@
 DB 는 tmp_path 의 빈 파일로 바꿔 끼운다 → 첫 요청 때 샘플이 자동으로 들어가는지도 같이 확인된다.
 """
 
+import json
 from datetime import datetime
 from pathlib import Path
 
@@ -65,7 +66,6 @@ def test_no_new_file_in_backend_data(client):
 
 # ── 개발용 엔진 확인 화면: GET /api/schedules/{senior_id}/view ──
 
-import json
 import re
 
 from app.api.schedules import MISSED_REASONS
@@ -155,7 +155,14 @@ def test_view_shows_budget_and_viewing_hours(client):
         for i in data["items"]
         if i["kind"] == "pick"
     )
-    assert budget["used_min"] == round(used) <= budget["limit_min"]
+    assert budget["used_min"] == round(used)
+    s3 = next(g for g in data["quality"]["goals"] if g["code"] == "S3")
+    if (
+        used > budget["limit_min"]
+    ):  # 대표 방송(S1)이 상한(S3)보다 우선이라 넘을 수 있음 → 실패로 표시하고 이유
+        assert s3["ok"] is False and "상한" in s3["detail"]
+    else:
+        assert s3["ok"] is True
     assert set(data["viewing_bands"]) <= {"아침", "낮", "저녁", "밤"} and data["viewing_bands"]
 
 
@@ -176,3 +183,69 @@ def test_view_is_not_in_api_contract():
     # 화면 경로는 약속(openapi)에 안 들어감 → pnpm gen 해도 contracts 변화 없음
     assert not any(path.endswith("/view") for path in app.openapi()["paths"])
     assert json.loads(CONTRACTS_OPENAPI.read_text(encoding="utf-8")) == app.openapi()
+
+
+def test_changing_interests_changes_the_next_schedule(tmp_path):
+    """가족 화면에서 관심사(seed_prefs)를 바꾸면 다음 하루표에 바로 반영된다."""
+    from app.models.db import Senior
+
+    db = tmp_path / "seed.db"
+
+    def session_on_db():
+        yield from open_session(db)
+
+    app.dependency_overrides[get_session] = session_on_db
+    try:
+        client = TestClient(app)
+        before = client.get("/api/schedules/s3").json()["items"]
+        gen = open_session(db)
+        session = next(gen)
+        s3 = session.get(Senior, "s3")
+        s3.seed_prefs = {"series": [], "cast": [], "genres": ["스포츠", "영화"]}
+        session.commit()
+        gen.close()
+        after = client.get("/api/schedules/s3").json()["items"]
+        assert [i["program_id"] for i in after] != [i["program_id"] for i in before]
+        assert any("스포츠" in i["reason"] or "영화" in i["reason"] for i in after)
+    finally:
+        app.dependency_overrides.pop(get_session, None)
+
+
+def test_view_data_escapes_script_tags_in_titles(client, tmp_path):
+    """방송 제목에 </script> 가 섞여도 화면 데이터가 깨지지 않는다 (JSON 안의 '<' 를 이스케이프)."""
+    from app.models.db import Program
+
+    client.get("/api/schedules/s1")  # 샘플 DB 만들기
+    gen = open_session(tmp_path / "t.db")
+    session = next(gen)
+    for p in session.query(Program).all():
+        p.title = p.title + "</script><b>"
+    session.commit()
+    gen.close()
+    html = client.get("/api/schedules/s1/view").text
+    blob = html.split('<script id="view-data" type="application/json">', 1)[1].split("</script>", 1)[0]
+    assert "<" not in blob, "데이터 안에 '<' 가 그대로 있으면 </script> 로 태그가 닫힐 수 있음"
+    assert any("</script><b>" in i["title"] for i in json.loads(blob)["items"] if i["kind"] == "pick")
+
+
+def test_view_top_shows_quality_table_and_value_metrics(client):
+    """확인 화면 맨 위: 기준표 v3 의 반드시 7개·목표 8개 판정 + 가치 지표."""
+    data = _view_data(client.get("/api/schedules/s1/view").text)
+    assert [q["code"] for q in data["quality"]["must"]] == ["M1", "M2", "M3", "M4", "M5", "M6", "M7"]
+    assert [q["code"] for q in data["quality"]["goals"]] == ["S1", "S2", "S3", "S9", "S8", "S4", "S5", "S6"]
+    assert all(q["ok"] is True for q in data["quality"]["must"]), data["quality"]["must"]
+    m = data["metrics"]
+    assert {
+        "taste_match",
+        "new_genre",
+        "lg_minutes",
+        "lg_share",
+        "genre_share_with_rep",
+        "genre_share_without_rep",
+    } <= set(m)
+    assert data["hint"] == "" and set(data["roles"].values()) <= {
+        "normal",
+        "pin",
+        "representative",
+        "novelty",
+    }

@@ -9,7 +9,7 @@ API 약속(contracts)에 안 들어가게 include_in_schema=False. 엔진은 고
 
 import json
 from collections.abc import Iterator
-from datetime import date, datetime, time, timedelta
+from datetime import date
 from pathlib import Path
 from typing import Annotated
 
@@ -20,23 +20,14 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from ..contracts.rest import ScheduleResponse
+from ..engine import planner as P
 from ..engine.config import TIME_BANDS
 from ..engine.genres import genres_of
-from ..engine.planner import candidate_floor, in_viewing_hours, starts_in_day, wake_and_sleep
-from ..engine.preference import Profile, build_profile
+from ..engine.plan import Plan
+from ..engine.quality import Report, check_plan
 from ..engine.rules import RuleSet
-from ..engine.scoring import score_program
-from ..engine.service import SeniorNotFound, make_schedule
-from ..models.db import (
-    Base,
-    Program,
-    Senior,
-    UserRule,
-    WatchLog,
-    init_db,
-    make_engine,
-    make_session_factory,
-)
+from ..engine.service import DayInputs, SeniorNotFound, load_inputs, make_schedule, save_and_respond
+from ..models.db import Base, Program, Senior, init_db, make_engine, make_session_factory
 from ..models.sample import load_sample
 from ..settings import settings
 
@@ -97,7 +88,24 @@ def get_schedule(
 
 VIEW_HTML = Path(__file__).parent / "views" / "schedule_view.html"
 DATA_SLOT = "__VIEW_DATA__"
-MISSED_REASONS = ("겹침", "기상 전·취침 후", "시청 시간대 밖", "규칙으로 제외", "기준점 미만")
+MISSED_REASONS = P.DROP_REASONS
+LABELS = {  # 기준표 v3 (backend/app/engine/QUALITY.md)
+    "M1": "칸 겹침 없음·시간 순",
+    "M2": "'안 볼래' 0 · '챙겨 줘' 100%",
+    "M3": "시청 시간대·취침 지킴",
+    "M4": "같은 시리즈 하루 1번",
+    "M5": "이유 = 실제 근거",
+    "M6": "같은 입력 → 같은 하루표",
+    "M7": "LG 가 방송을 안 밀어냄",
+    "S1": "오늘의 대표 방송",
+    "S2": "한 장르 비율",
+    "S3": "하루 시간 상한",
+    "S9": "LG 콘텐츠 기준",
+    "S8": "채널 전환",
+    "S4": "같은 장르 3연속 없음",
+    "S5": "새로 추천 1칸",
+    "S6": "첫 칸 30분 안",
+}
 
 
 @router.get("/{senior_id}/view", response_class=HTMLResponse, include_in_schema=False)
@@ -109,37 +117,31 @@ def view_schedule(
 ) -> HTMLResponse:
     day = day or DEMO_DATE
     try:
-        schedule = make_schedule(session, senior_id, day)
+        inputs = load_inputs(session, senior_id, day)
     except SeniorNotFound:
         raise HTTPException(404, f"없는 어르신이에요: {senior_id}") from None
-    data = build_view_data(session, senior_id, day, schedule, limit)
+    plan, report = check_plan(
+        inputs.programs, inputs.lg_contents, inputs.senior, inputs.profile, inputs.rules, day
+    )
+    schedule = save_and_respond(session, senior_id, day, plan)  # 하루표 API 와 같은 결과·같은 저장
+    data = build_view_data(session, inputs, plan, report, schedule, limit)
     # JSON 안의 "<" 를 \u003c 로 바꿔 </script> 가 데이터 중간에서 태그를 닫지 못하게 함
     blob = json.dumps(data, ensure_ascii=False).replace("<", r"\u003c")
     return HTMLResponse(VIEW_HTML.read_text(encoding="utf-8").replace(DATA_SLOT, blob))
 
 
 def build_view_data(
-    session: Session, senior_id: str, day: date, schedule: ScheduleResponse, limit: int = 5
+    session: Session,
+    inputs: DayInputs,
+    plan: Plan,
+    report: Report,
+    schedule: ScheduleResponse,
+    limit: int = 5,
 ) -> dict:
-    """화면에 뿌릴 데이터: 어르신 목록, 취향 요약, 하루표, 점수는 높은데 빠진 방송."""
-    senior = session.get(Senior, senior_id)
-    assert senior is not None  # make_schedule 이 이미 확인함
-    day_start = datetime.combine(day, time.min)
-    programs = list(
-        session.scalars(
-            select(Program).where(Program.start >= day_start, Program.start < day_start + timedelta(days=1))
-        )
-    )
-    logs = list(
-        session.scalars(
-            select(WatchLog).where(WatchLog.senior_id == senior_id, WatchLog.started_at < day_start)
-        )
-    )
-    rules = RuleSet(list(session.scalars(select(UserRule).where(UserRule.senior_id == senior_id))), day)
-    profile = build_profile(logs, senior, day)
-    series_title = {p.series_key: p.title for p in programs}
-
-    missed, floor = find_missed(programs, senior, profile, rules, day, schedule, limit)
+    """화면에 뿌릴 데이터: 기준표 판정, 가치 지표, 취향 요약, 하루표, 빠진 방송과 이유 (엔진 기록 그대로)."""
+    senior, profile = inputs.senior, inputs.profile
+    series_title = {p.series_key: p.title for p in inputs.programs}
+    used = sum((i.end - i.start).total_seconds() / 60 for i in schedule.items if i.kind == "pick")
     return {
         "senior": {
             "id": senior.id,
@@ -147,7 +149,7 @@ def build_view_data(
             "wake": senior.wake_time,
             "sleep": senior.sleep_time,
         },
-        "date": day.isoformat(),
+        "date": inputs.day.isoformat(),
         "seniors": [
             {"id": s.id, "name": s.name} for s in session.scalars(select(Senior).order_by(Senior.id))
         ],
@@ -158,73 +160,42 @@ def build_view_data(
             "timeslot": [{"name": k, "value": v} for k, v in _top3(profile.timeslot)],
             "n_logs": profile.n_logs,
             "history_share": round(profile.history_share, 3),
+            "pref_source": senior.pref_source,
         },
-        "floor": round(floor, 3),
+        "floor": round(plan.floor, 3),
         "budget": {
-            "limit_min": round(profile.daily_budget_min),
-            "used_min": round(
-                sum((i.end - i.start).total_seconds() / 60 for i in schedule.items if i.kind == "pick")
-            ),
+            "limit_min": round(plan.budget_min),
+            "used_min": round(used),
+            "lower_min": round(plan.budget_min * P.config.BUDGET_LOWER_RATIO),
         },
-        "viewing_bands": [b for b, _, _ in TIME_BANDS if b in profile.viewing_bands()],
+        "viewing_bands": [b for b, _, _ in TIME_BANDS if b in plan.bands],
+        "quality": {
+            part: [
+                {"code": c, "label": LABELS[c], "ok": chk.ok, "detail": chk.detail}
+                for c, chk in checks.items()
+            ]
+            for part, checks in (("must", report.must), ("goals", report.goals))
+        },
+        "metrics": report.metrics,
+        "hint": "관심사를 고르면 더 잘 맞춰요" if not plan.knows_taste else "",
         "items": [i.model_dump(mode="json") for i in schedule.items],
-        "missed": missed,
+        "roles": {e.program_id: e.role for e in plan.entries},
+        "missed": find_missed(inputs, plan, limit),
     }
 
 
 def _top3(d: dict[str, float]) -> list[tuple[str, float]]:
-    return [(k, round(v, 3)) for k, v in sorted(d.items(), key=lambda kv: -kv[1]) if v > 0][:3]
+    return [(k, round(v, 3)) for k, v in sorted(d.items(), key=lambda kv: (-kv[1], kv[0])) if v > 0][:3]
 
 
-def find_missed(
-    programs: list[Program],
-    senior: Senior,
-    profile: Profile,
-    rules: RuleSet,
-    day: date,
-    schedule: ScheduleResponse,
-    limit: int = 5,
-) -> tuple[list[dict], float]:
-    """오늘 편성 중 하루표에 안 들어간 방송을 점수 순으로, 빠진 이유와 함께. (엔진 planner 의 판정 함수를 그대로 씀)"""
-    wake, sleep = wake_and_sleep(senior, day)
-    family = senior.family_picks or []
-    scored = [(p, score_program(p, profile, family)) for p in programs]
-
-    def in_day(p: Program) -> bool:
-        return starts_in_day(p, wake, sleep)
-
-    def by_rule(p: Program) -> bool:
-        return not rules.allows_start(p.start) or rules.blocks(p.series_key, genres_of(p))
-
-    bands = profile.viewing_bands()
-
-    def off_hours(p: Program) -> bool:  # pin 은 시청 시간대와 상관없이 들어감
-        return not in_viewing_hours(p.start, bands) and not rules.is_pinned(p.series_key)
-
-    floor = candidate_floor([s.score for p, s in scored if in_day(p) and not by_rule(p) and not off_hours(p)])
-
-    planned = {i.program_id for i in schedule.items}
-    picks = [i for i in schedule.items if i.kind == "pick"]
+def find_missed(inputs: DayInputs, plan: Plan, limit: int = 5) -> list[dict]:
+    """오늘 편성 중 하루표에 없는 방송을 점수 순으로. 빠진 이유는 엔진이 배치하며 남긴 기록(Plan.dropped)."""
+    planned = {e.program_id for e in plan.entries}
     out = []
-    for p, s in sorted(scored, key=lambda ps: -ps[1].score):
+    for p in sorted(inputs.programs, key=lambda p: (-plan.scores.get(p.id, 0.0), p.start, p.id)):
         if p.id in planned:
             continue
-        if not in_day(p):
-            why = "기상 전·취침 후"
-            detail = f"기상 {senior.wake_time} 전" if p.start < wake else f"취침 {senior.sleep_time} 후"
-        elif by_rule(p):
-            why, detail = "규칙으로 제외", _rule_detail(p, rules)
-        elif off_hours(p):
-            why, detail = (
-                "시청 시간대 밖",
-                "평소 보는 시간대: " + ", ".join(b for b, _, _ in TIME_BANDS if b in bands),
-            )
-        elif s.score < floor and not rules.is_pinned(p.series_key):
-            why, detail = "기준점 미만", f"기준점 {floor:.3f} 미만"
-        else:
-            hits = [i.title for i in picks if i.start < p.end and p.start < i.end]
-            why = "겹침"
-            detail = "겹치는 방송: " + ", ".join(hits) if hits else "배치에서 밀림"
+        why = plan.dropped.get(p.id, P.OVERLAP)
         out.append(
             {
                 "program_id": p.id,
@@ -233,14 +204,38 @@ def find_missed(
                 "title": p.title,
                 "start": p.start.isoformat(),
                 "end": p.end.isoformat(),
-                "score": round(s.score, 3),
+                "score": round(plan.scores.get(p.id, 0.0), 3),
                 "why": why,
-                "detail": detail,
+                "detail": _detail(why, p, inputs, plan),
             }
         )
         if len(out) == limit:
             break
-    return out, floor
+    return out
+
+
+def _detail(why: str, p: Program, inputs: DayInputs, plan: Plan) -> str:
+    senior = inputs.senior
+    if why == P.OUT_OF_DAY:
+        wake, _ = P.wake_and_sleep(senior, inputs.day)
+        return f"기상 {senior.wake_time} 전" if p.start < wake else f"취침 {senior.sleep_time} 후"
+    if why == P.BY_RULE:
+        return _rule_detail(p, inputs.rules)
+    if why == P.OFF_HOURS:
+        return "평소 보는 시간대: " + ", ".join(b for b, _, _ in TIME_BANDS if b in plan.bands)
+    if why == P.BELOW_FLOOR:
+        return f"기준점 {plan.floor:.3f} 미만"
+    if why in (P.OVERLAP, P.PIN_CLASH):
+        hits = [e.title for e in plan.picks() if e.start < p.end and p.start < e.end]
+        return "겹치는 방송: " + ", ".join(hits) if hits else "배치에서 밀림"
+    return {
+        P.NO_TASTE: "취향을 몰라 새 회차·생방송만 골라요",
+        P.SAME_SERIES: "같은 시리즈가 이미 하루표에 있어요",
+        P.BUDGET: f"하루 시간 상한 {plan.budget_min:.0f}분",
+        P.DIVERSITY: "한 장르 비율·같은 장르 연속 조건",
+        P.BUDGET_AND_DIVERSITY: f"하루 시간 상한 {plan.budget_min:.0f}분 + 장르 조건",
+        P.CHANNEL: "앞 칸과 같은 채널 방송으로 바꿈",
+    }.get(why, "")
 
 
 def _rule_detail(p: Program, rules: RuleSet) -> str:

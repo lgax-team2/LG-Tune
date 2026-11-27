@@ -187,8 +187,8 @@ SENIORS = [
         "age": 70,
         "wake_time": "06:30",
         "sleep_time": "22:30",
-        "pref_source": "age_default",  # 정보 없음 → 나이대 기본값 (콜드 스타트)
-        "seed_prefs": {"series": [], "cast": [], "genres": ["교양", "건강", "트로트"]},
+        "pref_source": "child",  # 설치 때 자녀가 관심사 2~3개만 고름, 시청 기록은 거의 없음 (콜드 스타트)
+        "seed_prefs": {"series": [], "cast": [], "genres": ["건강", "교양", "요리"]},
         "family_picks": ["ebs-doctor"],
     },
 ]

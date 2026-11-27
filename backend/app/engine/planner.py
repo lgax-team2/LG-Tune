@@ -1,95 +1,59 @@
-"""③ 배치(DP) + ⑤ 빈 시간 채우기.
+"""하루표 짜기: 오늘 편성 + 취향 + 규칙 → 하루표(Plan). 기준표는 QUALITY.md.
 
-배치: 기상~취침 사이, 시청 시간대 안에서 "시작"하는(끝은 취침 뒤여도 됨) 점수 0.35(기준점) 이상 후보 중에서
-      겹치지 않고 총 시간이 하루 시청 시간 상한 안이면서 "(점수 − 기준점) × min(방송 길이, 60분)" 합이 최대인 조합.
-      기준점을 겨우 넘은 방송은 무게가 0 에 가까워서, 여러 개를 합쳐도 겹치는 최애를 밀어내지 못한다.
-      "매일 챙겨 줘"(pin) 방송은 시청 시간대와 상관없이 먼저 넣고, 그 시간만큼 상한에서 뺀 나머지로 배치.
-      (가중 구간 스케줄링 — 앞에서부터 욕심내서 고르는 것보다 정확)
-빈 시간: 방송 사이 — 20분 미만 → 앞 채널 그대로(fill) / 20분 이상 → 들어가는 LG채널·VOD 중 점수 최고(lg, 하루 한 번씩)
-         기상~첫 방송 — 20분 미만 → 비움(앞 채널이 없음) / 20분 이상 → LG채널·VOD
-         빈 시간이 시청 시간대 밖에서 시작하면 채우지 않음. 맞는 게 없으면 비움
+순서 (앞 단계가 우선 — 기준표 우선순위와 같음):
+1. 후보 거르기: 기상~취침 사이 시작, "안 볼래"·"그만 볼래" 아님, 시청 시간대 안 ("챙겨 줘" 예외)
+2. 먼저 넣기: "챙겨 줘"(pin) → 오늘의 대표 방송(S1). 넣은 시간만큼 하루 시간 예산에서 뺌
+3. 배치(DP): 남은 예산 안에서 무게 합 최대 (selection.py). 같은 시리즈는 무게가 가장 큰 회차 하나만 후보(M4)
+4. 다양성(S2·S4): 넘친 장르·3연속 칸의 무게를 깎아 다시 배치 (최대 MAX_REPLANS 번, 못 지키면 위반이 가장 적은 결과)
+5. 채널 유지(S8): 앞 칸과 같은 채널에 거의 비슷한 방송이 있으면 그걸로 바꿈 (다른 기준을 해치지 않을 때만)
+6. 새로 추천(S5): 남은 시간·빈자리에 들어가는 방송 1개 (없으면 7 에서 LG 콘텐츠로)
+7. 빈 시간 채우기(gaps.py) → 8. 이유 붙이기(reason.py)
+하루표에 못 들어간 방송은 이유를 Plan.dropped 에, 못 지킨 목표는 Plan.notes 에 남긴다.
 """
 
-from bisect import bisect_right
-from dataclasses import dataclass, field
-from datetime import date, datetime, time, timedelta
-from typing import Any
+from dataclasses import dataclass
+from datetime import date, datetime, time
 
 from ..models.db import LgContent, Program, Senior
 from . import config
+from .diversity import long_runs, over_share_genres, streak_breakers
+from .gaps import fill_gaps, first_viewing_moment
 from .genres import genres_of
+from .novelty import novelty_choices, novelty_genres
+from .plan import NORMAL, NOVELTY, PIN, REPRESENTATIVE, Entry, Plan
 from .preference import Profile, band_of
+from .reason import explain
 from .rules import RuleSet
-from .scoring import Scored, score_lg, score_program
+from .scoring import Scored, score_program
+from .selection import Candidate, overlaps, select_best
 
-
-@dataclass
-class Candidate:
-    key: str
-    start: datetime
-    end: datetime
-    score: float
-    floor: float = 0.0  # 기준점. 무게는 기준점을 넘은 만큼으로만 잰다
-    pinned: bool = False
-    payload: Any = None
-
-    @property
-    def weight(self) -> float:
-        """배치 무게 = (점수 − 기준점) × min(길이, 60분)."""
-        return (self.score - self.floor) * min(self.minutes, config.LENGTH_CAP_MIN)
-
-    @property
-    def minutes(self) -> int:
-        return round((self.end - self.start).total_seconds() / 60)
-
-
-@dataclass
-class Entry:
-    program_id: str
-    channel_id: str
-    title: str
-    start: datetime
-    end: datetime
-    score: float
-    kind: str  # pick | fill | lg
-    scored: Scored | None = None
-    pinned: bool = False
-    source: Any = field(default=None, repr=False)  # Program 또는 LgContent
-
-
-def select_best(cands: list[Candidate], budget_min: float | None = None) -> list[Candidate]:
-    """겹치지 않으면서 무게 합이 최대인 조합 (시작 순). budget_min 을 주면 총 시간(분)도 그 안으로.
-
-    쉬운 설명 (DP = 작은 문제의 답을 표에 적어 두고 키워 가기):
-    끝나는 시각 순으로 줄 세운 뒤, "앞에서 j 개만 보고 시간을 t 분까지 쓸 때 얻는 최대 무게"를 표 best[j][t] 에 채운다.
-    j 번째 방송은 (안 넣기) best[j-1][t] 와 (넣기) 무게 + best[그 방송 전에 끝나는 개수][t − 길이] 중 큰 쪽.
-    표를 다 채운 뒤 거꾸로 따라가며 "넣기"를 고른 방송을 모은다.
-    """
-    cands = sorted(cands, key=lambda c: (c.end, c.start))
-    limit = sum(c.minutes for c in cands) if budget_min is None else max(0, int(budget_min))
-    ends = [c.end for c in cands]
-    before = [bisect_right(ends, c.start, 0, j) for j, c in enumerate(cands)]  # c 시작 전에 끝나는 후보 수
-    best = [[0.0] * (limit + 1)]
-    for j, c in enumerate(cands):
-        prev, row = best[j], [0.0] * (limit + 1)
-        for t in range(limit + 1):
-            take = c.weight + best[before[j]][t - c.minutes] if c.minutes <= t else float("-inf")
-            row[t] = max(prev[t], take)
-        best.append(row)
-    chosen, j, t = [], len(cands), limit
-    while j > 0:
-        c = cands[j - 1]
-        if (
-            c.minutes <= t
-            and c.weight >= 0
-            and c.weight + best[before[j - 1]][t - c.minutes] >= best[j - 1][t]
-        ):
-            chosen.append(c)  # 무게 0 은 손해가 없을 때만 들어감
-            t -= c.minutes
-            j = before[j - 1]
-        else:
-            j -= 1
-    return sorted(chosen, key=lambda c: c.start)
+# 빠진 이유 (확인 화면 "빠진 방송")
+OUT_OF_DAY = "기상 전·취침 후"
+BY_RULE = "규칙으로 제외"
+OFF_HOURS = "시청 시간대 밖"
+NO_TASTE = "취향 정보 없음"
+BELOW_FLOOR = "기준점 미만"
+SAME_SERIES = "같은 시리즈"
+OVERLAP = "겹침"
+PIN_CLASH = "겹치는 챙겨 줘"
+BUDGET = "시간 상한"
+DIVERSITY = "다양성"
+BUDGET_AND_DIVERSITY = "시간 상한·다양성"
+CHANNEL = "채널 유지"
+DROP_REASONS = (
+    OUT_OF_DAY,
+    BY_RULE,
+    OFF_HOURS,
+    NO_TASTE,
+    BELOW_FLOOR,
+    SAME_SERIES,
+    OVERLAP,
+    PIN_CLASH,
+    BUDGET,
+    DIVERSITY,
+    BUDGET_AND_DIVERSITY,
+    CHANNEL,
+)
 
 
 def _at(day: date, hhmm: str) -> datetime:
@@ -120,6 +84,38 @@ def candidate_floor(scores: list[float]) -> float:
     return config.THRESHOLD
 
 
+def pin_rank(p: Program, s: Scored) -> tuple:
+    """'챙겨 줘'끼리 비교 순서: 점수 높은 것 → 이른 시작 → ID (작을수록 앞)."""
+    return (-s.score, p.start, p.id)
+
+
+def resolve_pins(scored: list[tuple[Program, Scored]], rules: RuleSet) -> list[Candidate]:
+    """'챙겨 줘' 방송 확정 (기준점·시청 시간대와 상관없음, 기준표 M2·M4):
+    좋은 순서(pin_rank)대로 보면서, 같은 시리즈가 이미 있거나 이미 고른 pin 과 겹치면 건너뛴다."""
+    pinned = sorted(
+        ((p, s) for p, s in scored if rules.is_pinned(p.series_key)), key=lambda ps: pin_rank(*ps)
+    )
+    kept: list[Candidate] = []
+    for p, s in pinned:
+        if any(k.series_key == p.series_key or overlaps(p, k) for k in kept):
+            continue
+        kept.append(_candidate(p, s, 0.0))
+    return sorted(kept, key=lambda c: c.start)
+
+
+@dataclass
+class _Day:
+    """하루표를 짜는 동안 쓰는 값 묶음."""
+
+    profile: Profile
+    rules: RuleSet
+    bands: set[str]
+    floor: float
+    budget_left: float
+    dropped: dict[str, str]
+    notes: dict[str, str]
+
+
 def build_plan(
     programs: list[Program],
     lg_contents: list[LgContent],
@@ -127,129 +123,323 @@ def build_plan(
     profile: Profile,
     rules: RuleSet,
     day: date,
-) -> list[Entry]:
+) -> Plan:
+    programs = sorted(programs, key=lambda p: (p.start, p.channel_id, p.id))  # 같은 입력 → 같은 결과 (M6)
+    lg_contents = sorted(lg_contents, key=lambda c: c.id)
     wake, sleep = wake_and_sleep(senior, day)
-    usable = [
-        p
-        for p in programs
-        if starts_in_day(p, wake, sleep)
-        and rules.allows_start(p.start)
-        and not rules.blocks(p.series_key, genres_of(p))
-    ]
     bands = profile.viewing_bands()
-    scored = [(p, score_program(p, profile, senior.family_picks or [])) for p in usable]
-    floor = candidate_floor([s.score for p, s in scored if in_viewing_hours(p.start, bands)])
+    knows_taste = profile.knows_taste
+    family = senior.family_picks or []
+    scored = [(p, score_program(p, profile, family)) for p in programs]
+    dropped: dict[str, str] = {}
 
-    def candidate(p: Program, s: Scored) -> Candidate:
-        pinned = rules.is_pinned(p.series_key)
-        own_floor = 0.0 if pinned else floor  # pin 은 기준점과 상관없음 (pin 끼리 겹칠 때만 점수로 비교)
-        return Candidate(p.id, p.start, p.end, s.score, floor=own_floor, pinned=pinned, payload=(p, s))
+    # 1) 후보 거르기
+    usable = []  # 기상~취침, 규칙 통과 (채널 유지 칸에도 씀)
+    for p, s in scored:
+        if not starts_in_day(p, wake, sleep):
+            dropped[p.id] = OUT_OF_DAY
+        elif not rules.allows_start(p.start) or rules.blocks(p.series_key, genres_of(p)):
+            dropped[p.id] = BY_RULE
+        else:
+            usable.append((p, s))
+    eligible = []  # 점수로 고를 수 있는 방송: 시청 시간대 안 (+ 취향을 모르면 새 회차·생방송만)
+    for p, s in usable:
+        if rules.is_pinned(p.series_key):
+            continue
+        if not in_viewing_hours(p.start, bands):
+            dropped[p.id] = OFF_HOURS
+        elif not knows_taste and not (p.is_new or p.is_live):
+            dropped[p.id] = NO_TASTE
+        else:
+            eligible.append((p, s))
+    floor = candidate_floor([s.score for _, s in eligible])
+    d = _Day(profile, rules, bands, floor, profile.daily_budget_min, dropped, {})
 
-    # 1) "매일 챙겨 줘" 방송 먼저 (시청 시간대·기준점과 상관없이, 서로 겹치면 무게 큰 쪽)
-    fixed = select_best([candidate(p, s) for p, s in scored if rules.is_pinned(p.series_key)])
-    # 2) 남은 시간 예산으로 나머지 배치
-    left = profile.daily_budget_min - sum(c.minutes for c in fixed)
-    pool = [
-        candidate(p, s)
-        for p, s in scored
-        if not rules.is_pinned(p.series_key)
-        and s.score >= floor
-        and in_viewing_hours(p.start, bands)
-        and not any(_overlaps(p, f) for f in fixed)
+    # 2) 먼저 넣기: 챙겨 줘 → 대표 방송
+    fixed: list[tuple[Candidate, str]] = [(c, PIN) for c in resolve_pins(usable, rules)]
+    kept_pins = {c.key for c, _ in fixed}
+    for p, _ in usable:
+        if rules.is_pinned(p.series_key) and p.id not in kept_pins:
+            same = any(c.series_key == p.series_key for c, _ in fixed)
+            dropped[p.id] = SAME_SERIES if same else PIN_CLASH
+    rep = _representative(eligible, fixed, d)
+    if rep:
+        fixed.append((rep, REPRESENTATIVE))
+    d.budget_left -= sum(c.minutes for c, _ in fixed)
+    if d.budget_left < 0:
+        d.notes["S3"] = "대표 방송·챙겨 줘만으로 하루 시간 상한을 넘음 (우선순위가 더 높음)"
+    open_cands = _open_candidates(eligible, fixed, d)
+
+    # 3)~5) 배치 + 다양성 + 채널 유지
+    pool = _one_per_series(_above_floor(open_cands, d), d)
+    chosen = _place_with_diversity(pool, fixed, d)
+    chosen = _prefer_same_channel(chosen, pool, fixed, d)
+    _record_unchosen(pool, chosen, fixed, d)
+
+    # 6) 새로 추천: 남은 시간·빈자리에 들어가는 방송 (우선순위가 낮아 배치가 끝난 뒤에)
+    novel_genres = novelty_genres(profile, rules)
+    if not knows_taste:
+        d.notes["S5"] = "해당 없음: 아직 취향을 몰라 가까운 장르를 정할 수 없음"
+    elif not novel_genres:
+        d.notes["S5"] = "가장 좋아하는 장르와 가까운 장르 중 아직 안 본 장르가 없음"
+    taken = [c for c, _ in fixed] + chosen
+    room = d.budget_left - sum(c.minutes for c in chosen)
+    free = [
+        c
+        for c in open_cands
+        if c not in chosen
+        and not any(overlaps(c, t) for t in taken)
+        and c.series_key not in {t.series_key for t in taken}
     ]
-    chosen = sorted(fixed + select_best(pool, left), key=lambda c: c.start)
-    picks = [_entry(c.payload[0], c.payload[1], "pick", pinned=c.pinned) for c in chosen]
-    return _fill_gaps(picks, usable, lg_contents, profile, rules, wake)
+    novel = _novelty_keeping_diversity(novelty_choices(free, novel_genres, room), chosen, fixed, d)
+    if novel:
+        fixed.append((novel, NOVELTY))
+    elif novel_genres and "S5" not in d.notes and free:
+        d.notes["S5"] = "새로 추천할 방송을 넣으면 장르 비율·3연속(더 높은 목표)이 나빠짐"
 
-
-def _overlaps(p: Program, c: Candidate) -> bool:
-    return p.start < c.end and c.start < p.end
-
-
-def _entry(
-    p: Program, s: Scored | None, kind: str, pinned: bool = False, end: datetime | None = None
-) -> Entry:
-    return Entry(
-        program_id=p.id,
-        channel_id=p.channel_id,
-        title=p.title,
-        start=p.start,
-        end=end or p.end,
-        score=s.score if (s and kind == "pick") else 0.0,
-        kind=kind,
-        scored=s,
-        pinned=pinned,
-        source=p,
+    # 6) 빈 시간 → 7) 이유
+    picks = sorted(
+        [_entry(c, role) for c, role in fixed] + [_entry(c, NORMAL) for c in chosen], key=lambda e: e.start
+    )
+    need_lg_novelty = novel_genres if (knows_taste and not novel) else []
+    entries, lg_note = fill_gaps(
+        picks,
+        [p for p, _ in usable],
+        lg_contents,
+        profile,
+        rules,
+        first_viewing_moment(wake, sleep, bands),
+        floor,
+        need_lg_novelty,
+    )
+    if lg_note and "S5" not in d.notes:
+        d.notes["S5"] = lg_note
+    favorite = profile.favorite_genre()
+    for e in entries:
+        r = explain(e, knows_taste, favorite)
+        e.reason, e.basis = r.text, r.basis
+    return Plan(
+        entries=entries,
+        floor=floor,
+        budget_min=profile.daily_budget_min,
+        bands=bands,
+        knows_taste=knows_taste,
+        favorite_genre=favorite,
+        scores={p.id: s.score for p, s in scored},
+        dropped={k: v for k, v in dropped.items() if k not in {e.program_id for e in entries}},
+        notes=d.notes,
+        day=day,
     )
 
 
-def _fill_gaps(
-    picks: list[Entry],
-    usable: list[Program],
-    lg_contents: list[LgContent],
-    profile: Profile,
-    rules: RuleSet,
-    wake: datetime,
-) -> list[Entry]:
-    out: list[Entry] = []
-    used_lg: set[str] = set()  # 같은 LG 콘텐츠는 하루에 한 번만
-    bands = profile.viewing_bands()
+def _novelty_keeping_diversity(
+    choices: list[Candidate], chosen: list[Candidate], fixed: list[tuple[Candidate, str]], d: _Day
+) -> Candidate | None:
+    """새로 추천 후보 중, 넣어도 다양성(S2·S4 — S5 보다 높은 목표) 위반이 늘지 않는 첫 번째."""
+    before = _violations(chosen, fixed, d).count()
+    for c in choices:
+        after = _violations(chosen, [*fixed, (c, NOVELTY)], d).count()
+        if after[0] <= before[0] and after[1] <= before[1]:
+            return c
+    return None
 
-    def may_fill(start: datetime) -> bool:  # 빈 시간은 시청 시간대 안, "그만 볼래" 전에 시작할 때만 채움
-        return rules.allows_start(start) and in_viewing_hours(start, bands)
 
-    if picks and may_fill(wake):
-        # 기상~첫 방송: 앞 채널이 없으니 짧으면 비우고, 길면 LG 콘텐츠
-        morning = _lg_for_gap(wake, picks[0].start, lg_contents, profile, rules, used_lg)
-        if morning:
-            out.append(morning)
-    for cur, nxt in zip(picks, [*picks[1:], None]):
-        out.append(cur)
-        if nxt is None or nxt.start <= cur.end or not may_fill(cur.end):
+def _candidate(p: Program, s: Scored, floor: float) -> Candidate:
+    return Candidate(
+        p.id,
+        p.start,
+        p.end,
+        s.score,
+        floor=floor,
+        genre=p.genre,
+        series_key=p.series_key,
+        channel_id=p.channel_id,
+        payload=(p, s),
+    )
+
+
+def _representative(eligible, fixed: list[tuple[Candidate, str]], d: _Day) -> Candidate | None:
+    """오늘의 대표 방송 (S1): 시리즈 취향 1위(REPRESENTATIVE_MIN_SERIES 이상)의 새 회차가 시청 시간대 안에 있을 때."""
+    if not d.profile.series:
+        d.notes["S1"] = "해당 없음: 아직 좋아하는 시리즈를 모름"
+        return None
+    top_key, top = min(d.profile.series.items(), key=lambda kv: (-kv[1], kv[0]))
+    if top < config.REPRESENTATIVE_MIN_SERIES:
+        d.notes["S1"] = f"해당 없음: 시리즈 취향 1위 점수 {top:.2f} < {config.REPRESENTATIVE_MIN_SERIES}"
+        return None
+    if d.rules.is_pinned(top_key):
+        d.notes["S1"] = "해당 없음: 시리즈 취향 1위가 이미 '챙겨 줘'로 들어감"
+        return None
+    episodes = [
+        (p, s)
+        for p, s in eligible
+        if p.series_key == top_key and p.is_new and not any(overlaps(p, c) for c, _ in fixed)
+    ]
+    if not episodes:
+        d.notes["S1"] = f"해당 없음: 시리즈 취향 1위({top_key})의 새 회차가 오늘 시청 시간대 안에 없음"
+        return None
+    p, s = episodes[0]  # 이른 시작
+    return _candidate(p, s, d.floor)
+
+
+def _open_candidates(eligible, fixed: list[tuple[Candidate, str]], d: _Day) -> list[Candidate]:
+    """먼저 넣은 칸과 겹치지 않고, 그 시리즈가 아직 안 나온 후보."""
+    used_series = {c.series_key for c, _ in fixed}
+    out = []
+    for p, s in eligible:
+        if p.id in {c.key for c, _ in fixed}:
             continue
-        gap = (nxt.start - cur.end).total_seconds() / 60
-        if gap < config.SHORT_GAP_MIN:
-            # 앞 채널에서 바로 이어지는 방송 (뺀 방송이면 usable 에 없으니 비워 둠)
-            same = [p for p in usable if p.channel_id == cur.channel_id and p.start <= cur.end < p.end]
-            if same:
-                out.append(_entry(same[0], None, "fill", end=min(same[0].end, nxt.start)))
+        if p.series_key in used_series:
+            d.dropped[p.id] = SAME_SERIES
+        elif any(overlaps(p, c) for c, _ in fixed):
+            d.dropped[p.id] = OVERLAP
         else:
-            filler = _lg_for_gap(cur.end, nxt.start, lg_contents, profile, rules, used_lg)
-            if filler:
-                out.append(filler)
+            out.append(_candidate(p, s, d.floor))
     return out
 
 
-def _lg_for_gap(
-    start: datetime,
-    end: datetime,
-    lg_contents: list[LgContent],
-    profile: Profile,
-    rules: RuleSet,
-    used_lg: set[str],
-) -> Entry | None:
-    """start~end 빈 시간에 들어가는 LG채널·VOD 중 점수 최고 1개 (20분 미만 빈 시간이거나 맞는 게 없으면 None).
-    고른 콘텐츠는 used_lg 에 넣어 하루에 한 번만 쓰게 한다."""
-    gap = (end - start).total_seconds() / 60
-    if gap < config.SHORT_GAP_MIN:
-        return None
-    fits = [
-        (c, score_lg(c, profile, start))
-        for c in lg_contents
-        if c.duration_min <= gap and c.id not in used_lg and not rules.blocks(None, genres_of(c))
-    ]
-    if not fits:
-        return None
-    c, s = max(fits, key=lambda x: (x[1].score, x[0].duration_min))
-    used_lg.add(c.id)
-    return Entry(
-        program_id=c.id,
-        channel_id=c.source,
-        title=c.title,
-        start=start,
-        end=start + timedelta(minutes=c.duration_min),
-        score=0.0,
-        kind="lg",
-        scored=s,
-        source=c,
+def _above_floor(cands: list[Candidate], d: _Day) -> list[Candidate]:
+    out = []
+    for c in cands:
+        if c.score >= d.floor:
+            out.append(c)
+        else:
+            d.dropped[c.key] = BELOW_FLOOR
+    return out
+
+
+def _one_per_series(cands: list[Candidate], d: _Day) -> list[Candidate]:
+    """같은 시리즈는 무게가 가장 큰 회차 하나만 (같으면 이른 시작 → ID). 기준표 M4."""
+    best: dict[str, Candidate] = {}
+    for c in cands:
+        cur = best.get(c.series_key)
+        if cur is None or (-c.base_weight, c.start, c.key) < (-cur.base_weight, cur.start, cur.key):
+            best[c.series_key] = c
+    keep = {id(c) for c in best.values()}
+    for c in cands:
+        if id(c) not in keep:
+            d.dropped[c.key] = SAME_SERIES
+    return [c for c in cands if id(c) in keep]
+
+
+@dataclass
+class _Violations:
+    over: list[str]  # 비율 넘친 장르 (S2)
+    runs: int  # 같은 장르 3연속 줄 수 (S4, 고정 칸 포함)
+    breakers: list[Candidate]  # 3연속 줄에서 감점할 칸 (고정 칸 제외)
+
+    def count(self) -> tuple[int, int]:
+        return len(self.over), self.runs
+
+
+def _violations(chosen: list[Candidate], fixed: list[tuple[Candidate, str]], d: _Day) -> _Violations:
+    """다양성 위반. 비율은 대표 방송·챙겨 줘를 빼고 셈, 3연속은 모든 방송 칸으로 셈."""
+    counted = chosen + [c for c, role in fixed if role == NOVELTY]
+    in_order = sorted(chosen + [c for c, _ in fixed], key=lambda c: c.start)
+    return _Violations(
+        over_share_genres(counted, d.profile),
+        long_runs(in_order),
+        streak_breakers(in_order, {c.key for c, _ in fixed}),
     )
+
+
+def _place_with_diversity(
+    pool: list[Candidate], fixed: list[tuple[Candidate, str]], d: _Day
+) -> list[Candidate]:
+    """시간 예산 DP → 다양성을 어기면 넘친 장르·3연속 칸 무게를 REPLAN_PENALTY 배로 깎아 다시 (최대 MAX_REPLANS 번)."""
+    genre_factor: dict[str, float] = {}
+    key_factor: dict[str, float] = {}
+    best, best_rank, best_factors = [], None, {}
+    for _ in range(config.MAX_REPLANS):
+        for c in pool:
+            c.factor = genre_factor.get(c.genre, 1.0) * key_factor.get(c.key, 1.0)
+        chosen = select_best(pool, max(d.budget_left, 0))
+        v = _violations(chosen, fixed, d)
+        rank = (*v.count(), -sum(c.base_weight for c in chosen))
+        if best_rank is None or rank < best_rank:
+            best, best_rank, best_factors = chosen, rank, {c.key: c.factor for c in pool}
+        if v.count() == (0, 0):
+            break
+        for g in v.over:
+            genre_factor[g] = genre_factor.get(g, 1.0) * config.REPLAN_PENALTY
+        for c in v.breakers:
+            key_factor[c.key] = key_factor.get(c.key, 1.0) * config.REPLAN_PENALTY
+    v = _violations(best, fixed, d)
+    if v.over:
+        d.notes["S2"] = f"다시 배치해도 비율을 못 맞춤 ({', '.join(v.over)}) — 후보가 부족함"
+    if v.runs:
+        d.notes["S4"] = "다시 배치해도 같은 장르 3연속을 못 피함 — 후보가 부족함"
+    for c in pool:  # 채택한 배치의 감점을 남겨 둠 (빠진 이유 판정에 씀)
+        c.factor = best_factors.get(c.key, 1.0)
+    return best
+
+
+def _prefer_same_channel(
+    chosen: list[Candidate], pool: list[Candidate], fixed: list[tuple[Candidate, str]], d: _Day
+) -> list[Candidate]:
+    """S8: 앞 칸과 채널이 다르면, 앞 칸 채널에서 같은 자리에 들어가는 후보 중 (무게 + 가산)이 더 큰 것으로 바꾼다.
+    바꾼 뒤 시간 예산·같은 시리즈·다양성이 나빠지면 바꾸지 않음."""
+    fixed_keys = {c.key for c, _ in fixed}
+    i = 0
+    while True:
+        i += 1
+        in_order = sorted(chosen + [c for c, _ in fixed], key=lambda c: c.start)
+        if i >= len(in_order):
+            break
+        prev, cur = in_order[i - 1], in_order[i]
+        if cur.key in fixed_keys or cur.channel_id == prev.channel_id:
+            continue
+        nxt = in_order[i + 1] if i + 1 < len(in_order) else None
+        used = {c.series_key for c in in_order if c is not cur}
+        spent = sum(c.minutes for c in chosen) - cur.minutes
+        alts = [
+            a
+            for a in pool
+            if a.channel_id == prev.channel_id
+            and a not in chosen
+            and a.start >= prev.end
+            and (nxt is None or a.end <= nxt.start)
+            and a.series_key not in used
+            and spent + a.minutes <= max(d.budget_left, 0)
+        ]
+        bonus = lambda a: a.base_weight + config.CHANNEL_STAY_BONUS * min(a.minutes, config.LENGTH_CAP_MIN)
+        alt = min(alts, key=lambda a: (-bonus(a), a.start, a.key), default=None)
+        if alt is None or bonus(alt) <= cur.base_weight:
+            continue
+        trial = [alt if c is cur else c for c in chosen]
+        before, after = _violations(chosen, fixed, d).count(), _violations(trial, fixed, d).count()
+        if after[0] <= before[0] and after[1] <= before[1]:
+            d.dropped[cur.key] = CHANNEL
+            chosen = trial
+    return sorted(chosen, key=lambda c: c.start)
+
+
+def _record_unchosen(pool: list[Candidate], chosen: list[Candidate], fixed, d: _Day) -> None:
+    """후보였는데 안 들어간 방송의 이유: 조건을 하나씩 끈 배치와 비교해서 정한다.
+    - 시간 예산·다양성 둘 다 없어도 못 들어감 → 겹침
+    - 예산만 지킨 배치엔 있음(다양성 때문) → 다양성 / 다양성 감점만 둔 배치엔 있음(예산 때문) → 시간 상한 / 그 외 → 둘 다"""
+    final = {c.key for c in chosen}
+    factors = {id(c): c.factor for c in pool}
+    for c in pool:
+        c.factor = 1.0
+    free = {c.key for c in select_best(pool)}
+    budget_only = {c.key for c in select_best(pool, max(d.budget_left, 0))}
+    for c in pool:
+        c.factor = factors[id(c)]
+    diversity_only = {c.key for c in select_best(pool)}
+    for c in pool:
+        if c.key in final or c.key in d.dropped:
+            continue
+        if c.key not in free:
+            d.dropped[c.key] = OVERLAP
+        elif c.key in budget_only and c.key not in diversity_only:
+            d.dropped[c.key] = DIVERSITY
+        elif c.key in diversity_only and c.key not in budget_only:
+            d.dropped[c.key] = BUDGET
+        else:
+            d.dropped[c.key] = BUDGET_AND_DIVERSITY
+
+
+def _entry(c: Candidate, role: str) -> Entry:
+    p, s = c.payload
+    return Entry(p.id, p.channel_id, p.title, p.start, p.end, s.score, "pick", scored=s, source=p, role=role)

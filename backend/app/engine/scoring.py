@@ -1,8 +1,8 @@
 """② 점수: 방송(또는 LG 콘텐츠) 하나 → 0~1 점수와 항목별 내역.
 
 - 장르 점수 = 장르 목록 중 가장 좋아하는 것 하나
-- 출연자 정보가 없으면(빈 목록) 출연자 항목을 빼고, 나머지 가중치 합으로 나눠 0~1 로 맞춘다
-  (출연자를 모르는 방송이 그것만으로 0.25 를 손해 보지 않게)
+- 출연자 정보가 없으면(빈 목록) 출연자 칸 = MISSING_CAST_SCORE (기본 0 = 모르는 출연자와 같음).
+  기준표 S7: 출연자 취향과 상관없는 방송은 출연자 칸을 지워도 점수가 거의 같아야 함
 """
 
 from dataclasses import dataclass
@@ -36,15 +36,13 @@ def _score(
     w = config.WEIGHTS
     parts = {
         "series": w["series"] * (profile.series.get(series_key, 0.0) if series_key else 0.0),
-        "cast": w["cast"] * (profile.cast[top_cast] if top_cast else 0.0),
+        "cast": w["cast"]
+        * (profile.cast[top_cast] if top_cast else (0.0 if cast else config.MISSING_CAST_SCORE)),
         "genre": w["genre"] * (profile.genre[top_genre] if top_genre else 0.0),
         "timeslot": w["timeslot"] * profile.timeslot_score(when),
         "fresh": w["fresh"] * (1.0 if fresh else 0.0),
         "family": w["family"] * (1.0 if family else 0.0),
     }
-    if not cast:  # 출연자 정보 없음 → 출연자 항목 빼고 나머지로 비율 맞춤
-        rescale = 1.0 / (1.0 - w["cast"])
-        parts = {k: v * rescale for k, v in parts.items()}
     return Scored(score=sum(parts.values()), parts=parts, top_cast=top_cast, top_genre=top_genre)
 
 
