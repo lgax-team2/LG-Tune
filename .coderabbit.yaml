@@ -1,42 +1,72 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 # CodeRabbit PR 리뷰 설정 (공통 파일 · 바꾸려면 3명 확인)
 # 리뷰 기준은 AGENTS.md · docs/기획.md · docs/명세.md
-language: ko-KR
+
+language: ko
+early_access: false
+tone_instructions: "친절하고 협력적인 톤으로. 팀원 대부분이 개발이 처음이니 쉬운 말로, 핵심 2~3개만. 제안은 이유와 간단한 예시 코드를 함께."
+
 reviews:
   profile: chill
   high_level_summary: true
+  poem: false
+  review_status: true
+  # Walkthrough(변경 요약) 댓글: 펼친 상태로, 구조 그림·파일별 요약 포함
+  collapse_walkthrough: false
+  sequence_diagrams: true
+  changed_files_summary: true
+  assess_linked_issues: true
+
   auto_review:
     enabled: true
-    drafts: false
+    auto_incremental_review: true
+    drafts: false   # 초안 PR은 리뷰 안 함 (오픈소스 리뷰 한도 아끼기)
+
+  # 리뷰에서 뺄 파일 (자동 생성·샘플 데이터·잠금 파일)
   path_filters:
     - "!**/pnpm-lock.yaml"
+    - "!backend/uv.lock"
     - "!contracts/*.json"
     - "!frontend/src/shared/api/**"
     - "!data/sample/**/*.json"
+
   path_instructions:
     - path: "**"
       instructions: |
-        AGENTS.md 의 담당 폴더표 기준으로, PR이 한 담당의 폴더 밖(특히 공통 폴더)을 고쳤으면 알려 줘.
-        공통 폴더 변경은 3명 확인이 필요하다는 점을 요약에 적어 줘.
-        API 키·비밀값이 코드에 들어갔는지 확인해 줘. 비밀값은 backend/.env 와 settings 로만 읽어야 해.
-        보류 기능(AI 친구, buddy.* 이벤트, 호출어)을 새로 키우는 변경이면 docs/기획.md 와 다르다고 알려 줘.
+        리뷰 기준: AGENTS.md · docs/기획.md · docs/명세.md
+
+        (중요)
+        - AGENTS.md 담당 폴더표 기준으로 한 담당의 폴더 밖(특히 공통 폴더)을 고쳤으면 알려 주고, 공통 폴더 변경은 3명 확인이 필요하다고 요약에 적어 주세요.
+        - 잠재적인 버그·엣지 케이스가 있으면 알려 주세요.
+        - API 키·비밀값이 코드에 들어갔는지 확인해 주세요. 비밀값은 backend/.env 와 settings 로만 읽어야 해요.
+        - 보류 기능(AI 친구, buddy.* 이벤트, 호출어)을 새로 키우는 변경이면 docs/기획.md 와 다르다고 알려 주세요.
+
+        (참고)
+        - 가독성·구조 개선이 가능하면 의견 주세요.
+
+        형식:
+        - 한 PR에서 핵심 피드백 2~3개만 먼저
+        - 각 피드백은 "왜(이유) + 어떻게(예시 코드)"로
     - path: "backend/app/contracts/**"
       instructions: |
-        API 모양이 바뀌었으면 docs/명세.md 도 같이 고쳐졌는지, pnpm gen 결과(contracts/*.json, frontend/src/shared/api)가 같이 커밋됐는지 확인해 줘.
+        API 모양이 바뀌었으면 docs/명세.md 도 같이 고쳐졌는지, pnpm gen 결과(contracts/*.json, frontend/src/shared/api)가 같이 커밋됐는지 확인해 주세요.
     - path: "backend/app/models/**"
       instructions: |
-        DB 구조가 바뀌었으면 docs/명세.md 2절 표가 같이 고쳐졌는지 확인해 줘.
+        DB 구조가 바뀌었으면 docs/명세.md 2절 표가 같이 고쳐졌는지 확인해 주세요.
     - path: "backend/app/engine/**"
       instructions: |
-        docs/명세.md 6절의 엔진 규칙 6개와 어긋나는지 봐 줘. 숫자는 engine/config.py 한 곳에만 있어야 해.
-        규칙을 바꿨으면 backend/tests/ 에 테스트가 같이 추가됐는지 확인해 줘.
+        docs/명세.md 6절의 엔진 규칙 6개와 어긋나는지 봐 주세요. 숫자는 engine/config.py 한 곳에만 있어야 해요.
+        규칙을 바꿨으면 backend/tests/ 에 테스트가 같이 추가됐는지 확인해 주세요.
     - path: "backend/**/*.py"
       instructions: |
-        LLM·TTS·장치 제어 같은 외부 호출은 어댑터 뒤에 있고 fake 구현이 있어야 해. 테스트에서 네트워크 호출이 생기면 알려 줘.
+        LLM·TTS·장치 제어 같은 외부 호출은 어댑터 뒤에 있고 fake 구현이 있어야 해요. 테스트에서 네트워크 호출이 생기면 알려 주세요.
     - path: "frontend/src/**"
       instructions: |
-        TV 화면은 1920×1080, 리모컨 키(방향·확인·뒤로=keyCode 461)만으로 조작돼야 해. 마우스·터치 전용 동작이 생기면 알려 줘.
+        React/TypeScript 공식 문서 기준으로 봐 주세요.
+        TV 화면은 1920×1080, 리모컨 키(방향·확인·뒤로=keyCode 461)만으로 조작돼야 해요. 마우스·터치 전용 동작이 생기면 알려 주세요.
         시니어 화면 원칙: 글자 최소 28px, 고대비, 한 번에 메시지 하나, 애니메이션 최소, 색만으로 의미 전달 금지.
-        하루표는 GET /api/schedules/{senior_id} 기준. 옛 /api/plan/today 나 WebSocket 이벤트에 새로 의존하면 알려 줘.
+        하루표는 GET /api/schedules/{senior_id} 기준. 옛 /api/plan/today 나 WebSocket 이벤트에 새로 의존하면 알려 주세요.
+
 knowledge_base:
   code_guidelines:
     enabled: true
@@ -44,3 +74,6 @@ knowledge_base:
       - "AGENTS.md"
       - "docs/기획.md"
       - "docs/명세.md"
+
+chat:
+  auto_reply: true

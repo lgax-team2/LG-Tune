@@ -94,4 +94,22 @@ main  ●──────────●──────────●
 - 전체 명세: [`docs/명세.md`](docs/명세.md) · 공통 샘플: `data/sample/`
 
 ## AI 코딩 도구 (Claude Code / Codex / Gemini)
-규칙 원본은 `AGENTS.md` 하나 (폴더별 규칙도 그 안에). `CLAUDE.md`·`GEMINI.md` 는 그걸 불러오기만 합니다. PR 리뷰는 CodeRabbit이 `.coderabbit.yaml` 설정대로 자동으로 봅니다 (스타 10개 미만이면 PR에 `@coderabbitai review` 댓글). 이슈 1개 = 브랜치 1개 = AI 세션 1개.
+규칙 원본은 `AGENTS.md` 하나 (폴더별 규칙도 그 안에). `CLAUDE.md`·`GEMINI.md` 는 그걸 불러오기만 합니다. 이슈 1개 = 브랜치 1개 = AI 세션 1개.
+
+## PR 자동 리뷰 (CodeRabbit)
+PR을 열면 CodeRabbit이 `AGENTS.md`·`docs/기획.md`·`docs/명세.md` 기준으로 리뷰를 달아 줍니다. 설정은 `.coderabbit.yaml` (공통 파일).
+
+| 무엇이 달리나 | 내용 |
+| --- | --- |
+| **Walkthrough** (첫 댓글) | 전체 요약, 바뀐 파일별 요약, **구조 그림**(어떤 코드가 어떤 순서로 불리는지), 리뷰 난이도 |
+| 코드 리뷰 댓글 | 핵심 2~3개만, "왜 + 예시 코드"로. 담당 폴더 밖 수정·API 키·명세 불일치도 짚어 줌 |
+
+| PR 댓글로 쓰는 명령 | 하는 일 |
+| --- | --- |
+| `@coderabbitai review` | 최신 변경분 리뷰 (**저장소 스타가 10개 미만이면 자동으로 안 돌아서 이걸로 시작**) |
+| `@coderabbitai full review` | PR 전체를 처음부터 다시 리뷰 |
+| `@coderabbitai 질문` | 리뷰 댓글에 답글로 물어보기 (예: "이거 왜 문제야?") |
+
+- 초안(Draft) PR은 리뷰하지 않음. 준비되면 **Ready for review** 로 바꾸기
+- AI 리뷰는 참고용. 틀릴 수 있으니 그대로 따르지 말고 판단하고, 합치기 기준(CI 초록불·공통 폴더 3명 확인)은 그대로
+- 무료(오픈소스) 플랜이라 리뷰 횟수에 시간당 한도가 있음. 같은 PR에 명령을 연달아 쓰지 않기
