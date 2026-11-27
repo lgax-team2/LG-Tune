@@ -1,22 +1,28 @@
 # B 담당 작업 계획 (하루표 엔진 · 음성 명령 · 질문 답하기)
 
 > 목표: 하루표 엔진·API 를 **시연 가능한 상태**로 끝내고, 처음 온 개발자도 이어받을 수 있게 정리.
-> 진행: 작업 1개씩 "다음" → 테스트 먼저(TDD) → Codex 리뷰 → 반영 → `pnpm test` → 커밋·push(engine/rules) → 여기 체크 + 진행 기록.
+> 진행: 작업 1개씩 → 테스트 먼저(TDD) → Codex 리뷰 → 반영 → `pnpm test` → 커밋·push(작업 브랜치) → PR(base: jinhyeok) → 여기 체크 + 진행 기록.
+> **진행 범위: 편성표(하루표 엔진) 마무리까지** — 그 지점에서 멈추고 보고 (11/27 사람 결정, 이전 "⑥까지 진행"을 대체)
 > 확인 화면: `pnpm dev:be` 후 http://localhost:8000/api/schedules/s1/view (s2·s3 는 주소의 s1 만 바꿈)
-> 현재 PR: (작업 브랜치 → backend/dev, 진행 기록 참고) · PR #5 는 backend/dev 로 squash merge 됨 11/27 · 이전 PR #3 (①·②) 합쳐짐 11/26
+> 현재 통합 브랜치: `jinhyeok` (main-copy 역할) · 이전 backend/dev 의 PR #5·#6·#8·#9 내용 그대로 옮김(11/27) · PR #3 (①·②) 은 main 에 합쳐짐 11/26
+> 명세: `docs/명세.md` 는 팀원 정리본이 기준. B 의 ②-2~②-4 DB·엔진 변경은 `명세_반영대기.md` (3명 확인 후 명세에 PR)
 
 ## 진행 규칙
-**브랜치 방식 (B 담당만의 방식 — AGENTS.md 의 팀 공통 규칙은 그대로, 11/27 사람 결정)**
-- `backend/dev` = B 의 통합 브랜치 (main 에서 만듦, **절대 지우지 않음**). main 은 직접 건드리지 않음
-- 작업마다: `backend/dev` 에서 작업 브랜치(`engine/...`) → PR (base: `backend/dev`) → CI 초록불 + 기준표 M 전부 통과면 **Claude 가 squash merge** → 작업 브랜치 삭제
-- 작업 시작 전: `origin/main` 을 `backend/dev` 에 merge 해서 팀원 변경 받기 (충돌 나면 멈추고 보고)
+**브랜치 구조 (11/27 사람 결정 — 브랜치 이름·커밋·PR 쓰는 법은 AGENTS.md·docs/협업.md 를 따름)**
+```
+main (최종본) ← main-copy = jinhyeok (B 통합본) ← 작업 브랜치 (작업마다 새로, engine/내용)
+```
+- `jinhyeok` = main-copy 역할. **삭제·force push 금지**. main 은 직접 건드리지 않음
+- 작업마다: GitHub 이슈 → `jinhyeok` 에서 작업 브랜치(`engine/...`) → PR (base: `jinhyeok`, 본문 `Closes #이슈`) → CI 초록불 + 기준표 M 전부 통과면 squash merge → 작업 브랜치 삭제
+- 작업 시작 전: `origin/main` 을 `jinhyeok` 에 merge 해서 팀원 변경 받기 (충돌 나면 멈추고 보고)
 - main 으로 가는 최종 PR 은 사람이 요청할 때만 만들고, merge 는 사람이 "Create a merge commit" 으로
+- 공통 폴더(`models/`, `contracts/`, `docs/`, `data/sample/`, `main.py`)를 바꾸는 건 main 으로 갈 때 3명 확인 (AGENTS.md)
 
 Codex 활용 (항상, 코드는 고치지 말고 의견만 받기)
 1. 커밋 직전: `codex exec` 로 diff 리뷰 (AGENTS.md 기준, 심각한 것 3개 이내)
 2. 사람에게 결정을 물어보기 전: `codex exec` 로 선택지 비교·추천을 먼저 받고, 보고에 "Codex 의견" 칸을 따로 둠
 3. 같은 테스트가 2번 실패하면: `codex exec` 로 원인 의견 받기
-4. 중간 합치기 전(②·⑥·⑨): `codex exec` 로 이번 구간 전체 diff 리뷰
+4. 멈추고 보고하기 전(편성표 마무리 등): `codex exec` 로 이번 구간 전체 diff 리뷰
 - Codex 의견은 맞는지 먼저 판단하고(receiving-code-review), 내 의견과 다르면 둘 다 보여 줌
 - 3줄 보고에 "Codex: 한 줄 요약"을 항상 포함
 
@@ -121,7 +127,7 @@ Codex 활용 (항상, 코드는 고치지 말고 의견만 받기)
   - 확인 화면에서 볼 것: 시계 칸에 20:00 입력 → 말하기 "오늘은 그만 볼래" → 20:00 이후 시작 칸만 없어짐
   - main.py 에 넣을 줄: `from .api.clock import router as clock_router` / `app.include_router(clock_router)`, `/ws` 의 `ClockTick` 시각을 `clock.now()` 로 (C 담당 "가상 시계"와 겹침 → C 에게 알림)
   - (추가 11/27, 나중에) 다시 짜기 시연: 시계를 앞으로 돌려 TV 꺼짐·무반응 → 남은 하루 재계산 화면 (생방송 끝 밀림도 시계로 흉내)
-  - ⏸ 끝나면 **중간 합치기**
+  - (11/27) 진행 범위가 "편성표 마무리까지"로 바뀜 — ③~⑥ 은 편성표 마무리 뒤에 다시 순서 정함
 
 - [ ] **⑦ 스냅샷 테스트** (s1~s3 의 12/1 하루표 저장, 달라지면 무엇이 바뀌었는지 보여 줌)
   - 고칠 파일: `tests/test_engine_snapshot.py`, `tests/snapshots/schedule_s1.json`~`s3`(새 폴더, 허용됨)
@@ -219,6 +225,7 @@ Codex 활용 (항상, 코드는 고치지 말고 의견만 받기)
 | 2026-11-27 | ②-2a 시청 시간대·하루 시청 시간 상한(1분 단위 예산 DP)·pin 먼저 고정. s1 510→210분(상한 224), s3 240분. 아직 장르 도배(s1 트로트·s2 뉴스 100%)는 b 에서. Codex: 심각한 문제 없음 | 11b05dd | /api/schedules/s1/view (요약에 하루표 시간/상한·시청 시간대) |
 | 2026-11-27 | ②-2 b~f 기준표 v3 (대표 방송·다양성·LG 기준·채널 유지·새로 추천·첫 칸·첫날 정보) — 공통 변경. 샘플 3명·페르소나 6명 M1~M7 통과. Codex: 결정 15개 비교(갈림 2: D1·D10), 리뷰 4회(pin 충돌·같은 시리즈 pin·새로 추천의 S2·S4 위반 → 반영), 구간 전체 리뷰 심각한 문제 없음 | a0c849b | /api/schedules/s1/view (맨 위 기준표·가치 지표) |
 | 2026-11-27 | ②-2 g TV 켜짐 패턴 (배경 편성·쉬는 시간·예산 두 개·S10) — 공통 변경. Codex: 결정 D18~D25 비교(갈림 없음), 리뷰에서 그만 볼래 이후 채우기·자정 넘김·방송 0칸 배경 없음 → 반영, 최종 심각한 문제 없음 | 63089c4 | /api/schedules/s1/view (배경·쉬는 시간 줄) |
+| 2026-11-27 | 브랜치 정리: backend/dev → `jinhyeok`(main-copy), 원격 backend/dev 삭제, origin/main 이미 반영, docs/명세.md 는 팀원 정리본으로 되돌리고 B 변경은 `명세_반영대기.md` 로 (이슈 #10) | (이 PR) | — |
 
 ## 시연 후 (지금 안 함)
 - 평일·주말 시청 패턴 분리 (지금은 섞어서 읽음 — 페르소나 테스트로 에러 없는 것만 확인)
