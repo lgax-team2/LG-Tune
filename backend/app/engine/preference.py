@@ -4,6 +4,7 @@
 - 본 날 기준 반감기: 최근 본 날부터 세어 14번째 본 날의 기록은 절반 (달력 날짜가 아님)
 - 기록이 적으면 첫날 정보(seed_prefs)를 더 믿음: 기록 비중 = n / (n + 10)
 - 장르가 여러 개인 기록은 각 장르에 같은 무게로 더함 (나눠 갖지 않음)
+- 시청 습관: 시청 시간대(습관 점수 0.35 이상인 시간대), 하루 시청 시간 상한(최근 평균, 기록 적으면 240분)
 """
 
 from collections import defaultdict
@@ -36,9 +37,17 @@ class Profile:
     timeslot: dict[str, float]  # 시간대 이름 → 0~1
     history_share: float  # 시청 기록을 믿는 비율 (0 = 첫날 정보만)
     n_logs: int
+    daily_budget_min: float = config.DEFAULT_BUDGET_MIN  # 하루 pick 시간 상한 (분)
 
     def timeslot_score(self, dt: datetime) -> float:
         return self.timeslot.get(band_of(dt), 0.0)
+
+    def viewing_bands(self) -> set[str]:
+        """평소 TV 를 보는 시간대 (습관 점수 HABIT_BAND_MIN 이상). 습관 정보가 아예 없으면 모든 시간대."""
+        all_bands = {name for name, _, _ in config.TIME_BANDS}
+        if not self.timeslot:
+            return all_bands
+        return {b for b in all_bands if self.timeslot.get(b, 0.0) >= config.HABIT_BAND_MIN}
 
 
 def weigh_logs(logs: list[WatchLog], today: date) -> list[WeightedLog]:
@@ -60,6 +69,18 @@ def weigh_logs(logs: list[WatchLog], today: date) -> list[WeightedLog]:
         )
         for lg in kept
     ]
+
+
+def daily_budget_min(logs: list[WatchLog], today: date) -> float:
+    """하루 시청 시간 상한 = 최근 BUDGET_RECENT_DAYS 일 동안 TV 를 본 날의 평균 시청 시간(분).
+    본 날이 BUDGET_MIN_DAYS 보다 적으면 기본값(DEFAULT_BUDGET_MIN). 취향 계산에서 버리는 기록(5분 미만·취소)은 빼고 셈."""
+    minutes_per_day: dict[date, float] = defaultdict(float)
+    for w in weigh_logs(logs, today):
+        if (today - w.log.started_at.date()).days <= config.BUDGET_RECENT_DAYS:
+            minutes_per_day[w.log.started_at.date()] += w.log.watched_min
+    if len(minutes_per_day) < config.BUDGET_MIN_DAYS:
+        return config.DEFAULT_BUDGET_MIN
+    return sum(minutes_per_day.values()) / len(minutes_per_day)
 
 
 def _normalize(d: dict[str, float]) -> dict[str, float]:
@@ -95,4 +116,5 @@ def build_profile(logs: list[WatchLog], senior: Senior, today: date) -> Profile:
         timeslot=_blend(_normalize(slot), neutral_slots, share),
         history_share=share,
         n_logs=n,
+        daily_budget_min=daily_budget_min(logs, today),
     )

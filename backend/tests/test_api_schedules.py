@@ -3,6 +3,7 @@
 DB 는 tmp_path 의 빈 파일로 바꿔 끼운다 → 첫 요청 때 샘플이 자동으로 들어가는지도 같이 확인된다.
 """
 
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -143,6 +144,28 @@ def test_old_db_without_new_columns_gives_clear_message(tmp_path):
         assert "pnpm sample" in r.json()["detail"] and "programs.genres" in r.json()["detail"]
     finally:
         app.dependency_overrides.pop(get_session, None)
+
+
+def test_view_shows_budget_and_viewing_hours(client):
+    """확인 화면 요약: 하루 시청 시간 상한, pick 총 시간(상한 이하), 시청 시간대."""
+    data = _view_data(client.get("/api/schedules/s1/view").text)
+    budget = data["budget"]
+    used = sum(
+        (datetime.fromisoformat(i["end"]) - datetime.fromisoformat(i["start"])).total_seconds() / 60
+        for i in data["items"]
+        if i["kind"] == "pick"
+    )
+    assert budget["used_min"] == round(used) <= budget["limit_min"]
+    assert set(data["viewing_bands"]) <= {"아침", "낮", "저녁", "밤"} and data["viewing_bands"]
+
+
+def test_view_marks_shows_outside_viewing_hours(client):
+    """s1 은 아침(05~09시)이 시청 시간대가 아님 → 기상 뒤 아침 방송은 '시청 시간대 밖'."""
+    data = _view_data(client.get("/api/schedules/s1/view", params={"limit": 100}).text)
+    assert "아침" not in data["viewing_bands"]
+    morning = [m for m in data["missed"] if data["senior"]["wake"] <= m["start"][11:16] < "09:00"]
+    assert morning and all(m["why"] in ("시청 시간대 밖", "규칙으로 제외") for m in morning)
+    assert any(m["why"] == "시청 시간대 밖" for m in morning)
 
 
 def test_view_unknown_senior_is_404(client):

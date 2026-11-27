@@ -141,7 +141,9 @@
   var p = data.profile;
   $("facts").innerHTML = "";
   [["기상", data.senior.wake], ["취침", data.senior.sleep], ["시청 기록", p.n_logs + "건"],
-   ["기록 비중", Math.round(p.history_share * 100) + "%"], ["기준점", score(data.floor)]
+   ["기록 비중", Math.round(p.history_share * 100) + "%"], ["기준점", score(data.floor)],
+   ["하루표 시간", data.budget.used_min + "분 / 상한 " + data.budget.limit_min + "분"],
+   ["시청 시간대", data.viewing_bands.join("·")]
   ].forEach(function (kv, i) {
     if (i) $("facts").appendChild(document.createTextNode(" · "));
     $("facts").appendChild(document.createTextNode(kv[0] + " "));
@@ -187,7 +189,7 @@
     "개 (pick " + counts.pick + " · fill " + counts.fill + " · lg " + counts.lg + ")";
 
   // ── 점수는 높은데 빠진 방송 ──
-  var whyCls = { "겹침": "why-overlap", "기상 전·취침 후": "why-time", "규칙으로 제외": "why-rule", "기준점 미만": "why-floor" };
+  var whyCls = { "겹침": "why-overlap", "기상 전·취침 후": "why-time", "시청 시간대 밖": "why-time", "규칙으로 제외": "why-rule", "기준점 미만": "why-floor" };
   data.missed.forEach(function (m) {
     var tr = el("tr");
     tr.appendChild(el("td", "num", score(m.score)));

@@ -20,8 +20,9 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from ..contracts.rest import ScheduleResponse
+from ..engine.config import TIME_BANDS
 from ..engine.genres import genres_of
-from ..engine.planner import candidate_floor, starts_in_day, wake_and_sleep
+from ..engine.planner import candidate_floor, in_viewing_hours, starts_in_day, wake_and_sleep
 from ..engine.preference import Profile, build_profile
 from ..engine.rules import RuleSet
 from ..engine.scoring import score_program
@@ -96,7 +97,7 @@ def get_schedule(
 
 VIEW_HTML = Path(__file__).parent / "views" / "schedule_view.html"
 DATA_SLOT = "__VIEW_DATA__"
-MISSED_REASONS = ("겹침", "기상 전·취침 후", "규칙으로 제외", "기준점 미만")
+MISSED_REASONS = ("겹침", "기상 전·취침 후", "시청 시간대 밖", "규칙으로 제외", "기준점 미만")
 
 
 @router.get("/{senior_id}/view", response_class=HTMLResponse, include_in_schema=False)
@@ -159,6 +160,13 @@ def build_view_data(
             "history_share": round(profile.history_share, 3),
         },
         "floor": round(floor, 3),
+        "budget": {
+            "limit_min": round(profile.daily_budget_min),
+            "used_min": round(
+                sum((i.end - i.start).total_seconds() / 60 for i in schedule.items if i.kind == "pick")
+            ),
+        },
+        "viewing_bands": [b for b, _, _ in TIME_BANDS if b in profile.viewing_bands()],
         "items": [i.model_dump(mode="json") for i in schedule.items],
         "missed": missed,
     }
@@ -188,7 +196,12 @@ def find_missed(
     def by_rule(p: Program) -> bool:
         return not rules.allows_start(p.start) or rules.blocks(p.series_key, genres_of(p))
 
-    floor = candidate_floor([s.score for p, s in scored if in_day(p) and not by_rule(p)])
+    bands = profile.viewing_bands()
+
+    def off_hours(p: Program) -> bool:  # pin 은 시청 시간대와 상관없이 들어감
+        return not in_viewing_hours(p.start, bands) and not rules.is_pinned(p.series_key)
+
+    floor = candidate_floor([s.score for p, s in scored if in_day(p) and not by_rule(p) and not off_hours(p)])
 
     planned = {i.program_id for i in schedule.items}
     picks = [i for i in schedule.items if i.kind == "pick"]
@@ -201,6 +214,11 @@ def find_missed(
             detail = f"기상 {senior.wake_time} 전" if p.start < wake else f"취침 {senior.sleep_time} 후"
         elif by_rule(p):
             why, detail = "규칙으로 제외", _rule_detail(p, rules)
+        elif off_hours(p):
+            why, detail = (
+                "시청 시간대 밖",
+                "평소 보는 시간대: " + ", ".join(b for b, _, _ in TIME_BANDS if b in bands),
+            )
         elif s.score < floor and not rules.is_pinned(p.series_key):
             why, detail = "기준점 미만", f"기준점 {floor:.3f} 미만"
         else:

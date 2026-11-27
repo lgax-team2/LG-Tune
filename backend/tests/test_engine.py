@@ -86,7 +86,7 @@ def lg(cid, genre, minutes, cast=()):
     return LgContent(id=cid, title=cid, genre=genre, cast=list(cast), duration_min=minutes, source="LG채널")
 
 
-def flat_profile(series=None, cast=None, genre=None, timeslot=None):
+def flat_profile(series=None, cast=None, genre=None, timeslot=None, budget=None):
     return Profile(
         series=series or {},
         cast=cast or {},
@@ -94,6 +94,7 @@ def flat_profile(series=None, cast=None, genre=None, timeslot=None):
         timeslot=timeslot or {},
         history_share=0.0,
         n_logs=0,
+        daily_budget_min=budget or config.DEFAULT_BUDGET_MIN,
     )
 
 
@@ -550,3 +551,87 @@ def test_floor_drops_to_sixth_score_when_fewer_than_six_pass_threshold():
     assert candidate_floor([0.9, 0.3, 0.2, 0.1, 0.05, 0.04, 0.01]) == 0.04
     assert candidate_floor([0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.1]) == config.THRESHOLD
     assert candidate_floor([0.2, 0.1]) == config.THRESHOLD  # 방송이 6개도 안 되면 낮추지 않음
+
+
+# ───────── ②-2a 시청 시간: 시청 시간대 · 하루 시청 시간 상한 ─────────
+
+
+def test_viewing_bands_are_bands_with_habit_score_over_min():
+    p = flat_profile(timeslot={"아침": 0.13, "낮": 0.79, "저녁": 0.91, "밤": 0.43})
+    assert p.viewing_bands() == {"낮", "저녁", "밤"}
+    assert flat_profile().viewing_bands() == {"아침", "낮", "저녁", "밤"}, "습관 정보가 없으면 제한 없음"
+
+
+def test_daily_budget_is_recent_average_or_240_when_few_days():
+    from app.engine.preference import daily_budget_min
+
+    seven_days = [log("a", DAY - timedelta(days=d), minutes=m) for d in range(1, 8) for m in (40, 60)]
+    assert daily_budget_min(seven_days, DAY) == pytest.approx(100)
+    three_days = [log("a", DAY - timedelta(days=d), minutes=100) for d in range(1, 4)]
+    assert daily_budget_min(three_days, DAY) == config.DEFAULT_BUDGET_MIN == 240
+
+
+def test_daily_budget_ignores_old_short_and_cancelled_logs():
+    from app.engine.preference import daily_budget_min
+
+    recent = [log("a", DAY - timedelta(days=d), minutes=100) for d in range(1, 8)]
+    noise = [
+        log("a", DAY - timedelta(days=20), minutes=600),  # 최근 14일 밖
+        log("a", DAY - timedelta(days=1), minutes=3),  # 5분 미만
+        log("a", DAY - timedelta(days=2), minutes=300, cancelled=True),  # 취소
+    ]
+    assert daily_budget_min(recent + noise, DAY) == pytest.approx(100)
+
+
+def test_total_pick_minutes_stay_within_budget():
+    """상한 120분: 1시간짜리 4개 중 점수 높은 2개만."""
+    progs = [
+        prog(k, f"{h}:00", f"{h + 1}:00", cast=["가수"])
+        for k, h in (("a", 10), ("b", 12), ("c", 14), ("d", 16))
+    ]
+    profile = flat_profile(series={"a": 0.9, "b": 0.5, "c": 1.0, "d": 0.6}, cast={"가수": 1.0}, budget=120)
+    picks = [e for e in plan(progs, profile=profile) if e.kind == "pick"]
+    assert [e.program_id for e in picks] == ["a", "c"]
+    assert sum((e.end - e.start).total_seconds() / 60 for e in picks) <= 120
+
+
+def test_shows_outside_viewing_hours_are_not_picked():
+    progs = [prog("morning", "07:00", "08:00"), prog("evening", "18:00", "19:00")]
+    profile = flat_profile(
+        series={"morning": 1, "evening": 1}, genre={"교양": 1}, timeslot={"아침": 0.1, "저녁": 0.9}
+    )
+    assert [e.program_id for e in plan(progs, profile=profile)] == ["evening"]
+
+
+def test_pinned_show_is_kept_outside_viewing_hours_and_counts_against_budget():
+    """'매일 챙겨 줘' 방송은 시청 시간대 밖이어도 넣고, 그 시간만큼 상한에서 뺀 나머지로 배치."""
+    progs = [
+        prog("pinned", "07:00", "08:00", key="pinned"),
+        prog("long", "18:00", "19:00"),
+        prog("short", "20:00", "20:30"),
+    ]
+    profile = flat_profile(
+        series={"long": 1.0, "short": 1.0},
+        genre={"교양": 1},
+        timeslot={"아침": 0.1, "저녁": 0.9, "밤": 0.9},
+        budget=90,
+    )
+    entries = plan(progs, profile=profile, rules=[rule("pin", "pinned")])
+    assert [e.program_id for e in entries if e.kind == "pick"] == ["pinned", "short"]
+
+
+def test_lg_fill_only_inside_viewing_hours():
+    """방송 사이 빈 시간이 시청 시간대 밖(낮)에서 시작하면 LG 콘텐츠로 채우지 않는다."""
+    progs = [prog("am", "08:00", "09:00"), prog("pm", "19:00", "20:00")]
+    profile = flat_profile(
+        series={"am": 1, "pm": 1}, genre={"교양": 1}, timeslot={"아침": 0.9, "낮": 0.1, "저녁": 0.9}
+    )
+    entries = plan(progs, profile=profile, s=senior(wake="08:00"), lgs=[lg("x", "교양", 30)])
+    assert [e.kind for e in entries] == ["pick", "pick"]
+
+
+def test_morning_gap_outside_viewing_hours_stays_empty():
+    """기상(06:00)이 시청 시간대(아침) 밖이면 기상~첫 방송 사이도 채우지 않는다."""
+    progs = [prog("noon", "12:00", "13:00")]
+    profile = flat_profile(series={"noon": 1}, genre={"교양": 1}, timeslot={"아침": 0.1, "낮": 0.9})
+    assert [e.kind for e in plan(progs, profile=profile, lgs=[lg("x", "교양", 30)])] == ["pick"]
