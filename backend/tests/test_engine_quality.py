@@ -20,7 +20,7 @@ from app.models.db import LgContent, Program, Senior, UserRule, WatchLog
 from app.models.sample import SAMPLE_DIR
 
 DAY = date(2026, 12, 1)
-MUST = ["M1", "M2", "M3", "M4", "M5", "M6", "M7"]
+MUST = ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"]
 
 
 def at(hhmm: str, d: date = DAY) -> datetime:
@@ -186,6 +186,15 @@ PERSONAS = {
 }
 
 
+def sample_numbers() -> set[str]:
+    """샘플 채널 번호표 (channels.json) — M8 확인용."""
+    return {
+        c["id"]
+        for c in json.loads((SAMPLE_DIR / "channels.json").read_text(encoding="utf-8"))
+        if c.get("number")
+    }
+
+
 def persona_plan(name):
     p = PERSONAS[name]
     prof = build_profile(p["logs"], p["s"], DAY)
@@ -196,6 +205,7 @@ def persona_plan(name):
         profile=prof,
         rules=RuleSet(p["rules"], DAY),
         day=DAY,
+        numbered_channels=sample_numbers(),
     )
 
 
@@ -355,14 +365,14 @@ def test_same_series_is_not_repeated_as_channel_fill():
 
 
 def test_one_genre_takes_at_most_half_unless_the_viewer_watches_more():
-    """두 칸(10시·11시)에 트로트·다큐가 하나씩 겹쳐 있음: 보통은 반반, 트로트만 보는 분은 트로트 두 칸."""
-    progs = [prog(f"t{h}", f"{h}:00", f"{h + 1}:00", genre="트로트") for h in (10, 11)]
-    progs += [prog(f"d{h}", f"{h}:00", f"{h + 1}:00", genre="다큐", ch="EBS1") for h in (10, 11)]
-    base = {"genre": {"트로트": 1.0, "다큐": 0.9}, "budget": 120, "seen": {"트로트": 1.0, "다큐": 1.0}}
+    """네 칸(10~13시)에 트로트·다큐가 하나씩 겹쳐 있음: 보통은 트로트 절반까지, 실제로 75% 보는 분은 75% 까지."""
+    progs = [prog(f"t{h}", f"{h}:00", f"{h + 1}:00", genre="트로트") for h in range(10, 14)]
+    progs += [prog(f"d{h}", f"{h}:00", f"{h + 1}:00", genre="다큐", ch="EBS1") for h in range(10, 14)]
+    base = {"genre": {"트로트": 1.0, "다큐": 0.9}, "budget": 240, "seen": {"트로트": 1.0, "다큐": 1.0}}
     half = [e.source.genre for e in picks(plan(progs, profile(**base)))]
-    assert sorted(half) == ["다큐", "트로트"]
-    loves = [e.source.genre for e in picks(plan(progs, profile(**base, watch_share={"트로트": 1.0})))]
-    assert loves == ["트로트", "트로트"], "실제로 트로트만 보는 분은 상한이 그 비율까지"
+    assert len(half) == 4 and half.count("트로트") <= 2
+    loves = [e.source.genre for e in picks(plan(progs, profile(**base, watch_share={"트로트": 0.75})))]
+    assert loves.count("트로트") == 3, "실제로 75% 보는 분은 상한이 그 비율까지 (3연속은 피해서)"
 
 
 def test_no_three_same_genre_in_a_row():
@@ -499,14 +509,12 @@ def test_equal_scores_prefer_the_earlier_show():
 
 
 def test_sample_s1_has_two_more_shows_besides_representative(sample_session):
-    """상한에 추천으로 본 시청(plan)도 넣으면 s1 은 대표 방송 말고 2칸 이상, 트로트는 대표 제외 50% 이하."""
+    """s1(하루 종일 켜 두는 분)은 대표 방송 말고도 집중 시청 방송이 2칸 이상."""
     from app.engine.service import plan_day
 
-    p, report = plan_day(sample_session, "s1", DAY)
+    p, _report = plan_day(sample_session, "s1", DAY)
     others = [e for e in picks(p) if e.role != "representative"]
-    assert len(others) >= 2
-    trot = sum(e.minutes for e in others if e.source.genre == "트로트")
-    assert report.goals["S2"].ok is not None and trot <= 0.5 * sum(e.minutes for e in others)
+    assert len(others) >= 2  # 장르 비율(S2)은 기준표 v4 부터 3칸 이상일 때만 판정
 
 
 def test_novelty_lg_is_exempt_from_lg_taste_score_rule():
@@ -715,7 +723,7 @@ def test_series_only_left_on_becomes_background_not_a_pick():
     prof = build_profile(left_on + logs_for(["tvc-star"], minutes=100), s, DAY)
     assert {"kbs1-news-noon", "kbs1-trot-party", "kbs1-docu"} <= prof.left_on_series
     assert prof.usual_channel[12] == "KBS1" and prof.tier(13) == "높음"
-    p, report = check_plan(sample_programs(), sample_lg(), s, prof, RuleSet([], DAY), DAY)
+    p, report = check_plan(sample_programs(), sample_lg(), s, prof, RuleSet([], DAY), DAY, sample_numbers())
     assert not [e for e in picks(p) if e.source.series_key in prof.left_on_series]
     bg = [e for e in p.entries if e.role == "background" and e.kind == "fill"]
     assert bg and all(e.channel_id == "KBS1" for e in bg)
@@ -772,22 +780,23 @@ def log_at(key, days_ago, hhmm, minutes, how):
 
 
 def test_heavily_penalized_filler_leaves_room_for_a_better_show_in_the_next_stage():
-    """1단계('높음' 시각)의 기준점 근처 칸이 다양성 감점을 계속 받으면 후보에서 빠져, 2단계의 좋은 방송이 들어올 자리가 생긴다."""
+    """1단계('높음' 시각)의 기준점 근처 칸이 다양성 감점을 계속 받으면 후보에서 빠져, 2단계의 좋은 방송들이 들어올 자리가 생긴다."""
     progs = [
         prog("drama", "21:00", "22:00", key="drama", genre="드라마"),
         prog("filler", "10:00", "11:00", key="filler", genre="드라마", ch="MBC"),
         prog("trot", "16:00", "17:00", key="trot", genre="트로트", ch="SBS"),
+        prog("cult", "17:00", "18:00", key="cult", genre="교양", ch="EBS1"),
     ]
-    on = {h: 0.0 for h in range(24)} | {10: 0.9, 21: 0.9, 16: 0.4}
+    on = {h: 0.0 for h in range(24)} | {10: 0.9, 21: 0.9, 16: 0.4, 17: 0.4}
     prof = profile(
-        series={"drama": 1.0, "filler": 0.3, "trot": 1.0},
-        genre={"드라마": 1.0, "트로트": 1.0},
-        budget=120,
+        series={"drama": 1.0, "filler": 0.3, "trot": 1.0, "cult": 1.0},
+        genre={"드라마": 1.0, "트로트": 1.0, "교양": 1.0},
+        budget=180,
         on=on,
         seen={"드라마": 1.0, "트로트": 1.0, "사극": 1.0, "영화": 1.0, "교양": 1.0, "다큐": 1.0, "예능": 1.0},
     )
     assert config.REPLAN_DROP_FACTOR > 0
-    assert sorted(e.program_id for e in picks(plan(progs, prof))) == ["drama", "trot"]
+    assert sorted(e.program_id for e in picks(plan(progs, prof))) == ["cult", "drama", "trot"]
 
 
 def test_nothing_starts_after_rest_day_even_in_later_high_hours():
@@ -855,7 +864,108 @@ def test_viewer_who_only_leaves_tv_on_still_gets_background():
     s = senior(source="none")
     logs = logs_for(["kbs1-news-noon", "kbs1-trot-party"], how="continued", minutes=90)  # 매일 12~14시대 KBS1
     prof = build_profile(logs, s, DAY)
-    p, report = check_plan(sample_programs(), sample_lg(), s, prof, RuleSet([], DAY), DAY)
+    p, report = check_plan(sample_programs(), sample_lg(), s, prof, RuleSet([], DAY), DAY, sample_numbers())
     bg = [e for e in p.entries if e.role == "background"]
     assert not picks(p) and bg and all(e.channel_id == "KBS1" for e in bg)
     assert all(report.must[c].ok for c in MUST), {c: report.must[c].detail for c in MUST}
+
+
+# ───────── 기준표 v4 (11/27): S5·S2·S6·M4 정의 수정, M8 추가 ─────────
+
+
+def test_novelty_is_not_applicable_when_there_is_no_room():
+    """새로 추천: 켜짐 '높음·중간' 구간에 여유가 없으면 '해당 없음' (실패 아님)."""
+    near = config.NEAR_GENRES["트로트"][0]
+    progs = [
+        prog("fav", "10:00", "12:00", genre="트로트"),
+        prog("new", "13:00", "14:00", genre=near, ch="EBS1"),
+    ]
+    prof = profile(series={"fav": 1.0}, genre={"트로트": 1.0}, seen={"트로트": 1.0}, budget=120)
+    p, report = check_plan(progs, [lg("lg-new", near, 30)], senior(), prof, RuleSet([], DAY), DAY)
+    assert not p.with_role("novelty")
+    assert report.goals["S5"].ok is None and report.goals["S5"].detail.startswith("해당 없음")
+
+
+def test_genre_share_is_not_applicable_under_three_counted_shows():
+    progs = [
+        prog("a", "10:00", "11:00", genre="트로트"),
+        prog("b", "12:00", "13:00", genre="트로트", ch="MBC"),
+    ]
+    p, report = check_plan(
+        progs, [], senior(), profile(series={"a": 1.0, "b": 1.0}, seen={"트로트": 1.0}), RuleSet([], DAY), DAY
+    )
+    assert len(picks(p)) == 2 and report.goals["S2"].ok is None
+
+
+def test_first_slot_counts_from_the_first_high_on_hour():
+    """S6: 켜짐 '높음' 구간이 시작되면(13시) 30분 안에 칸이 있어야 함 — '중간'(9시) 구간 시작은 상관없음."""
+    on = {h: 0.0 for h in range(24)} | {9: 0.4, 13: 0.9, 14: 0.9}
+    progs = [prog("noon", "13:00", "14:00"), prog("pm", "14:00", "15:00", ch="MBC")]
+    _p, report = check_plan(
+        progs,
+        [],
+        senior(),
+        profile(series={"noon": 1.0, "pm": 1.0}, on=on, seen={"교양": 1.0}),
+        RuleSet([], DAY),
+        DAY,
+    )
+    assert report.goals["S6"].ok, report.goals["S6"].detail
+
+
+def test_same_episode_once_but_two_episodes_of_a_series_are_allowed():
+    """M4: 같은 '회차'는 하루 1번. 회차 정보가 다르면 같은 시리즈 두 편(연속 방송)도 됨."""
+    from app.engine.quality import evaluate
+
+    e1, e2 = prog("e1", "20:00", "21:00", key="d"), prog("e2", "21:00", "22:00", key="d", ch="MBC")
+    e1.episode, e2.episode = "11", "12"
+    p = plan([e1, e2], profile(series={"d": 1.0}, watch_share={"교양": 1.0}))
+    assert [e.program_id for e in picks(p)] == ["e1", "e2"]
+    e2.episode = "11"  # 같은 회차 재방송이면 한 번만
+    p2 = plan([e1, e2], profile(series={"d": 1.0}, watch_share={"교양": 1.0}))
+    assert [e.program_id for e in picks(p2)] == ["e1"]
+    p2.entries.append(p.entries[-1])
+    assert (
+        not evaluate(
+            p2, programs=[e1, e2], senior=senior(), profile=profile(series={"d": 1.0}), rules=RuleSet([], DAY)
+        )
+        .must["M4"]
+        .ok
+    )
+
+
+def test_shows_on_channels_without_a_number_are_never_planned():
+    """M8: 채널 번호가 없는 방송은 하루표에 넣지 않음 (LG 콘텐츠는 번호 없이도 됨)."""
+    progs = [prog("ok", "10:00", "11:00", ch="KBS1"), prog("nonum", "12:00", "13:00", ch="NEW")]
+    prof = profile(series={"ok": 1.0, "nonum": 1.0})
+    p, report = check_plan(progs, [], senior(), prof, RuleSet([], DAY), DAY, numbered_channels={"KBS1"})
+    assert "nonum" not in [e.program_id for e in p.entries] and p.dropped["nonum"] == "채널 번호 없음"
+    assert report.must["M8"].ok
+
+
+def test_m2_requires_every_pinned_episode():
+    """챙겨 줘 시리즈의 11회·12회가 안 겹치면 둘 다 있어야 M2 통과 (회차 단위, Codex 리뷰에서 찾음)."""
+    from app.engine.quality import evaluate
+
+    e1, e2 = prog("e1", "10:00", "11:00", key="d"), prog("e2", "15:00", "16:00", key="d", ch="MBC")
+    e1.episode, e2.episode = "11", "12"
+    rules = RuleSet([rule("pin", "d")], DAY)
+    prof = profile(series={"d": 1.0})
+    p = plan([e1, e2], prof, rules=[rule("pin", "d")])
+    assert [e.program_id for e in picks(p)] == ["e1", "e2"]
+    p.entries = [e for e in p.entries if e.program_id != "e2"]
+    assert not evaluate(p, programs=[e1, e2], senior=senior(), profile=prof, rules=rules).must["M2"].ok
+
+
+def test_m2_does_not_require_pins_on_channels_without_a_number():
+    pinned = prog("p", "10:00", "11:00", key="p", ch="NEW")
+    p, report = check_plan(
+        [pinned], [], senior(), profile(), RuleSet([rule("pin", "p")], DAY), DAY, numbered_channels={"KBS1"}
+    )
+    assert not p.entries and report.must["M2"].ok and report.must["M8"].ok
+
+
+def test_m8_is_not_marked_passed_without_a_channel_number_table():
+    _p, report = check_plan(
+        [prog("a", "10:00", "11:00")], [], senior(), profile(series={"a": 1.0}), RuleSet([], DAY), DAY
+    )
+    assert report.must["M8"].ok is None

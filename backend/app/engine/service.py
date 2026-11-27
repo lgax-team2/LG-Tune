@@ -33,6 +33,7 @@ class DayInputs:
     profile: Profile
     rules: RuleSet
     day: date
+    numbered_channels: set[str]  # 리모컨 번호가 있는 채널 (기준표 M8)
 
 
 def load_inputs(session: Session, senior_id: str, day: date) -> DayInputs:
@@ -58,19 +59,22 @@ def load_inputs(session: Session, senior_id: str, day: date) -> DayInputs:
         session.scalars(select(UserRule).where(UserRule.senior_id == senior_id).order_by(UserRule.id))
     )
     lg = list(session.scalars(select(LgContent).order_by(LgContent.id)))
-    return DayInputs(senior, programs, lg, build_profile(logs, senior, day), RuleSet(rules, day), day)
+    numbered = {c.id for c in session.scalars(select(Channel)) if c.number is not None}
+    return DayInputs(
+        senior, programs, lg, build_profile(logs, senior, day), RuleSet(rules, day), day, numbered
+    )
 
 
 def plan_day(session: Session, senior_id: str, day: date) -> tuple[Plan, Report]:
     """하루표 + 기준표 판정 (확인 화면·테스트용)."""
     i = load_inputs(session, senior_id, day)
-    return check_plan(i.programs, i.lg_contents, i.senior, i.profile, i.rules, i.day)
+    return check_plan(i.programs, i.lg_contents, i.senior, i.profile, i.rules, i.day, i.numbered_channels)
 
 
 def make_schedule(session: Session, senior_id: str, day: date) -> ScheduleResponse:
     """하루표 API 응답을 만들고 plan_items 에 저장한다 (같은 날 것은 새로 덮어씀)."""
     i = load_inputs(session, senior_id, day)
-    plan = build_plan(i.programs, i.lg_contents, i.senior, i.profile, i.rules, i.day)
+    plan = build_plan(i.programs, i.lg_contents, i.senior, i.profile, i.rules, i.day, i.numbered_channels)
     return save_and_respond(session, senior_id, day, plan)
 
 

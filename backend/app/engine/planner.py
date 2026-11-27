@@ -20,8 +20,8 @@ from datetime import date, datetime, time, timedelta
 from ..models.db import LgContent, Program, Senior
 from . import config
 from .diversity import long_runs, over_share_genres, streak_breakers
-from .gaps import fill_gaps, first_viewing_moment
-from .genres import genres_of
+from .gaps import fill_gaps, first_high_moment, first_viewing_moment
+from .genres import episode_key, genres_of
 from .novelty import novelty_choices, novelty_genres
 from .plan import NORMAL, NOVELTY, PIN, REPRESENTATIVE, Entry, Plan
 from .preference import Profile
@@ -35,6 +35,7 @@ from .tv_pattern import HIGH
 OUT_OF_DAY = "기상 전·취침 후"
 BY_RULE = "규칙으로 제외"
 OFF_HOURS = "시청 시간대 밖"
+NO_NUMBER = "채널 번호 없음"
 LEFT_ON = "켜 두는 방송"
 NO_TASTE = "취향 정보 없음"
 BELOW_FLOOR = "기준점 미만"
@@ -49,6 +50,7 @@ DROP_REASONS = (
     OUT_OF_DAY,
     BY_RULE,
     OFF_HOURS,
+    NO_NUMBER,
     LEFT_ON,
     NO_TASTE,
     BELOW_FLOOR,
@@ -103,7 +105,7 @@ def resolve_pins(scored: list[tuple[Program, Scored]], rules: RuleSet) -> list[C
     )
     kept: list[Candidate] = []
     for p, s in pinned:
-        if any(k.series_key == p.series_key or overlaps(p, k) for k in kept):
+        if any(k.unit == episode_key(p) or overlaps(p, k) for k in kept):
             continue
         kept.append(_candidate(p, s, 0.0))
     return sorted(kept, key=lambda c: c.start)
@@ -129,7 +131,9 @@ def build_plan(
     profile: Profile,
     rules: RuleSet,
     day: date,
+    numbered_channels: set[str] | None = None,
 ) -> Plan:
+    """numbered_channels: 리모컨 채널 번호가 있는 채널 (None 이면 확인 안 함). 번호 없는 채널 방송은 넣지 않음 (M8)."""
     programs = sorted(programs, key=lambda p: (p.start, p.channel_id, p.id))  # 같은 입력 → 같은 결과 (M6)
     lg_contents = sorted(lg_contents, key=lambda c: c.id)
     wake, sleep = wake_and_sleep(senior, day)
@@ -142,7 +146,9 @@ def build_plan(
     # 1) 후보 거르기
     usable = []  # 기상~취침, 규칙 통과 (채널 유지 칸에도 씀)
     for p, s in scored:
-        if not starts_in_day(p, wake, sleep):
+        if numbered_channels is not None and p.channel_id not in numbered_channels:
+            dropped[p.id] = NO_NUMBER
+        elif not starts_in_day(p, wake, sleep):
             dropped[p.id] = OUT_OF_DAY
         elif not rules.allows_start(p.start) or rules.blocks(p.series_key, genres_of(p)):
             dropped[p.id] = BY_RULE
@@ -171,7 +177,7 @@ def build_plan(
     kept_pins = {c.key for c, _ in fixed}
     for p, _ in usable:
         if rules.is_pinned(p.series_key) and p.id not in kept_pins:
-            same = any(c.series_key == p.series_key for c, _ in fixed)
+            same = any(c.unit == episode_key(p) for c, _ in fixed)
             dropped[p.id] = SAME_SERIES if same else PIN_CLASH
     rep = _representative(eligible, fixed, d)
     if rep:
@@ -192,7 +198,7 @@ def build_plan(
     if not knows_taste:
         d.notes["S5"] = "해당 없음: 아직 취향을 몰라 가까운 장르를 정할 수 없음"
     elif not novel_genres:
-        d.notes["S5"] = "가장 좋아하는 장르와 가까운 장르 중 아직 안 본 장르가 없음"
+        d.notes["S5"] = "해당 없음: 가장 좋아하는 장르와 가까운 장르 중 아직 안 본 장르가 없음"
     taken = [c for c, _ in fixed] + chosen
     room = d.budget_left - sum(c.minutes for c in chosen)
     free = [
@@ -200,12 +206,15 @@ def build_plan(
         for c in open_cands
         if c not in chosen
         and not any(overlaps(c, t) for t in taken)
-        and c.series_key not in {t.series_key for t in taken}
+        and c.unit not in {t.unit for t in taken}
     ]
-    novel = _novelty_keeping_diversity(novelty_choices(free, novel_genres, room), chosen, fixed, d)
+    choices = novelty_choices(free, novel_genres, room)
+    novel = _novelty_keeping_diversity(choices, chosen, fixed, d)
     if novel:
         fixed.append((novel, NOVELTY))
-    elif novel_genres and "S5" not in d.notes and free:
+    elif (
+        choices and "S5" not in d.notes
+    ):  # 넣을 시간·자리는 있었는데 더 높은 목표 때문에 못 넣음 (시간이 없으면 LG 쪽에서 판정)
         d.notes["S5"] = "새로 추천할 방송을 넣으면 장르 비율·3연속(더 높은 목표)이 나빠짐"
 
     # 6) 빈 시간 → 7) 이유
@@ -223,6 +232,7 @@ def build_plan(
         floor,
         need_lg_novelty,
         sleep,
+        first_high_moment(wake, sleep, profile),
     )
     if filled.novelty_note and "S5" not in d.notes:
         d.notes["S5"] = filled.novelty_note
@@ -271,6 +281,7 @@ def _candidate(p: Program, s: Scored, floor: float) -> Candidate:
         floor=floor,
         genre=p.genre,
         series_key=p.series_key,
+        unit=episode_key(p),
         channel_id=p.channel_id,
         payload=(p, s),
     )
@@ -301,13 +312,13 @@ def _representative(eligible, fixed: list[tuple[Candidate, str]], d: _Day) -> Ca
 
 
 def _open_candidates(eligible, fixed: list[tuple[Candidate, str]], d: _Day) -> list[Candidate]:
-    """먼저 넣은 칸과 겹치지 않고, 그 시리즈가 아직 안 나온 후보."""
-    used_series = {c.series_key for c, _ in fixed}
+    """먼저 넣은 칸과 겹치지 않고, 그 회차가 아직 안 나온 후보."""
+    used_units = {c.unit for c, _ in fixed}
     out = []
     for p, s in eligible:
         if p.id in {c.key for c, _ in fixed}:
             continue
-        if p.series_key in used_series:
+        if episode_key(p) in used_units:
             d.dropped[p.id] = SAME_SERIES
         elif any(overlaps(p, c) for c, _ in fixed):
             d.dropped[p.id] = OVERLAP
@@ -327,12 +338,12 @@ def _above_floor(cands: list[Candidate], d: _Day) -> list[Candidate]:
 
 
 def _one_per_series(cands: list[Candidate], d: _Day) -> list[Candidate]:
-    """같은 시리즈는 무게가 가장 큰 회차 하나만 (같으면 이른 시작 → ID). 기준표 M4."""
+    """같은 회차는 무게가 가장 큰 방송 하나만 (같으면 이른 시작 → ID). 기준표 M4 — 회차 정보가 없으면 시리즈 단위."""
     best: dict[str, Candidate] = {}
     for c in cands:
-        cur = best.get(c.series_key)
+        cur = best.get(c.unit)
         if cur is None or (-c.base_weight, c.start, c.key) < (-cur.base_weight, cur.start, cur.key):
-            best[c.series_key] = c
+            best[c.unit] = c
     keep = {id(c) for c in best.values()}
     for c in cands:
         if id(c) not in keep:
@@ -381,8 +392,8 @@ def _place_with_diversity(
         counted = len(chosen) + sum(1 for _, role in fixed if role == NOVELTY)
         first_count = counted if first_count is None else first_count
         over, runs = v.count()
-        if first_count >= 2 and counted < 2:
-            over += 1  # 칸을 줄여 '비율 판정 안 함'으로 피한 것도 위반으로 셈
+        if first_count >= config.GENRE_SHARE_MIN_COUNT and counted < config.GENRE_SHARE_MIN_COUNT:
+            over += 1  # 칸을 줄여 '비율 판정 안 함(3칸 미만)'으로 피한 것도 위반으로 셈
         rank = (over, runs, -sum(c.base_weight for c in chosen))
         if best_rank is None or rank < best_rank:
             best, best_rank, best_factors = chosen, rank, {c.key: c.factor for c in pool}
@@ -422,7 +433,7 @@ def _prefer_same_channel(
         if cur.key in fixed_keys or cur.channel_id == prev.channel_id:
             continue
         nxt = in_order[i + 1] if i + 1 < len(in_order) else None
-        used = {c.series_key for c in in_order if c is not cur}
+        used = {c.unit for c in in_order if c is not cur}
         spent = sum(c.minutes for c in chosen) - cur.minutes
         alts = [
             a
@@ -431,7 +442,7 @@ def _prefer_same_channel(
             and a not in chosen
             and a.start >= prev.end
             and (nxt is None or a.end <= nxt.start)
-            and a.series_key not in used
+            and a.unit not in used
             and spent + a.minutes <= max(d.budget_left, 0)
         ]
         bonus = lambda a: a.base_weight + config.CHANNEL_STAY_BONUS * min(a.minutes, config.LENGTH_CAP_MIN)
@@ -453,13 +464,11 @@ def _staged(pool: list[Candidate], budget: float, profile: Profile) -> list[Cand
     if not profile.pattern_known or not high:
         return select_best(pool, budget)
     first = select_best(high, budget)
-    taken = {c.series_key for c in first}
+    taken = {c.unit for c in first}
     rest = [
         c
         for c in pool
-        if not _touches_high(c, profile)
-        and c.series_key not in taken
-        and not any(overlaps(c, f) for f in first)
+        if not _touches_high(c, profile) and c.unit not in taken and not any(overlaps(c, f) for f in first)
     ]
     return sorted(first + select_best(rest, budget - sum(c.minutes for c in first)), key=lambda c: c.start)
 
