@@ -194,22 +194,22 @@ SENIORS = [
 ]
 
 # 시청 기록 만들 때 어르신별로 잘 보는 것 (가중치) · 싫어하는 것 (반응)
+# 시청 습관 (성격이 분명하게)
+# - like: 직접 골라 보는 프로그램(무게) / per_day: 하루에 몇 편 / fixed: 정해진 시간에 거의 매일 (per_day 대신)
+# - focus_how: 골라 본 방송의 (직접 고름, 추천으로 봄, 틀어만 놓음) 비율 — 없으면 (6, 2, 2)
+# - left_on: (채널, 시작, 끝) — 이 시간엔 TV 를 켜 둔 채 그 채널을 이어서 틂 (continued, 85% 의 날)
 HABITS = {
-    "s1": {
-        "like": {
-            "kbs1-haetsal": 5,
-            "tvc-star": 4,
-            "kbs1-songclass": 3,
-            "kbs2-king-of-song": 3,
-            "mbc-bluesea": 2,
-        },
+    "s1": {  # 하루 종일 켜 두는 분: 낮에 KBS1 을 켜 두고(약 4시간), 저녁에 드라마·트로트 몇 편을 골라 봄 → 켜짐 6~8시간
+        "like": {"kbs1-haetsal": 6, "kbs2-season": 4, "kbs1-songclass": 3, "tvc-star": 1},
         "dislike": {"kbs1-debate": "next", "mbc-current": "next"},
-        "per_day": (3, 5),
+        "per_day": (6, 8),  # 좋아하는 4편 중 거의 다 (같은 편이 뽑히면 한 번)
+        "focus_how": (7, 3, 0),  # 골라 본 방송은 직접 고름·추천으로 끝까지 (틀어만 놓기는 낮 시간에)
+        "left_on": [("KBS1", "10:00", "14:30")],
     },
-    "s2": {
-        "like": {"kbs1-king": 5, "kbs1-news-pm": 5, "kbs1-news-am": 3, "tvc-current-pm": 3, "ebs-baduk": 2},
+    "s2": {  # 정해진 시간만 보는 분: 아침 뉴스·저녁 시사·저녁 뉴스·사극 재방송을 거의 매일 직접 골라 봄, 그 밖엔 끔
+        "like": {"kbs1-news-am": 5, "tvc-current-pm": 4, "kbs1-news-pm": 5, "mbc-joseon": 3},
         "dislike": {"kbs2-laugh": "help", "sbs-laugh": "help"},
-        "per_day": (3, 5),
+        "fixed": True,
     },
     "s3": {"like": {"ebs-doctor": 2, "kbs1-hometown": 2}, "dislike": {}, "per_day": (0, 1)},
 }
@@ -243,39 +243,58 @@ def day_programs(d: date) -> list[dict]:
     return out
 
 
-def watch_logs(rng: random.Random) -> list[dict]:
+def _minutes(p: dict) -> float:
+    return (datetime.fromisoformat(p["end"]) - datetime.fromisoformat(p["start"])).seconds / 60
+
+
+def watch_logs(seed: int) -> list[dict]:
+    """어르신마다 난수를 따로 써서, 한 분의 습관을 바꿔도 다른 분 기록은 그대로."""
     logs = []
-    for offset in range(HISTORY_DAYS, 0, -1):
-        d = DAY - timedelta(days=offset)
-        progs = day_programs(d)
-        for senior in SENIORS:
-            h = HABITS[senior["id"]]
+    for senior in SENIORS:
+        rng = random.Random(f"{seed}-{senior['id']}")
+        for offset in range(HISTORY_DAYS, 0, -1):
             if senior["id"] == "s3" and offset > 3:  # 콜드 스타트: 최근 3일만 조금
                 continue
-            liked = [p for p in progs if p["series_key"] in h["like"]]
-            weights = [h["like"][p["series_key"]] for p in liked]
-            n = rng.randint(*h["per_day"])
-            chosen = {p["id"]: p for p in rng.choices(liked, weights, k=n)} if liked and n else {}
-            for p in chosen.values():
-                dur = (datetime.fromisoformat(p["end"]) - datetime.fromisoformat(p["start"])).seconds / 60
-                how = rng.choices(["chosen", "plan", "continued"], [6, 2, 2])[0]
-                logs.append(_log(senior["id"], p, rng.uniform(0.6, 1.0) * dur, "none", how))
-            # 싫어하는 것: 잠깐 보다가 "다음에"/"됐다"
-            for key, fb in h["dislike"].items():
-                if rng.random() < 0.3:
-                    p = next(p for p in progs if p["series_key"] == key)
-                    logs.append(_log(senior["id"], p, rng.uniform(1, 4), fb, "continued"))
-            # 채널 돌리다 잠깐 (5분 미만 → 취향 계산에서 무시돼야 함)
-            if rng.random() < 0.5:
-                p = rng.choice(progs)
-                logs.append(_log(senior["id"], p, rng.uniform(0.5, 4.5), "none", "chosen"))
-            # 틀어만 놓고 집안일 (이어서 켜진 채 오래) → 엔진은 약하게만 반영해야 함
-            if senior["id"] != "s3" and rng.random() < 0.3:
-                p = rng.choice([p for p in progs if p["series_key"] not in h["like"]])
-                dur = (datetime.fromisoformat(p["end"]) - datetime.fromisoformat(p["start"])).seconds / 60
-                logs.append(_log(senior["id"], p, dur, "none", "continued"))
+            logs += _day_logs(
+                senior["id"], HABITS[senior["id"]], day_programs(DAY - timedelta(days=offset)), rng
+            )
     logs.sort(key=lambda x: (x["started_at"], x["senior_id"]))
     return logs
+
+
+def _day_logs(sid: str, h: dict, progs: list[dict], rng: random.Random) -> list[dict]:
+    out = []
+    liked = [p for p in progs if p["series_key"] in h["like"]]
+    if h.get("fixed"):  # 정해진 시간에 거의 매일
+        chosen = {p["id"]: p for p in liked if rng.random() < 0.9}
+    else:
+        n = rng.randint(*h["per_day"])
+        weights = [h["like"][p["series_key"]] for p in liked]
+        chosen = {p["id"]: p for p in rng.choices(liked, weights, k=n)} if liked and n else {}
+    for p in chosen.values():
+        how = (
+            "chosen"
+            if h.get("fixed")
+            else rng.choices(["chosen", "plan", "continued"], h.get("focus_how", (6, 2, 2)))[0]
+        )
+        full = h.get("fixed") or "focus_how" in h  # 정해 두고 보는 분은 거의 끝까지
+        out.append(_log(sid, p, rng.uniform(0.8 if full else 0.6, 1.0) * _minutes(p), "none", how))
+    # 켜 둔 시간: 그 채널을 이어서 틂 (틀어만 놓기 → 취향엔 약하게, TV 켜짐 패턴엔 그대로)
+    for ch, frm, to in h.get("left_on", []):
+        if rng.random() < 0.85:
+            for p in progs:
+                if p["channel_id"] == ch and frm <= p["start"][11:16] < to and p["id"] not in chosen:
+                    out.append(_log(sid, p, _minutes(p), "none", "continued"))
+    # 싫어하는 것: 잠깐 보다가 "다음에"/"됐다"
+    for key, fb in h["dislike"].items():
+        if rng.random() < 0.3:
+            p = next(p for p in progs if p["series_key"] == key)
+            out.append(_log(sid, p, rng.uniform(1, 4), fb, "continued"))
+    # 채널 돌리다 잠깐 (5분 미만 → 취향·켜짐 계산에서 무시돼야 함)
+    if rng.random() < 0.5:
+        p = rng.choice(progs)
+        out.append(_log(sid, p, rng.uniform(0.5, 4.5), "none", "chosen"))
+    return out
 
 
 def _log(senior_id: str, p: dict, minutes: float, feedback: str, how_started: str) -> dict:
@@ -368,7 +387,7 @@ def main() -> None:
         "channels.json": [{"id": i, "number": n, "name": name} for i, n, name in CHANNELS],
         "programs.json": progs,
         "seniors.json": SENIORS,
-        "watch_logs.json": watch_logs(random.Random(42)),
+        "watch_logs.json": watch_logs(42),
         "schedule_example.json": schedule_example(progs),
         "lg_contents.json": [
             {"id": i, "title": t, "genre": g, "cast": c, "duration_min": d, "source": src}

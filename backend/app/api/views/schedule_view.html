@@ -83,6 +83,8 @@
   .hint { background: #fff7d6; border: 1px solid #f1d46b; border-radius: 10px; padding: 6px 16px; font-size: 22px; }
   .role { font-size: 17px; font-weight: 700; border-radius: 6px; padding: 1px 6px; margin-right: 6px; }
   .role-representative { background: #fde68a; } .role-novelty { background: #bbf7d0; } .role-pin { background: #e0e7ff; }
+  .role-background { background: #e5e7eb; }
+  tr.row-rest td { color: var(--mute); font-style: italic; background: #fafafa; }
 </style>
 </head>
 <body>
@@ -164,8 +166,8 @@
   $("facts").innerHTML = "";
   [["기상", data.senior.wake], ["취침", data.senior.sleep], ["시청 기록", p.n_logs + "건"],
    ["기록 비중", Math.round(p.history_share * 100) + "%"], ["기준점", score(data.floor)],
-   ["하루표 시간", data.budget.used_min + "분 / 상한 " + data.budget.limit_min + "분"],
-   ["시청 시간대", data.viewing_bands.join("·")]
+   ["하루표 시간", data.budget.used_min + "분 / 상한 " + data.budget.limit_min + "분 (집중 " + data.budget.focus_min + "분)"],
+   ["TV 켜는 시각", (data.pattern_known ? "" : "(기록 적음·전부 중간) ") + data.viewing_hours.join(", ")]
   ].forEach(function (kv, i) {
     if (i) $("facts").appendChild(document.createTextNode(" · "));
     $("facts").appendChild(document.createTextNode(kv[0] + " "));
@@ -194,6 +196,7 @@
   var m = data.metrics;
   [["취향 일치율", pct(m.taste_match)], ["새 장르 발견", m.new_genre || "없음"],
    ["LG 노출", m.lg_minutes + "분 (" + pct(m.lg_share) + ")"], ["채널 전환", m.switches + "번"],
+   ["배경 편성", m.background_minutes + "분"], ["쉬는 시간", m.rest_minutes + "분"],
    ["장르 비율(대표 포함)", shares(m.genre_share_with_rep)], ["장르 비율(대표 제외)", shares(m.genre_share_without_rep)]
   ].forEach(function (kv) {
     var d = el("div"); d.appendChild(document.createTextNode(kv[0] + " ")); d.appendChild(el("b", null, kv[1]));
@@ -218,7 +221,18 @@
 
   // ── 하루표 ──
   var counts = { pick: 0, fill: 0, lg: 0 };
-  data.items.forEach(function (it) {
+  var rows = data.items.map(function (it) { return { at: it.start, item: it }; })
+    .concat(data.rests.map(function (r) { return { at: r.start, rest: r }; }))
+    .sort(function (a, b) { return a.at < b.at ? -1 : (a.at > b.at ? 1 : 0); });
+  rows.forEach(function (row) {
+    if (row.rest) {
+      var tr0 = el("tr", "row-rest");
+      tr0.appendChild(el("td", "time", span(row.rest.start, row.rest.end)));
+      var td = el("td", null, "쉬는 시간 — 평소 이 시간엔 TV 를 거의 안 켜세요"); td.colSpan = 5;
+      tr0.appendChild(td); $("plan").appendChild(tr0);
+      return;
+    }
+    var it = row.item;
     counts[it.kind] = (counts[it.kind] || 0) + 1;
     var tr = el("tr", "row-" + it.kind);
     tr.appendChild(el("td", "time", span(it.start, it.end)));
@@ -229,7 +243,7 @@
     tr.appendChild(ch);
     var title = el("td", "title");
     var role = data.roles[it.program_id];
-    var roleName = { representative: "대표", novelty: "새로 추천", pin: "챙겨 줘" }[role];
+    var roleName = { representative: "대표", novelty: "새로 추천", pin: "챙겨 줘", background: "배경" }[role];
     if (roleName) title.appendChild(el("span", "role role-" + role, roleName));
     title.appendChild(document.createTextNode(it.title));
     tr.appendChild(title);

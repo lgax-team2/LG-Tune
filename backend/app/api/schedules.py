@@ -21,7 +21,6 @@ from sqlalchemy.orm import Session
 
 from ..contracts.rest import ScheduleResponse
 from ..engine import planner as P
-from ..engine.config import TIME_BANDS
 from ..engine.genres import genres_of
 from ..engine.plan import Plan
 from ..engine.quality import Report, check_plan
@@ -101,6 +100,7 @@ LABELS = {  # 기준표 v3 (backend/app/engine/QUALITY.md)
     "S2": "한 장르 비율",
     "S3": "하루 시간 상한",
     "S9": "LG 콘텐츠 기준",
+    "S10": "LG 칸 < 방송 칸",
     "S8": "채널 전환",
     "S4": "같은 장르 3연속 없음",
     "S5": "새로 추천 1칸",
@@ -141,7 +141,7 @@ def build_view_data(
     """화면에 뿌릴 데이터: 기준표 판정, 가치 지표, 취향 요약, 하루표, 빠진 방송과 이유 (엔진 기록 그대로)."""
     senior, profile = inputs.senior, inputs.profile
     series_title = {p.series_key: p.title for p in inputs.programs}
-    used = sum((i.end - i.start).total_seconds() / 60 for i in schedule.items if i.kind == "pick")
+    used = sum((i.end - i.start).total_seconds() / 60 for i in schedule.items)  # 하루표 전체 (기준표 S3)
     return {
         "senior": {
             "id": senior.id,
@@ -165,10 +165,14 @@ def build_view_data(
         "floor": round(plan.floor, 3),
         "budget": {
             "limit_min": round(plan.budget_min),
+            "focus_min": round(inputs.profile.focus_budget_min or plan.budget_min),
             "used_min": round(used),
             "lower_min": round(plan.budget_min * P.config.BUDGET_LOWER_RATIO),
         },
-        "viewing_bands": [b for b, _, _ in TIME_BANDS if b in plan.bands],
+        "viewing_hours": hour_ranges(plan.hours),
+        "tiers": {h: profile.tier(h) for h in range(24)},
+        "pattern_known": profile.pattern_known,
+        "rests": [{"start": a.isoformat(), "end": b.isoformat()} for a, b in plan.rests],
         "quality": {
             part: [
                 {"code": c, "label": LABELS[c], "ok": chk.ok, "detail": chk.detail}
@@ -182,6 +186,19 @@ def build_view_data(
         "roles": {e.program_id: e.role for e in plan.entries},
         "missed": find_missed(inputs, plan, limit),
     }
+
+
+def hour_ranges(hours: set[int]) -> list[str]:
+    """{9, 10, 11, 19, 20} → ["09–12시", "19–21시"] (끝 시각은 그 시각 전까지)."""
+    out, run = [], []
+    for h in sorted(hours):
+        if run and h != run[-1] + 1:
+            out.append(f"{run[0]:02d}–{run[-1] + 1:02d}시")
+            run = []
+        run.append(h)
+    if run:
+        out.append(f"{run[0]:02d}–{run[-1] + 1:02d}시")
+    return out
 
 
 def _top3(d: dict[str, float]) -> list[tuple[str, float]]:
@@ -222,7 +239,7 @@ def _detail(why: str, p: Program, inputs: DayInputs, plan: Plan) -> str:
     if why == P.BY_RULE:
         return _rule_detail(p, inputs.rules)
     if why == P.OFF_HOURS:
-        return "평소 보는 시간대: " + ", ".join(b for b, _, _ in TIME_BANDS if b in plan.bands)
+        return "평소 TV 를 켜는 시각: " + ", ".join(hour_ranges(plan.hours))
     if why == P.BELOW_FLOOR:
         return f"기준점 {plan.floor:.3f} 미만"
     if why in (P.OVERLAP, P.PIN_CLASH):
@@ -230,6 +247,7 @@ def _detail(why: str, p: Program, inputs: DayInputs, plan: Plan) -> str:
         return "겹치는 방송: " + ", ".join(hits) if hits else "배치에서 밀림"
     return {
         P.NO_TASTE: "취향을 몰라 새 회차·생방송만 골라요",
+        P.LEFT_ON: "평소 틀어만 두시는 방송 — 집중 시청 말고 배경 편성 후보",
         P.SAME_SERIES: "같은 시리즈가 이미 하루표에 있어요",
         P.BUDGET: f"하루 시간 상한 {plan.budget_min:.0f}분",
         P.DIVERSITY: "한 장르 비율·같은 장르 연속 조건",

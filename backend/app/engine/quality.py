@@ -15,9 +15,10 @@ from .gaps import first_viewing_moment
 from .genres import genres_of
 from .plan import NOVELTY, PIN, REPRESENTATIVE, Entry, Plan
 from .planner import build_plan, starts_in_day, wake_and_sleep
-from .preference import Profile, band_of
+from .preference import Profile
 from .rules import RuleSet
 from .scoring import score_lg, score_program
+from .tv_pattern import HIGH
 
 TASTE_BASIS = ("series", "cast:", "genre:", "timeslot", "representative")
 
@@ -86,6 +87,7 @@ def evaluate(
     r.goals["S2"] = _genre_share(plan, profile)
     r.goals["S3"] = _budget(plan)
     r.goals["S9"] = _lg(plan, profile)
+    r.goals["S10"] = _lg_count(plan)
     r.goals["S8"] = Check(True, f"채널 전환 {_switches(plan.entries)}번")
     r.goals["S4"] = _streak(plan)
     r.goals["S5"] = _novelty(plan)
@@ -111,6 +113,8 @@ def _rules_kept(plan, programs, senior, profile, rules, wake, sleep) -> Check:
         series = getattr(e.source, "series_key", None)
         if rules.blocks(series, genres_of(e.source)):
             return Check(False, f"'안 볼래' 위반: {e.title}")
+        if not rules.allows_start(e.start):
+            return Check(False, f"'오늘은 그만 볼래' 뒤에 시작: {e.title} {e.start:%H:%M}")
     # '챙겨 줘'는 엔진 함수를 다시 쓰지 않고 규칙대로 직접 확인: 빠진 pin 은 (더 좋은 같은 시리즈 회차가 있거나)
     # (겹치는 pin 이 점수가 더 높을 때 — 같으면 이른 시작 → ID)만 허용
     family = senior.family_picks or []
@@ -139,7 +143,7 @@ def _inside_hours(plan: Plan, wake, sleep) -> Check:
     for e in plan.entries:
         if not (wake <= e.start < sleep):
             return Check(False, f"기상~취침 밖 시작: {e.title} {e.start:%H:%M}")
-        if e.role != PIN and band_of(e.start) not in plan.bands:
+        if e.role != PIN and e.start.hour not in plan.hours:
             return Check(False, f"시청 시간대 밖 시작: {e.title} {e.start:%H:%M}")
     return Check(True)
 
@@ -187,6 +191,7 @@ def _basis_holds(b: str, e: Entry, plan: Plan, senior: Senior, profile: Profile,
         "novelty": lambda: arg == src.genre and arg in config.NEAR_GENRES.get(plan.favorite_genre or "", []),
         "lg": lambda: arg in genres_of(src) and e.kind == "lg",
         "unknown_taste": lambda: not plan.knows_taste and bool(src.is_new or src.is_live),
+        "background": lambda: profile.tier(e.start.hour) == HIGH,
         "none": lambda: True,
     }
     return kind in checks and checks[kind]()
@@ -223,7 +228,7 @@ def _genre_share(plan: Plan, profile: Profile) -> Check:
 
 
 def _budget(plan: Plan) -> Check:
-    used = sum(e.minutes for e in plan.picks())
+    used = sum(e.minutes for e in plan.entries)  # 하루표 전체 (방송 + 채널 유지 + LG)
     lower = plan.budget_min * config.BUDGET_LOWER_RATIO
     detail = (
         f"{used}분 / 상한 {plan.budget_min:.0f}분 (하한 {lower:.0f}분{' — 짧음' if used < lower else ''})"
@@ -254,6 +259,13 @@ def _lg(plan: Plan, profile: Profile) -> Check:
     return Check(True, detail)
 
 
+def _lg_count(plan: Plan) -> Check:
+    n_lg = sum(1 for e in plan.entries if e.kind == "lg")
+    n_pick = len(plan.picks())
+    detail = f"LG {n_lg}칸 / 방송 {n_pick}칸"
+    return Check(n_lg < n_pick or n_lg == 0, detail)
+
+
 def _switches(entries: list[Entry]) -> int:
     return sum(1 for a, b in itertools.pairwise(entries) if a.channel_id != b.channel_id)
 
@@ -275,7 +287,7 @@ def _novelty(plan: Plan) -> Check:
 
 
 def _first_slot(plan: Plan, wake, sleep) -> Check:
-    moment = first_viewing_moment(wake, sleep, plan.bands)
+    moment = first_viewing_moment(wake, sleep, plan.hours)
     if moment is None or not plan.entries:
         return Check(None, "해당 없음: 시청 시간대나 칸이 없음")
     first = plan.entries[0].start
@@ -291,7 +303,7 @@ def metrics(plan: Plan) -> dict:
     entries = plan.entries
     total = sum(e.minutes for e in entries)
     lg_min = sum(e.minutes for e in entries if e.kind == "lg")
-    taste = [e for e in entries if e.basis.startswith(TASTE_BASIS)]
+    taste = [e for e in entries if any(b.startswith(TASTE_BASIS) for b in e.basis.split("+"))]
     nov = plan.with_role(NOVELTY)
     share = lambda items: {g: round(s, 3) for g, s in genre_minutes_share(items).items()}
     return {
@@ -303,4 +315,6 @@ def metrics(plan: Plan) -> dict:
         "genre_share_without_rep": share([e for e in plan.picks() if e.role != REPRESENTATIVE]),
         "switches": _switches(entries),
         "ask_interests": not plan.knows_taste,
+        "rest_minutes": round(sum((b - a).total_seconds() / 60 for a, b in plan.rests)),
+        "background_minutes": sum(e.minutes for e in entries if e.role == "background"),
     }

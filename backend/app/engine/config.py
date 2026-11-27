@@ -39,15 +39,15 @@ MIN_CANDIDATES = (
 # 규칙 6. 빈 시간
 SHORT_GAP_MIN = 20  # 이보다 짧은 빈 시간은 앞 채널 그대로(기상 직후엔 비움), 이상이면 LG채널·VOD
 
-# 규칙 7. 시청 시간 (평소처럼 보게)
-# 시간대 습관 점수가 이 이상인 시간대 = 시청 시간대. pick·LG 채우기는 이 안에서 "시작"하는 것만
-HABIT_BAND_MIN = 0.35
-# 하루 시청 시간 상한에 세는 시청: 직접 고름 + 추천으로 봄 (틀어만 놓기 continued 는 제외)
-BUDGET_SIGNALS = ("chosen", "plan")
+# 규칙 7. 하루 틀 = TV 켜짐 패턴 (tv_pattern.py). 신호 세기와 상관없이 켜져 있던 시간 전부 (5분 미만·취소만 제외)
+ON_HIGH = 0.6  # 그 시각 TV 켜짐 비율이 이 이상 = '높음' → 빈 시간에 배경 편성(앞 채널 유지·취향 LG)
+ON_MID = 0.25  # 이 이상 = '중간' → 빈 시간은 MID_FILL_MAX_MIN 분 이하로만 / 미만 = '낮음' → 쉬는 시간. 시청 시간대 = 중간 이상
+MID_FILL_MAX_MIN = 20  # '중간' 시각의 빈 시간 채우기 최대 길이
+PATTERN_RECENT_DAYS = 14  # 켜짐 패턴은 최근 14일 기록으로
+PATTERN_MIN_DAYS = 7  # 기록 있는 날이 이보다 적으면 패턴 모름 → 기상~취침 전부 '중간', 하루 시간은 기본값
+FOCUS_SIGNALS = ("chosen", "plan")  # 집중 시청(pick) 상한 = 직접 고름·추천으로 본 시간의 하루 평균 (결정 D25)
 WATCH_SHARE_SIGNALS = ("chosen",)  # 장르별 실제 시청 비율(기준표 S2)은 직접 고른 시청만
-BUDGET_RECENT_DAYS = 14  # 하루 시청 시간 상한 = 최근 14일 동안 본 날의 평균 시청 시간
-BUDGET_MIN_DAYS = 7  # 본 날이 이보다 적으면 평균 대신 기본값
-DEFAULT_BUDGET_MIN = 240  # 기록이 적을 때 하루 시청 시간 상한 (4시간)
+DEFAULT_BUDGET_MIN = 240  # 패턴을 모를 때 하루 시간 상한 (4시간)
 BUDGET_LOWER_RATIO = 0.7  # 하한(표시만) = 상한 × 0.7. 이보다 짧으면 확인 화면에 "짧음" 표시
 
 # 기준표 S1. 오늘의 대표 방송: 시리즈 취향 1위가 이 점수 이상이고 오늘 시청 시간대 안에 새 회차가 있을 때만
@@ -57,6 +57,7 @@ REPRESENTATIVE_MIN_SERIES = 0.5
 GENRE_SHARE_MAX = 0.5  # 한 장르 ≤ max(이 값, 그분 실제 시청 비율). 대표 방송·챙겨 줘 제외
 STREAK_MAX = 2  # 같은 장르 연속 허용 칸 수 (3칸째부터 감점)
 REPLAN_PENALTY = 0.7  # 넘친 장르·3연속 칸의 배치 무게에 곱하는 값
+REPLAN_DROP_FACTOR = 0.1  # 장르 비율(S2) 감점이 이 아래로 쌓인 후보는 다시 배치할 때 뺌 (무게가 0 보다 크면 DP 가 예산이 남는 한 계속 넣기 때문)
 MAX_REPLANS = 20  # 다시 배치 최대 횟수 (그래도 못 지키면 규칙 위반이 가장 적은 결과)
 
 # 기준표 S9. LG 콘텐츠

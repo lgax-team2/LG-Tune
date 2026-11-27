@@ -153,7 +153,6 @@ def test_view_shows_budget_and_viewing_hours(client):
     used = sum(
         (datetime.fromisoformat(i["end"]) - datetime.fromisoformat(i["start"])).total_seconds() / 60
         for i in data["items"]
-        if i["kind"] == "pick"
     )
     assert budget["used_min"] == round(used)
     s3 = next(g for g in data["quality"]["goals"] if g["code"] == "S3")
@@ -163,14 +162,19 @@ def test_view_shows_budget_and_viewing_hours(client):
         assert s3["ok"] is False and "상한" in s3["detail"]
     else:
         assert s3["ok"] is True
-    assert set(data["viewing_bands"]) <= {"아침", "낮", "저녁", "밤"} and data["viewing_bands"]
+    assert data["viewing_hours"] and all(r.endswith("시") for r in data["viewing_hours"])
 
 
 def test_view_marks_shows_outside_viewing_hours(client):
-    """s1 은 아침(05~09시)이 시청 시간대가 아님 → 기상 뒤 아침 방송은 '시청 시간대 밖'."""
+    """s1 은 아침(5~8시)에 TV 를 거의 안 켬 → 기상 뒤 그 시각에 시작하는 방송은 '시청 시간대 밖'."""
     data = _view_data(client.get("/api/schedules/s1/view", params={"limit": 100}).text)
-    assert "아침" not in data["viewing_bands"]
-    morning = [m for m in data["missed"] if data["senior"]["wake"] <= m["start"][11:16] < "09:00"]
+    low = {int(h) for h, t in data["tiers"].items() if t == "낮음"}
+    morning = [
+        m
+        for m in data["missed"]
+        if int(m["start"][11:13]) in low
+        and data["senior"]["wake"] <= m["start"][11:16] < data["senior"]["sleep"]
+    ]
     assert morning and all(m["why"] in ("시청 시간대 밖", "규칙으로 제외") for m in morning)
     assert any(m["why"] == "시청 시간대 밖" for m in morning)
 
@@ -229,10 +233,20 @@ def test_view_data_escapes_script_tags_in_titles(client, tmp_path):
 
 
 def test_view_top_shows_quality_table_and_value_metrics(client):
-    """확인 화면 맨 위: 기준표 v3 의 반드시 7개·목표 8개 판정 + 가치 지표."""
+    """확인 화면 맨 위: 기준표 v3 의 반드시 7개·목표 9개 판정 + 가치 지표."""
     data = _view_data(client.get("/api/schedules/s1/view").text)
     assert [q["code"] for q in data["quality"]["must"]] == ["M1", "M2", "M3", "M4", "M5", "M6", "M7"]
-    assert [q["code"] for q in data["quality"]["goals"]] == ["S1", "S2", "S3", "S9", "S8", "S4", "S5", "S6"]
+    assert [q["code"] for q in data["quality"]["goals"]] == [
+        "S1",
+        "S2",
+        "S3",
+        "S9",
+        "S10",
+        "S8",
+        "S4",
+        "S5",
+        "S6",
+    ]
     assert all(q["ok"] is True for q in data["quality"]["must"]), data["quality"]["must"]
     m = data["metrics"]
     assert {
@@ -248,4 +262,5 @@ def test_view_top_shows_quality_table_and_value_metrics(client):
         "pin",
         "representative",
         "novelty",
+        "background",
     }

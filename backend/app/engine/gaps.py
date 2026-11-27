@@ -1,45 +1,57 @@
-"""빈 시간 채우기: 방송 칸(pick) 사이와 하루 첫 시청 구간 시작~첫 방송 사이를 채운다.
+"""빈 시간 채우기: 방송 칸(pick) 사이와 하루 첫 시청 구간 시작~첫 방송 사이. 그 시각의 TV 켜짐 단계(tv_pattern)에 따라:
 
-- 20분 미만 → 앞 채널 그대로(fill). 첫 칸 앞은 앞 채널이 없으니 비움. 같은 시리즈가 이미 있으면 비움 (기준표 M4)
-- 20분 이상 → LG채널·VOD (기준표 S9: 취향 점수 ≥ 기준점 × 0.8, 하루표 전체 시간 중 LG ≤ 30%)
-  · 배정 순서: 새로 추천(S5) LG → 하루 첫 시청 구간 빈 시간(S6) → 나머지는 취향 점수 높은 것부터 (같은 콘텐츠는 하루 한 번)
-  · 새로 추천 LG 1개는 취향 점수 기준 예외 (config.NOVELTY_LG_SKIPS_SCORE_RULE), 비율 상한은 그대로
-- 빈 시간이 시청 시간대 밖이나 "오늘은 그만 볼래" 뒤에서 시작하면 채우지 않음
-- LG 는 빈 시간에만 들어가므로 방송 칸을 밀어내지 않는다 (기준표 M7)
+- 높음 → 배경 편성: 앞 채널의 다음 방송을 이어 붙임(채널 전환 최소). 뺀 방송·이미 나온 시리즈·켜짐 단계가 바뀌면 끊고,
+         남은 자리는 취향 맞는 LG 콘텐츠
+- 중간 → 짧게만: 앞 채널 이어서 또는 LG 콘텐츠, 합쳐서 MID_FILL_MAX_MIN(20분) 이하
+- 낮음 → 비움 ("쉬는 시간"으로 확인 화면에 표시)
+LG 조건 (기준표 S9·S10): 취향 점수 ≥ 기준점 × 0.8 (새로 추천 1개는 예외), 하루표 전체 시간 중 LG ≤ 30%, LG 칸 수 < 방송 칸 수.
+LG 배정 순서: 새로 추천(S5) → 하루 첫 시청 구간(S6) → 취향 점수 높은 것부터 (같은 콘텐츠는 하루 한 번).
+채운 시간도 하루 총 시간 상한에 들어간다. LG 는 빈자리에만 들어가므로 방송 칸을 밀어내지 않는다 (기준표 M7).
 """
 
 import itertools
-from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta
+from dataclasses import dataclass, field
+from datetime import datetime, time, timedelta
 
 from ..models.db import LgContent, Program
 from . import config
 from .genres import genres_of
-from .plan import NOVELTY, Entry
-from .preference import Profile, band_of
+from .plan import BACKGROUND, NORMAL, NOVELTY, Entry
+from .preference import Profile
 from .rules import RuleSet
-from .scoring import score_lg
+from .scoring import Scored, score_lg
+from .tv_pattern import HIGH, LOW, MID
 
 
 @dataclass
-class Gap:
+class Slot:
+    """LG 를 넣을 수 있는 빈자리 (같은 켜짐 단계 안)."""
+
     start: datetime
     end: datetime
-    before: Entry | None  # 빈 시간 바로 앞 방송 칸 (첫 칸 앞이면 None)
+    tier: str
+    first: bool  # 하루 첫 시청 구간 (S6)
+    room: float  # 이 자리에 더 넣을 수 있는 분 ('중간'은 MID_FILL_MAX_MIN 까지)
 
     @property
     def minutes(self) -> float:
-        return (self.end - self.start).total_seconds() / 60
+        return min((self.end - self.start).total_seconds() / 60, self.room)
 
 
-def first_viewing_moment(wake: datetime, sleep: datetime, bands: set[str]) -> datetime | None:
-    """기상 이후 처음으로 시청 시간대가 되는 시각 (취침 전까지 없으면 None)."""
-    if band_of(wake) in bands:
+@dataclass
+class Filled:
+    entries: list[Entry]
+    rests: list[tuple[datetime, datetime]] = field(default_factory=list)  # '낮음' 시각의 쉬는 시간
+    novelty_note: str | None = None
+
+
+def first_viewing_moment(wake: datetime, sleep: datetime, hours: set[int]) -> datetime | None:
+    """기상 이후 처음으로 시청 시간대(켜짐 '중간' 이상)가 되는 시각 (취침 전까지 없으면 None)."""
+    if wake.hour in hours:
         return wake
-    day: date = wake.date()
-    for name, start_h, _ in config.TIME_BANDS:
-        moment = datetime.combine(day, time(start_h))
-        if name in bands and wake < moment < sleep:
+    for h in range(wake.hour + 1, 24):
+        moment = datetime.combine(wake.date(), time(h))
+        if h in hours and moment < sleep:
             return moment
     return None
 
@@ -53,116 +65,171 @@ def fill_gaps(
     viewing_start: datetime | None,
     floor: float,
     novelty_lg_genres: list[str],
-) -> tuple[list[Entry], str | None]:
-    """방송 칸 사이를 채운 전체 칸 목록과, 새로 추천 LG 를 못 넣었으면 그 이유."""
-    bands = profile.viewing_bands()
-    gaps = [
-        g for g in _gaps(picks, viewing_start) if rules.allows_start(g.start) and band_of(g.start) in bands
-    ]
+    sleep: datetime | None = None,
+) -> Filled:
     used_series = {e.source.series_key for e in picks if isinstance(e.source, Program)}
+    budget = profile.daily_budget_min - sum(e.minutes for e in picks)
+    fills: list[Entry] = []
+    slots: list[Slot] = []
+    rests: list[tuple[datetime, datetime]] = []
+    for start, end, before in _gaps(picks, viewing_start, sleep):
+        if not rules.allows_start(start):
+            continue  # "오늘은 그만 볼래" 뒤
+        for seg_start, seg_end, tier in _segments(start, end, profile):
+            if not rules.allows_start(seg_start):
+                break  # "오늘은 그만 볼래" 뒤 구간은 채우지도, 쉬는 시간으로 표시하지도 않음
+            if tier == LOW:
+                rests.append((seg_start, seg_end))
+                continue
+            prev = before if seg_start == start else None  # 앞 방송에 바로 붙은 구간만 채널을 이어 감
+            usual = profile.usual_channel.get(seg_start.hour) if tier == HIGH else None
+            channel = prev.channel_id if prev else usual  # 앞 채널, 없으면 그 시각에 평소 켜 두는 채널
+            chain = _same_channel(channel, seg_start, seg_end, tier, usable, used_series, budget, rules)
+            fills += chain
+            used = sum(e.minutes for e in chain)
+            budget -= used
+            t = chain[-1].end if chain else seg_start
+            room = (config.MID_FILL_MAX_MIN - used) if tier == MID else float("inf")
+            if t < seg_end and room > 0:
+                slots.append(Slot(t, seg_end, tier, before is None, room))
+    base = picks + fills
+    lgs, note = _choose_lg(slots, lg_contents, profile, rules, floor, base, budget, novelty_lg_genres)
+    return Filled(sorted(base + lgs, key=lambda e: e.start), rests, note)
 
-    fills = []
-    for g in gaps:
-        if g.minutes < config.SHORT_GAP_MIN and g.before is not None:
-            fill = _same_channel(g, usable, used_series)
-            if fill:
-                fills.append(fill)
-                used_series.add(fill.source.series_key)
-    base_minutes = sum(e.minutes for e in picks + fills)
-    long_gaps = [g for g in gaps if g.minutes >= config.SHORT_GAP_MIN]
-    lgs, novelty_note = _choose_lg(
-        long_gaps, lg_contents, profile, rules, floor, base_minutes, novelty_lg_genres
-    )
-    return sorted(picks + fills + lgs, key=lambda e: e.start), novelty_note
 
-
-def _gaps(picks: list[Entry], viewing_start: datetime | None) -> list[Gap]:
-    out = []
-    if picks and viewing_start is not None and viewing_start < picks[0].start:
-        out.append(Gap(viewing_start, picks[0].start, None))
+def _gaps(picks: list[Entry], viewing_start: datetime | None, sleep: datetime | None = None):
+    """(시작, 끝, 바로 앞 방송 칸) — 첫 칸 앞 구간은 앞 방송이 없음, 마지막 칸 뒤는 취침까지.
+    방송 칸이 하나도 없으면 하루 첫 시청 시각~취침 전체가 빈 시간 (켜 두기만 하는 분도 배경 편성)."""
+    if not picks:
+        if viewing_start is not None and sleep is not None and viewing_start < sleep:
+            yield viewing_start, sleep, None
+        return
+    if viewing_start is not None and viewing_start < picks[0].start:
+        yield viewing_start, picks[0].start, None
     for cur, nxt in itertools.pairwise(picks):
         if cur.end < nxt.start:
-            out.append(Gap(cur.end, nxt.start, cur))
+            yield cur.end, nxt.start, cur
+    if sleep is not None and picks[-1].end < sleep:
+        yield picks[-1].end, sleep, picks[-1]
+
+
+def _segments(start: datetime, end: datetime, profile: Profile):
+    """빈 시간을 켜짐 단계가 같은 구간으로 나눈다 (정시마다 단계가 바뀔 수 있음)."""
+    t = start
+    while t < end:
+        tier = profile.tier(t.hour)
+        nxt = t.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+        while nxt < end and profile.tier(nxt.hour) == tier:
+            nxt += timedelta(hours=1)
+        seg_end = min(nxt, end)
+        yield t, seg_end, tier
+        t = seg_end
+
+
+def _same_channel(
+    channel: str | None,
+    start: datetime,
+    end: datetime,
+    tier: str,
+    usable: list[Program],
+    used_series: set[str],
+    budget: float,
+    rules: RuleSet,
+) -> list[Entry]:
+    """그 채널(앞 방송 채널 또는 평소 켜 두는 채널)에서 이어지는 방송들.
+    '높음'은 끊길 때까지 이어 붙이고, '중간'은 MID_FILL_MAX_MIN 분까지 한 편."""
+    out: list[Entry] = []
+    if channel is None:
+        return out
+    t = start
+    limit = end if tier == HIGH else min(end, start + timedelta(minutes=config.MID_FILL_MAX_MIN))
+    while t < limit and rules.allows_start(t):
+        nxt = next(
+            (
+                p
+                for p in usable
+                if p.channel_id == channel and p.start <= t < p.end and p.series_key not in used_series
+            ),
+            None,
+        )
+        if nxt is None:
+            break
+        stop = min(nxt.end, limit)
+        if (stop - t).total_seconds() / 60 > budget - sum(e.minutes for e in out):
+            break
+        role = BACKGROUND if tier == HIGH else NORMAL
+        out.append(Entry(nxt.id, nxt.channel_id, nxt.title, t, stop, 0.0, "fill", source=nxt, role=role))
+        used_series.add(nxt.series_key)
+        t = stop
+        if tier == MID:
+            break
     return out
 
 
-def _same_channel(g: Gap, usable: list[Program], used_series: set[str]) -> Entry | None:
-    """앞 채널에서 바로 이어지는 방송 (뺀 방송·이미 나온 시리즈면 None)."""
-    same = [
-        p
-        for p in usable
-        if p.channel_id == g.before.channel_id
-        and p.start <= g.start < p.end
-        and p.series_key not in used_series
-    ]
-    if not same:
-        return None
-    p = same[0]
-    return Entry(p.id, p.channel_id, p.title, g.start, min(p.end, g.end), 0.0, "fill", source=p)
-
-
 def _choose_lg(
-    gaps: list[Gap],
+    slots: list[Slot],
     lg_contents: list[LgContent],
     profile: Profile,
     rules: RuleSet,
     floor: float,
-    base_minutes: float,
+    base: list[Entry],
+    budget: float,
     novelty_genres: list[str],
 ) -> tuple[list[Entry], str | None]:
     min_score = floor * config.LG_SCORE_RATIO
-    every = []  # (점수, 빈 시간, 콘텐츠) — 들어가는 것 전부
-    for g in gaps:
-        for c in lg_contents:
-            if c.duration_min <= g.minutes and not rules.blocks(None, genres_of(c)):
-                every.append((score_lg(c, profile, g.start), g, c))
-    every.sort(key=lambda o: (-o[0].score, o[1].start, o[2].id))
-    options = [o for o in every if o[0].score >= min_score]  # 취향 점수 기준(S9)을 넘는 것
-
+    n_picks = sum(1 for e in base if e.kind == "pick")
+    base_minutes = sum(e.minutes for e in base)
     chosen: list[Entry] = []
-    filled: set[datetime] = set()
     used: set[str] = set()
-    lg_minutes = 0.0
 
-    def fits_cap(minutes: float) -> bool:  # LG / (방송 + LG) ≤ LG_SHARE_MAX
-        total = base_minutes + lg_minutes + minutes
-        return total > 0 and (lg_minutes + minutes) / total <= config.LG_SHARE_MAX + 1e-9
+    def lg_minutes() -> float:
+        return sum(e.minutes for e in chosen)
 
-    def take(s, g, c, role) -> None:
-        nonlocal lg_minutes
-        chosen.append(
-            Entry(
-                c.id,
-                c.source,
-                c.title,
-                g.start,
-                g.start + timedelta(minutes=c.duration_min),
-                0.0,
-                "lg",
-                scored=s,
-                source=c,
-                role=role,
-            )
+    def allowed(c: LgContent, slot: Slot) -> bool:
+        total = base_minutes + lg_minutes() + c.duration_min
+        return (
+            c.id not in used
+            and rules.allows_start(slot.start)  # "그만 볼래" 뒤에 시작하지 않게
+            and c.duration_min <= slot.minutes
+            and not rules.blocks(None, genres_of(c))
+            and len(chosen) + 1 < n_picks  # S10: LG 칸 수 < 방송 칸 수
+            and lg_minutes() + c.duration_min <= budget  # 하루 총 시간
+            and (lg_minutes() + c.duration_min) / total <= config.LG_SHARE_MAX + 1e-9  # S9 비율
         )
-        filled.add(g.start)
-        used.add(c.id)
-        lg_minutes += c.duration_min
 
-    def free(o) -> bool:
-        return o[1].start not in filled and o[2].id not in used and fits_cap(o[2].duration_min)
+    def options(score_rule: bool) -> list[tuple[Scored, Slot, LgContent]]:
+        out = []
+        for slot in slots:
+            for c in lg_contents:
+                if allowed(c, slot):
+                    s = score_lg(c, profile, slot.start)
+                    if not score_rule or s.score >= min_score:
+                        out.append((s, slot, c))
+        return sorted(out, key=lambda o: (-o[0].score, o[1].start, o[2].id))
+
+    def take(s: Scored, slot: Slot, c: LgContent, role: str) -> None:
+        start = slot.start
+        end = start + timedelta(minutes=c.duration_min)
+        chosen.append(Entry(c.id, c.source, c.title, start, end, 0.0, "lg", scored=s, source=c, role=role))
+        used.add(c.id)
+        slot.start = end
+        slot.room -= c.duration_min
+
+    def tier_role(slot: Slot) -> str:
+        return BACKGROUND if slot.tier == HIGH else NORMAL
 
     note = None
     if novelty_genres:
-        pool = every if config.NOVELTY_LG_SKIPS_SCORE_RULE else options
-        novel = [o for o in pool if o[2].genre in novelty_genres and free(o)]
+        novel = [o for o in options(not config.NOVELTY_LG_SKIPS_SCORE_RULE) if o[2].genre in novelty_genres]
         if novel:
             take(*novel[0], NOVELTY)
         else:
-            note = "새로 추천할 장르의 방송·LG 콘텐츠가 남은 시간·빈 시간·LG 비율 조건에 맞지 않음"
-    first_gap = [o for o in options if o[1].before is None and free(o)]  # 하루 첫 시청 구간 (S6)
-    if first_gap:
-        take(*first_gap[0], "normal")
-    for o in options:
-        if free(o):
-            take(*o, "normal")
+            note = "새로 추천할 장르의 방송·LG 콘텐츠가 남은 시간·빈자리·LG 조건에 맞지 않음"
+    first = [o for o in options(True) if o[1].first]
+    if first:
+        s, slot, c = first[0]
+        take(s, slot, c, tier_role(slot))
+    while rest := options(True):
+        s, slot, c = rest[0]
+        take(s, slot, c, tier_role(slot))
     return chosen, note

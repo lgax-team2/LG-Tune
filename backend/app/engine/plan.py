@@ -15,6 +15,7 @@ NORMAL = "normal"  # 점수로 고른 방송
 PIN = "pin"  # "매일 챙겨 줘"
 REPRESENTATIVE = "representative"  # 오늘의 대표 방송 (기준표 S1)
 NOVELTY = "novelty"  # 새로 추천 (기준표 S5)
+BACKGROUND = "background"  # 배경 편성: TV 를 켜 두는 시각의 빈 시간을 앞 채널·취향 LG 로 이어 줌
 
 
 @dataclass
@@ -46,13 +47,14 @@ class Plan:
     entries: list[Entry]
     floor: float  # 기준점
     budget_min: float  # 하루 pick 시간 상한
-    bands: set[str]  # 시청 시간대
+    hours: set[int]  # 시청 시간대 (TV 켜짐 '중간' 이상인 시각)
     knows_taste: bool  # 관심사·기록으로 취향을 아는가
     favorite_genre: str | None = None
     scores: dict[str, float] = field(default_factory=dict)  # 오늘 방송 program_id → 점수
     dropped: dict[str, str] = field(default_factory=dict)  # 하루표에 없는 방송 program_id → 빠진 이유
     notes: dict[str, str] = field(default_factory=dict)  # 기준표 목표 코드(S1…) → 못 지킨 이유·해당 없음 설명
     day: date | None = None
+    rests: list[tuple[datetime, datetime]] = field(default_factory=list)  # 쉬는 시간 (켜짐 '낮음' 빈 시간)
 
     def picks(self) -> list[Entry]:
         return [e for e in self.entries if e.kind == "pick"]

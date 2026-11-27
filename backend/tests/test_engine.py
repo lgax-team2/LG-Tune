@@ -19,6 +19,7 @@ from app.engine.selection import Candidate, select_best
 from app.models.db import LgContent, Program, Senior, UserRule, WatchLog
 
 DAY = date(2026, 12, 1)
+ALL_DAY_ON = {h: 1.0 for h in range(24)}
 
 
 def at(hhmm: str, d: date = DAY) -> datetime:
@@ -98,6 +99,7 @@ def flat_profile(series=None, cast=None, genre=None, timeslot=None, budget=None)
         history_share=0.0,
         n_logs=0,
         daily_budget_min=budget or config.DEFAULT_BUDGET_MIN,
+        on_ratio=dict(ALL_DAY_ON),  # 기본: 하루 종일 켜 두는 분 (시청 시간대 제한 없음, 빈 시간은 배경 편성)
     )
 
 
@@ -230,9 +232,12 @@ def test_show_starting_at_or_after_sleep_is_not_allowed():
 
 def test_morning_gap_of_20min_or_more_gets_lg_content_at_wake_time():
     """기상(06:00)~첫 방송(09:00) 사이도 빈 시간: 20분 이상이면 LG 콘텐츠를 기상 시각부터."""
-    progs = [prog("first", "09:00", "11:00")]  # LG 비율 30% 안에 들게 방송을 2시간으로
+    progs = [
+        prog("first", "09:00", "11:00"),
+        prog("second", "11:00", "12:00"),
+    ]  # LG 칸 < 방송 칸(S10), LG 30% 안
     entries = plan(progs, lgs=[lg("morning", "교양", 30)])
-    assert [(e.program_id, e.kind) for e in entries] == [("morning", "lg"), ("first", "pick")]
+    assert [(e.program_id, e.kind) for e in entries][:2] == [("morning", "lg"), ("first", "pick")]
     assert entries[0].start == at("06:00") and entries[0].end == at("06:30")
 
 
@@ -379,7 +384,9 @@ def test_long_show_does_not_push_out_favorite():
 def test_same_lg_content_is_used_once_a_day():
     progs = [prog("a", "10:00", "11:00"), prog("b", "12:00", "13:00"), prog("c", "14:00", "15:00")]
     lgs = [lg("best", "교양", 30), lg("second", "교양", 30)]
-    entries = [e.program_id for e in plan(progs, lgs=lgs) if e.kind == "lg"]
+    p = flat_profile(series={k: 1.0 for k in "abc"}, genre={"교양": 1.0}, cast={"가수": 1.0})
+    p.genre_watch_share = {"교양": 1.0}  # 교양만 보는 분 (장르 비율·3연속 때문에 방송이 빠지지 않게)
+    entries = [e.program_id for e in plan(progs, profile=p, lgs=lgs) if e.kind == "lg"]
     assert len(entries) == len(set(entries)) == 2
 
 
@@ -432,14 +439,20 @@ def test_empty_cast_is_left_out_and_other_weights_rescaled():
     assert sum(no_cast.parts.values()) == pytest.approx(no_cast.score)
 
 
-def test_daily_budget_counts_chosen_and_plan_but_not_continued():
+def test_tv_on_time_counts_every_signal_and_overlaps_once():
+    """하루 틀은 신호 세기와 상관없이 켜져 있던 시간 전부 (직접 고름·추천·틀어만 놓음 100%), 겹친 시간은 한 번만."""
     from app.engine.preference import daily_budget_min
+    from app.engine.tv_pattern import on_ratio_by_hour
 
     days = range(1, 8)
-    chosen = [log("a", DAY - timedelta(days=d), minutes=60) for d in days]
-    planned = [log("b", DAY - timedelta(days=d), minutes=40, how="plan") for d in days]
-    left_on = [log("c", DAY - timedelta(days=d), minutes=300, how="continued") for d in days]
-    assert daily_budget_min(chosen + planned + left_on, DAY) == pytest.approx(100)
+    chosen = [log("a", DAY - timedelta(days=d), minutes=60, hhmm="19:00") for d in days]
+    planned = [log("b", DAY - timedelta(days=d), minutes=60, how="plan", hhmm="20:00") for d in days]
+    left_on = [log("c", DAY - timedelta(days=d), minutes=120, how="continued", hhmm="10:00") for d in days]
+    overlap = [log("d", DAY - timedelta(days=d), minutes=30, how="continued", hhmm="10:30") for d in days]
+    logs = chosen + planned + left_on + overlap
+    assert daily_budget_min(logs, DAY) == pytest.approx(240)
+    on = on_ratio_by_hour(logs, DAY)
+    assert on[10] == on[11] == on[19] == on[20] == 1.0 and on[15] == 0.0
 
 
 def test_missing_is_new_is_live_defaults_to_false(tmp_path):
@@ -578,16 +591,24 @@ def test_floor_drops_to_sixth_score_when_fewer_than_six_pass_threshold():
 # ───────── ②-2a 시청 시간: 시청 시간대 · 하루 시청 시간 상한 ─────────
 
 
-def test_viewing_bands_are_bands_with_habit_score_over_min():
-    p = flat_profile(timeslot={"아침": 0.13, "낮": 0.79, "저녁": 0.91, "밤": 0.43})
-    assert p.viewing_bands() == {"낮", "저녁", "밤"}
-    assert flat_profile().viewing_bands() == {"아침", "낮", "저녁", "밤"}, "습관 정보가 없으면 제한 없음"
+def test_viewing_hours_follow_tv_on_tiers():
+    """시청 시간대 = TV 켜짐 비율 0.25 이상인 시각. 패턴을 모르면(비어 있으면) 0~23시 전부 '중간'."""
+    p = flat_profile()
+    p.on_ratio = {h: 0.0 for h in range(24)} | {9: 0.3, 10: 0.7, 20: 0.9}
+    assert p.viewing_hours() == {9, 10, 20}
+    assert (p.tier(9), p.tier(10), p.tier(11)) == ("중간", "높음", "낮음")
+    p.on_ratio = {}
+    assert p.viewing_hours() == set(range(24)) and p.tier(3) == "중간"
 
 
-def test_daily_budget_is_recent_average_or_240_when_few_days():
+def test_daily_budget_is_average_tv_on_time_or_240_when_few_days():
     from app.engine.preference import daily_budget_min
 
-    seven_days = [log("a", DAY - timedelta(days=d), minutes=m) for d in range(1, 8) for m in (40, 60)]
+    seven_days = [
+        log("a", DAY - timedelta(days=d), minutes=m, hhmm=t)
+        for d in range(1, 8)
+        for m, t in ((40, "10:00"), (60, "20:00"))
+    ]
     assert daily_budget_min(seven_days, DAY) == pytest.approx(100)
     three_days = [log("a", DAY - timedelta(days=d), minutes=100) for d in range(1, 4)]
     assert daily_budget_min(three_days, DAY) == config.DEFAULT_BUDGET_MIN == 240
@@ -619,9 +640,8 @@ def test_total_pick_minutes_stay_within_budget():
 
 def test_shows_outside_viewing_hours_are_not_picked():
     progs = [prog("morning", "07:00", "08:00"), prog("evening", "18:00", "19:00")]
-    profile = flat_profile(
-        series={"morning": 1, "evening": 1}, genre={"교양": 1}, timeslot={"아침": 0.1, "저녁": 0.9}
-    )
+    profile = flat_profile(series={"morning": 1, "evening": 1}, genre={"교양": 1})
+    profile.on_ratio = {h: (0.9 if h == 18 else 0.0) for h in range(24)}  # 18시만 TV 를 켬
     assert [e.program_id for e in plan(progs, profile=profile)] == ["evening"]
 
 
@@ -643,20 +663,20 @@ def test_pinned_show_is_kept_outside_viewing_hours_and_counts_against_budget():
 
 
 def test_lg_fill_only_inside_viewing_hours():
-    """방송 사이 빈 시간이 시청 시간대 밖(낮)에서 시작하면 LG 콘텐츠로 채우지 않는다."""
+    """방송 사이 빈 시간이 TV 를 거의 안 켜는 시각(낮음)에서 시작하면 채우지 않고 쉬는 시간으로 둔다."""
     progs = [prog("am", "08:00", "09:00"), prog("pm", "19:00", "20:00")]
-    profile = flat_profile(
-        series={"am": 1, "pm": 1}, genre={"교양": 1}, timeslot={"아침": 0.9, "낮": 0.1, "저녁": 0.9}
-    )
+    profile = flat_profile(series={"am": 1, "pm": 1}, genre={"교양": 1}, cast={"가수": 1})
+    profile.on_ratio = {h: (0.9 if h in (8, 19) else 0.0) for h in range(24)}
     entries = plan(progs, profile=profile, s=senior(wake="08:00"), lgs=[lg("x", "교양", 30)])
     assert [e.kind for e in entries] == ["pick", "pick"]
 
 
 def test_morning_gap_outside_viewing_hours_stays_empty():
-    """기상(06:00)이 시청 시간대(아침) 밖이면 기상~첫 방송 사이도 채우지 않는다."""
-    progs = [prog("noon", "12:00", "13:00")]
-    profile = flat_profile(series={"noon": 1}, genre={"교양": 1}, timeslot={"아침": 0.1, "낮": 0.9})
-    assert [e.kind for e in plan(progs, profile=profile, lgs=[lg("x", "교양", 30)])] == ["pick"]
+    """기상(06:00) 무렵 TV 를 안 켜는 분이면 기상~첫 방송 사이도 채우지 않는다."""
+    progs = [prog("noon", "12:00", "13:00"), prog("pm", "14:00", "15:00")]
+    profile = flat_profile(series={"noon": 1, "pm": 1}, genre={"교양": 1}, cast={"가수": 1})
+    profile.on_ratio = {h: (0.9 if h >= 12 else 0.0) for h in range(24)}
+    assert next(e.kind for e in plan(progs, profile=profile, lgs=[lg("x", "교양", 30)])) == "pick"
 
 
 def test_sample_s3_is_child_picked_interests_with_few_logs(sample_session):

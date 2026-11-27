@@ -65,7 +65,9 @@ def rule(kind, target="", target_type="series"):
     return UserRule(senior_id="t", kind=kind, target_type=target_type, target=target, active=True)
 
 
-def profile(series=None, cast=None, genre=None, timeslot=None, budget=240.0, watch_share=None, seen=None):
+def profile(
+    series=None, cast=None, genre=None, timeslot=None, budget=240.0, watch_share=None, seen=None, on=None
+):
     return Profile(
         series=series or {},
         cast=cast if cast is not None else {"가수": 1.0},
@@ -76,6 +78,7 @@ def profile(series=None, cast=None, genre=None, timeslot=None, budget=240.0, wat
         daily_budget_min=budget,
         genre_watch_share=watch_share or {},
         genre_seen_share=seen or {},
+        on_ratio=on if on is not None else {h: 1.0 for h in range(24)},  # 기본: 하루 종일 켜 두는 분
     )
 
 
@@ -138,6 +141,11 @@ def logs_for(
     return out
 
 
+def logs_on(series_keys: list[str], weekdays: set[int], minutes: float = 60.0) -> list[WatchLog]:
+    """logs_for 와 같되, 요일(0=월~6=일)이 weekdays 인 날만."""
+    return [w for w in logs_for(series_keys, minutes) if w.started_at.weekday() in weekdays]
+
+
 EVERY_GENRE_BUT_THREE = ["뉴스", "드라마", "사극", "예능", "트로트", "교양", "다큐", "시사", "건강", "요리"]
 PERSONAS = {
     # 극단형
@@ -148,6 +156,21 @@ PERSONAS = {
         "s": senior(genres=["트로트"]),
         "logs": logs_for(["tvc-star"]),
         "rules": [rule("exclude", g, "genre") for g in EVERY_GENRE_BUT_THREE],
+    },
+    "외출 잦은 분": {
+        "s": senior(genres=["뉴스", "드라마"]),
+        "logs": logs_for(
+            ["kbs1-news-am", "kbs1-news-pm", "kbs1-haetsal"]
+        ),  # 아침·저녁만, 오후엔 TV 거의 안 켬
+        "rules": [],
+    },
+    "평일·주말 다른 분": {
+        "s": senior(genres=["드라마", "예능"]),
+        "logs": logs_on(["kbs1-haetsal", "kbs2-season"], {0, 1, 2, 3, 4})
+        + logs_on(
+            ["kbs2-quiz", "kbs2-movie", "kbs2-cook"], {5, 6}
+        ),  # 평일 저녁 드라마, 주말 낮 예능·영화 (지금은 섞어서 읽음)
+        "rules": [],
     },
     # 보편형
     "뉴스·사극 위주": {
@@ -204,9 +227,9 @@ def test_persona_without_any_taste_gets_new_or_live_shows_with_honest_reason():
 
 def test_persona_watching_one_evening_hour_gets_short_evening_plan():
     p, _ = persona_plan("저녁 1시간만")
-    assert p.bands == {"저녁"}
+    assert p.hours == {18, 19}, "18:30~19:30 만 켬 → 18시·19시가 시청 시간대"
     assert p.budget_min == pytest.approx(60)
-    assert sum(e.minutes for e in picks(p)) <= 60
+    assert sum(e.minutes for e in p.entries) <= 60
 
 
 # ───────── 샘플 3명: 반드시 전부 통과 ─────────
@@ -355,10 +378,10 @@ def test_no_three_same_genre_in_a_row():
 
 def test_lg_content_needs_taste_score_near_floor():
     progs = [prog("a", "10:00", "12:00"), prog("b", "13:00", "15:00")]
-    prof = profile(series={"a": 1.0, "b": 1.0}, genre={"트로트": 1.0}, cast={})
+    prof = profile(series={"a": 1.0, "b": 1.0}, genre={"트로트": 1.0}, cast={}, budget=400)
     liked = plan(progs, prof, lgs=[lg("liked", "트로트", 30, cast=())])  # 0.15 < 0.35×0.8
     assert not [e for e in liked.entries if e.kind == "lg"]
-    prof2 = profile(series={"a": 1.0, "b": 1.0}, genre={"트로트": 1.0})
+    prof2 = profile(series={"a": 1.0, "b": 1.0}, genre={"트로트": 1.0}, budget=400)  # 방송 240분 + LG 자리
     ok = plan(progs, prof2, lgs=[lg("liked", "트로트", 30)])  # 출연자 0.25 + 장르 0.15
     assert [e.program_id for e in ok.entries if e.kind == "lg"] == ["liked"]
 
@@ -435,9 +458,15 @@ def test_novelty_never_picks_excluded_genre():
 
 
 def test_first_slot_starts_within_30min_of_viewing_hours():
-    """시청 시간대(낮 09:00~) 시작 30분 안에 첫 칸 (방송이 늦게 시작하면 LG 로)."""
-    progs = [prog("late", "13:00", "15:00")]
-    prof = profile(series={"late": 1.0}, genre={"교양": 1.0}, timeslot={"아침": 0.1, "낮": 0.9})
+    """시청 시간대(09시~) 시작 30분 안에 첫 칸 (방송이 늦게 시작하면 LG 로)."""
+    progs = [prog("late", "13:00", "15:00"), prog("later", "15:00", "16:00", ch="MBC")]
+    on = {h: (1.0 if h >= 9 else 0.0) for h in range(24)}
+    prof = profile(
+        series={"late": 1.0, "later": 1.0},
+        genre={"교양": 1.0},
+        on=on,
+        seen={"다큐": 1.0, "건강": 1.0, "요리": 1.0},
+    )
     p = plan(progs, prof, lgs=[lg("morning", "교양", 30)])
     assert p.entries[0].start <= at("09:30")
 
@@ -469,10 +498,6 @@ def test_equal_scores_prefer_the_earlier_show():
     assert [e.program_id for e in picks(tight)] == ["early"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="샘플 편성상 불가: 상한 171분 − 대표 방송 120분 = 51분인데 s1 시청 시간대에 51분 이하 방송은 '동물 이야기'(30분) 하나뿐",
-)
 def test_sample_s1_has_two_more_shows_besides_representative(sample_session):
     """상한에 추천으로 본 시청(plan)도 넣으면 s1 은 대표 방송 말고 2칸 이상, 트로트는 대표 제외 50% 이하."""
     from app.engine.service import plan_day
@@ -505,6 +530,7 @@ def test_first_viewing_gap_is_filled_before_higher_scoring_spots():
         genre={"교양": 1.0},
         seen={"교양": 1.0, "다큐": 1.0, "건강": 1.0, "요리": 1.0},
         timeslot={"아침": 0.5, "낮": 1.0},
+        budget=400,  # 하루 총 시간(방송 240분)에 LG 자리가 남게
     )
     p = plan(progs, prof, s=senior(wake="08:00"), lgs=[lg("only", "교양", 40)])
     assert [(e.program_id, e.start) for e in p.entries if e.kind == "lg"] == [("only", at("08:00"))]
@@ -519,7 +545,9 @@ def test_overlapping_pins_keep_the_higher_score():
     prof = profile(series={"a": 1.0, "b": 0.5})
     p = plan(progs, prof, rules=[rule("pin", "a"), rule("pin", "b")])
     assert [e.program_id for e in picks(p)] == ["A"]
-    assert p.dropped["B"] == "겹치는 챙겨 줘"
+    assert "B" not in [e.program_id for e in picks(p)], (
+        "B 는 방송 칸이 아님 (A 뒤에 같은 채널 배경으로 이어질 수는 있음)"
+    )
 
 
 def test_pinned_series_appears_once_a_day():
@@ -586,3 +614,248 @@ def test_novelty_does_not_make_three_in_a_row_with_fixed_slots():
     prof = profile(genre={"뉴스": 1.0}, seen={"뉴스": 1.0})
     p = plan(progs, prof, rules=[rule("pin", "p1"), rule("pin", "p2")])
     assert "new" not in [e.program_id for e in p.entries]
+
+
+# ───────── TV 켜짐 패턴: 시간 배분 · 빈 시간 3단계 · S10 ─────────
+
+
+def test_persona_often_out_gets_nothing_in_the_afternoon():
+    p, _ = persona_plan("외출 잦은 분")
+    assert not [e for e in p.entries if 12 <= e.start.hour < 17], "오후엔 TV 를 거의 안 켬"
+    assert any(a.hour < 17 and b.hour >= 12 for a, b in p.rests), "그 시간은 쉬는 시간으로 표시"
+
+
+def test_high_on_hours_are_filled_first_when_budget_is_short():
+    """시간 예산이 한 칸뿐: 켜짐 '중간' 시각의 조금 더 좋은 방송보다 '높음' 시각의 방송을 먼저 (결정 D18)."""
+    progs = [prog("mid", "10:00", "11:00", key="mid"), prog("high", "20:00", "21:00", key="high")]
+    on = {h: 0.0 for h in range(24)} | {10: 0.4, 20: 0.9}
+    p = plan(progs, profile(series={"mid": 1.0, "high": 0.9}, budget=60, on=on, seen={"교양": 1.0}))
+    assert [e.program_id for e in picks(p)] == ["high"]
+
+
+def test_gap_in_high_on_hours_keeps_the_channel_as_background():
+    progs = [
+        prog("a", "10:00", "11:00", key="a"),
+        prog("k1", "11:00", "12:00", key="k1", genre="다큐", cast=()),
+        prog("k2", "12:00", "13:00", key="k2", genre="뉴스", cast=()),
+        prog("b", "13:00", "14:00", key="b", ch="MBC"),
+    ]
+    p = plan(progs, profile(series={"a": 1.0, "b": 1.0}, budget=600, seen={"교양": 1.0}))
+    bg = [e for e in p.entries if e.role == "background"]
+    assert [(e.program_id, e.kind) for e in bg] == [("k1", "fill"), ("k2", "fill")]
+    assert all(e.reason.startswith("평소 이 시간엔 TV 를 켜 두셔서") for e in bg)
+
+
+def test_gap_in_mid_on_hours_is_filled_20_minutes_at_most():
+    progs = [
+        prog("a", "10:00", "11:00", key="a"),
+        prog("k1", "11:00", "12:00", key="k1", cast=()),
+        prog("b", "13:00", "14:00", key="b", ch="MBC"),
+    ]
+    on = {h: 0.4 for h in range(24)}
+    p = plan(
+        progs,
+        profile(series={"a": 1.0, "b": 1.0}, budget=600, on=on, seen={"교양": 1.0}),
+        lgs=[lg("x", "교양", 20), lg("y", "교양", 60)],
+    )
+    gap = [e for e in p.entries if e.kind != "pick"]
+    assert sum(e.minutes for e in gap) <= 20
+
+
+def test_gap_in_low_on_hours_becomes_rest():
+    progs = [prog("a", "10:00", "11:00", key="a"), prog("b", "15:00", "16:00", key="b", ch="MBC")]
+    on = {h: 0.0 for h in range(24)} | {10: 0.9, 15: 0.9}
+    p = plan(progs, profile(series={"a": 1.0, "b": 1.0}, budget=600, on=on), lgs=[lg("x", "교양", 60)])
+    assert [e.kind for e in p.entries] == ["pick", "pick"]
+    assert p.rests == [(at("11:00"), at("15:00")), (at("16:00"), at("22:00"))], "마지막 방송 뒤~취침도"
+
+
+def test_lg_slots_stay_fewer_than_show_slots():
+    """방송 2칸(240분)이면 LG 비율 30% 로는 3칸까지 되지만, S10(LG 칸 < 방송 칸) 때문에 1칸만."""
+    progs = [prog("a", "10:00", "12:00", key="a"), prog("b", "15:00", "17:00", key="b", ch="MBC")]
+    lgs = [lg(f"l{i}", "교양", 30) for i in range(4)]
+    seen = {"교양": 1.0, "다큐": 1.0, "건강": 1.0, "요리": 1.0}
+    p = plan(progs, profile(series={"a": 1.0, "b": 1.0}, genre={"교양": 1.0}, budget=600, seen=seen), lgs=lgs)
+    assert sum(1 for e in p.entries if e.kind == "lg") == 1
+
+
+def test_lg_reason_names_the_taste_it_matches():
+    progs = [prog("a", "10:00", "11:00", key="a"), prog("b", "12:00", "13:00", key="b", ch="MBC")]
+    p = plan(
+        progs,
+        profile(
+            series={"a": 1.0, "b": 1.0},
+            genre={"교양": 1.0},
+            budget=600,
+            seen={"교양": 1.0, "다큐": 1.0, "건강": 1.0, "요리": 1.0},
+        ),
+        lgs=[lg("x", "교양", 30)],
+    )
+    lgs = [e for e in p.entries if e.kind == "lg"]
+    assert lgs and lgs[0].basis.split("+")[-1] in ("cast:가수", "genre:교양")
+    assert "가수 님이 나오는" in lgs[0].reason or "좋아하시는 교양" in lgs[0].reason
+
+
+def test_program_spanning_a_high_on_hour_is_placed_in_the_first_stage():
+    """20:30~21:30 방송: 시작(20시)은 '중간'이지만 '높음'인 21시에 걸치면 '높음' 단계로 먼저 배치 (결정 D23)."""
+    progs = [prog("day", "10:00", "11:00", key="day"), prog("drama", "20:30", "21:30", key="drama", ch="MBC")]
+    on = {h: 0.0 for h in range(24)} | {10: 0.9, 20: 0.35, 21: 0.9}
+    p = plan(progs, profile(series={"day": 1.0, "drama": 0.9}, budget=60, on=on, seen={"교양": 1.0}))
+    assert [e.program_id for e in picks(p)] in (["day"], ["drama"])
+    p2 = plan(progs, profile(series={"day": 0.9, "drama": 1.0}, budget=60, on=on, seen={"교양": 1.0}))
+    assert [e.program_id for e in picks(p2)] == ["drama"], "둘 다 '높음' 단계라 점수 높은 드라마"
+
+
+def test_series_only_left_on_becomes_background_not_a_pick():
+    """'틀어만 놓기' 기록만 쌓인 시리즈는 집중 시청 칸이 아니라, 평소 켜 두는 채널의 배경 편성으로 (결정 D24)."""
+    s = senior(genres=["트로트"])
+    left_on = logs_for(
+        ["kbs1-news-noon", "kbs1-trot-party", "kbs1-docu"], how="continued", minutes=90
+    )  # 낮 12~16시 KBS1
+    prof = build_profile(left_on + logs_for(["tvc-star"], minutes=100), s, DAY)
+    assert {"kbs1-news-noon", "kbs1-trot-party", "kbs1-docu"} <= prof.left_on_series
+    assert prof.usual_channel[12] == "KBS1" and prof.tier(13) == "높음"
+    p, report = check_plan(sample_programs(), sample_lg(), s, prof, RuleSet([], DAY), DAY)
+    assert not [e for e in picks(p) if e.source.series_key in prof.left_on_series]
+    bg = [e for e in p.entries if e.role == "background" and e.kind == "fill"]
+    assert bg and all(e.channel_id == "KBS1" for e in bg)
+    assert all(e.reason.startswith("평소 이 시간엔 TV 를 켜 두셔서 KBS1") for e in bg)
+    assert all(report.must[c].ok for c in MUST), {c: report.must[c].detail for c in MUST}
+
+
+def test_shows_stay_within_focus_time_and_the_rest_of_tv_on_time_is_background():
+    """예산 두 개 (결정 D25): 집중 시청(pick) ≤ 골라 본 시간 평균, 남는 TV 켜짐 시간은 배경 편성."""
+    progs = [
+        prog("a", "10:00", "11:00", key="a"),
+        prog("k1", "11:00", "12:00", key="k1", cast=()),
+        prog("k2", "12:00", "13:00", key="k2", cast=()),
+        prog("b", "11:00", "12:00", key="b", ch="MBC"),
+    ]
+    prof = profile(series={"a": 1.0, "b": 0.9, "k1": 0.9, "k2": 0.9}, budget=180, seen={"교양": 1.0})
+    prof.focus_budget_min = 60
+    p = plan(progs, prof)
+    assert [e.program_id for e in picks(p)] == ["a"]
+    assert [(e.program_id, e.role) for e in p.entries if e.kind == "fill"] == [
+        ("k1", "background"),
+        ("k2", "background"),
+    ]
+
+
+def test_focus_time_counts_chosen_and_plan_but_not_left_on():
+    from app.engine.preference import focus_budget_min
+
+    days = range(1, 8)
+    logs = (
+        [log_at("a", d, "19:00", 60, "chosen") for d in days]
+        + [log_at("b", d, "20:00", 30, "plan") for d in days]
+        + [log_at("c", d, "10:00", 300, "continued") for d in days]
+    )
+    assert focus_budget_min(logs, DAY) == pytest.approx(90)
+
+
+def log_at(key, days_ago, hhmm, minutes, how):
+    h, m = map(int, hhmm.split(":"))
+    return WatchLog(
+        senior_id="t",
+        channel_id="KBS1",
+        series_key=key,
+        genre="교양",
+        genres=["교양"],
+        cast=[],
+        started_at=datetime.combine(DAY - timedelta(days=days_ago), datetime.min.time())
+        + timedelta(hours=h, minutes=m),
+        watched_min=minutes,
+        feedback="none",
+        how_started=how,
+        cancelled=False,
+    )
+
+
+def test_heavily_penalized_filler_leaves_room_for_a_better_show_in_the_next_stage():
+    """1단계('높음' 시각)의 기준점 근처 칸이 다양성 감점을 계속 받으면 후보에서 빠져, 2단계의 좋은 방송이 들어올 자리가 생긴다."""
+    progs = [
+        prog("drama", "21:00", "22:00", key="drama", genre="드라마"),
+        prog("filler", "10:00", "11:00", key="filler", genre="드라마", ch="MBC"),
+        prog("trot", "16:00", "17:00", key="trot", genre="트로트", ch="SBS"),
+    ]
+    on = {h: 0.0 for h in range(24)} | {10: 0.9, 21: 0.9, 16: 0.4}
+    prof = profile(
+        series={"drama": 1.0, "filler": 0.3, "trot": 1.0},
+        genre={"드라마": 1.0, "트로트": 1.0},
+        budget=120,
+        on=on,
+        seen={"드라마": 1.0, "트로트": 1.0, "사극": 1.0, "영화": 1.0, "교양": 1.0, "다큐": 1.0, "예능": 1.0},
+    )
+    assert config.REPLAN_DROP_FACTOR > 0
+    assert sorted(e.program_id for e in picks(plan(progs, prof))) == ["drama", "trot"]
+
+
+def test_nothing_starts_after_rest_day_even_in_later_high_hours():
+    """'오늘은 그만 볼래'(12:30) 이후엔 뒤쪽 켜짐 '높음' 시각이라도 채우지 않는다 (Codex 리뷰에서 찾음)."""
+    progs = [prog("a", "10:00", "11:00", key="a"), prog("b", "11:00", "12:00", key="b", ch="MBC")]
+    on = {h: 0.0 for h in range(24)} | {10: 0.9, 11: 0.9, 13: 0.9, 14: 0.9}  # 12시 '낮음', 13~14시 '높음'
+    rest = UserRule(
+        senior_id="t",
+        kind="rest_day",
+        target_type="none",
+        target="",
+        date=DAY.isoformat(),
+        from_time="12:30",
+        active=True,
+    )
+    prof = profile(
+        series={"a": 1.0, "b": 1.0},
+        genre={"교양": 1.0},  # LG 가 S9 기준을 넘게
+        watch_share={"교양": 1.0},
+        budget=600,
+        on=on,
+        seen={"교양": 1.0, "다큐": 1.0, "건강": 1.0, "요리": 1.0},
+    )
+    p = plan(progs, prof, rules=[rest], lgs=[lg("x", "교양", 30)])
+    assert all(e.start < at("12:30") for e in p.entries), [(e.program_id, e.start) for e in p.entries]
+
+
+def test_quality_m2_flags_slots_after_rest_day():
+    from dataclasses import replace
+
+    from app.engine.quality import evaluate
+
+    progs = [prog("a", "11:00", "12:00", key="a"), prog("late", "13:00", "14:00", key="late")]
+    rest = UserRule(
+        senior_id="t",
+        kind="rest_day",
+        target_type="none",
+        target="",
+        date=DAY.isoformat(),
+        from_time="12:30",
+        active=True,
+    )
+    rules = RuleSet([rest], DAY)
+    prof = profile(series={"a": 1.0, "late": 1.0})
+    p = plan(progs, prof, rules=[rest])
+    p.entries = [
+        *p.entries,
+        replace(p.entries[0], program_id="late", start=progs[1].start, end=progs[1].end, source=progs[1]),
+    ]
+    assert not evaluate(p, programs=progs, senior=senior(), profile=prof, rules=rules).must["M2"].ok
+
+
+def test_tv_on_time_after_midnight_counts_for_that_day():
+    """매일 23:00~다음 날 01:00 을 보면 하루 켜짐 시간은 120분 (자정에서 자르지 않음, Codex 리뷰에서 찾음)."""
+    from app.engine.tv_pattern import daily_on_minutes, on_ratio_by_hour
+
+    late = [log_at("night", d, "23:00", 120, "chosen") for d in range(1, 8)]
+    assert daily_on_minutes(late, DAY) == pytest.approx(120)
+    on = on_ratio_by_hour(late, DAY)
+    assert on[23] == on[0] == 1.0
+
+
+def test_viewer_who_only_leaves_tv_on_still_gets_background():
+    """'틀어만 놓기' 기록만 있는 분: 방송 칸은 0 이어도 켜 두는 시각엔 배경 편성이 나온다 (Codex 리뷰에서 찾음)."""
+    s = senior(source="none")
+    logs = logs_for(["kbs1-news-noon", "kbs1-trot-party"], how="continued", minutes=90)  # 매일 12~14시대 KBS1
+    prof = build_profile(logs, s, DAY)
+    p, report = check_plan(sample_programs(), sample_lg(), s, prof, RuleSet([], DAY), DAY)
+    bg = [e for e in p.entries if e.role == "background"]
+    assert not picks(p) and bg and all(e.channel_id == "KBS1" for e in bg)
+    assert all(report.must[c].ok for c in MUST), {c: report.must[c].detail for c in MUST}

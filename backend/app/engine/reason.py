@@ -6,7 +6,9 @@
 
 from dataclasses import dataclass
 
-from .plan import NOVELTY, PIN, REPRESENTATIVE, Entry
+from .plan import BACKGROUND, NOVELTY, PIN, REPRESENTATIVE, Entry
+
+KEEP_ON = "평소 이 시간엔 TV 를 켜 두셔서"
 
 UNKNOWN_TASTE = "아직 취향을 몰라서 새로 하는 방송 위주로 골랐어요"
 
@@ -36,6 +38,8 @@ def explain(e: Entry, knows_taste: bool = True, favorite: str | None = None) -> 
     """칸의 역할·종류·점수 내역에서 이유와 근거를 만든다."""
     genre = getattr(e.source, "genre", "")
     if e.kind == "fill":
+        if e.role == BACKGROUND:
+            return Reason(f"{KEEP_ON} {e.channel_id} 이어서 틀어 드려요", "background")
         return Reason("채널을 그대로 두고 이어서 봐요", "fill")
     if e.role == NOVELTY:
         what = "콘텐츠" if e.kind == "lg" else "방송"
@@ -44,7 +48,7 @@ def explain(e: Entry, knows_taste: bool = True, favorite: str | None = None) -> 
             f"novelty:{genre}",
         )
     if e.kind == "lg":
-        return Reason("빈 시간에 볼 만한 " + ieyo(f"{e.channel_id} {genre}"), f"lg:{genre}")
+        return _lg_reason(e, genre)
     if e.role == PIN:
         return Reason("매일 챙겨 드리기로 한 " + ieyo("방송"), "pin")
     if e.role == REPRESENTATIVE:
@@ -52,6 +56,25 @@ def explain(e: Entry, knows_taste: bool = True, favorite: str | None = None) -> 
     if not knows_taste:
         return Reason(UNKNOWN_TASTE, "unknown_taste")
     return _from_score(e)
+
+
+def _lg_reason(e: Entry, genre: str) -> Reason:
+    """LG 콘텐츠 이유는 취향 근거(좋아하는 출연자·장르)를 말한다. 배경 편성이면 '켜 두셔서'로 시작."""
+    parts = e.scored.parts if e.scored else {}
+    cast = e.scored.top_cast if e.scored else None
+    liked = {k: v for k, v in parts.items() if k in ("cast", "genre") and v > 0}
+    if not cast:
+        liked.pop("cast", None)
+    if not liked:
+        return Reason("빈 시간에 볼 만한 " + ieyo(f"{e.channel_id} {genre}"), f"lg:{genre}")
+    if max(liked, key=lambda k: (liked[k], k)) == "cast":
+        what, basis = f"{cast} 님이 나오는 {e.channel_id} 콘텐츠", f"cast:{cast}"
+    else:
+        top_genre = e.scored.top_genre
+        what, basis = f"좋아하시는 {top_genre} {e.channel_id} 콘텐츠", f"genre:{top_genre}"
+    if e.role == BACKGROUND:
+        return Reason(f"{KEEP_ON} {what}를 이어서 틀어 드려요", f"background+{basis}")
+    return Reason("빈 시간에 " + ieyo(what), basis)
 
 
 def _from_score(e: Entry) -> Reason:

@@ -1,18 +1,21 @@
 """하루표 짜기: 오늘 편성 + 취향 + 규칙 → 하루표(Plan). 기준표는 QUALITY.md.
 
 순서 (앞 단계가 우선 — 기준표 우선순위와 같음):
-1. 후보 거르기: 기상~취침 사이 시작, "안 볼래"·"그만 볼래" 아님, 시청 시간대 안 ("챙겨 줘" 예외)
+1. 후보 거르기: 기상~취침 사이 시작, "안 볼래"·"그만 볼래" 아님, 시청 시간대(TV 켜짐 '중간' 이상 시각) 안 ("챙겨 줘" 예외)
 2. 먼저 넣기: "챙겨 줘"(pin) → 오늘의 대표 방송(S1). 넣은 시간만큼 하루 시간 예산에서 뺌
-3. 배치(DP): 남은 예산 안에서 무게 합 최대 (selection.py). 같은 시리즈는 무게가 가장 큰 회차 하나만 후보(M4)
+3. 배치(DP): 남은 예산 안에서 무게 합 최대 (selection.py). TV 켜짐 '높음' 시각부터 채우고 남은 예산으로 '중간' 시각.
+   같은 시리즈는 무게가 가장 큰 회차 하나만 후보(M4)
 4. 다양성(S2·S4): 넘친 장르의 가장 약한 칸·3연속 줄의 칸 무게를 깎아 다시 배치 (최대 MAX_REPLANS 번, 못 지키면 위반이 가장 적은 결과)
 5. 채널 유지(S8): 앞 칸과 같은 채널에 거의 비슷한 방송이 있으면 그걸로 바꿈 (다른 기준을 해치지 않을 때만)
 6. 새로 추천(S5): 남은 시간·빈자리에 들어가는 방송 1개 (없으면 7 에서 LG 콘텐츠로)
-7. 빈 시간 채우기(gaps.py) → 8. 이유 붙이기(reason.py)
+7. 빈 시간 채우기(gaps.py: 켜짐 높음=배경 편성 / 중간=짧게 / 낮음=쉬는 시간) → 8. 이유 붙이기(reason.py)
+예산 두 개 (결정 D25): 방송(pick)은 집중 시청 상한(골라 본 시간 평균) 안에서, 하루 총 시간 상한(TV 켜짐 시간 평균)의
+남은 만큼은 빈 시간 채우기(배경 편성·LG)에 쓴다.
 하루표에 못 들어간 방송은 이유를 Plan.dropped 에, 못 지킨 목표는 Plan.notes 에 남긴다.
 """
 
 from dataclasses import dataclass
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 
 from ..models.db import LgContent, Program, Senior
 from . import config
@@ -21,16 +24,18 @@ from .gaps import fill_gaps, first_viewing_moment
 from .genres import genres_of
 from .novelty import novelty_choices, novelty_genres
 from .plan import NORMAL, NOVELTY, PIN, REPRESENTATIVE, Entry, Plan
-from .preference import Profile, band_of
+from .preference import Profile
 from .reason import explain
 from .rules import RuleSet
 from .scoring import Scored, score_program
 from .selection import Candidate, overlaps, select_best
+from .tv_pattern import HIGH
 
 # 빠진 이유 (확인 화면 "빠진 방송")
 OUT_OF_DAY = "기상 전·취침 후"
 BY_RULE = "규칙으로 제외"
 OFF_HOURS = "시청 시간대 밖"
+LEFT_ON = "켜 두는 방송"
 NO_TASTE = "취향 정보 없음"
 BELOW_FLOOR = "기준점 미만"
 SAME_SERIES = "같은 시리즈"
@@ -44,6 +49,7 @@ DROP_REASONS = (
     OUT_OF_DAY,
     BY_RULE,
     OFF_HOURS,
+    LEFT_ON,
     NO_TASTE,
     BELOW_FLOOR,
     SAME_SERIES,
@@ -70,9 +76,9 @@ def starts_in_day(p: Program, wake: datetime, sleep: datetime) -> bool:
     return wake <= p.start < sleep
 
 
-def in_viewing_hours(start: datetime, bands: set[str]) -> bool:
-    """평소 TV 를 보는 시간대(Profile.viewing_bands)에 시작하는가."""
-    return band_of(start) in bands
+def in_viewing_hours(start: datetime, hours: set[int]) -> bool:
+    """시청 시간대(Profile.viewing_hours — TV 켜짐 '중간' 이상인 시각)에 시작하는가."""
+    return start.hour in hours
 
 
 def candidate_floor(scores: list[float]) -> float:
@@ -109,7 +115,7 @@ class _Day:
 
     profile: Profile
     rules: RuleSet
-    bands: set[str]
+    hours: set[int]
     floor: float
     budget_left: float
     dropped: dict[str, str]
@@ -127,7 +133,7 @@ def build_plan(
     programs = sorted(programs, key=lambda p: (p.start, p.channel_id, p.id))  # 같은 입력 → 같은 결과 (M6)
     lg_contents = sorted(lg_contents, key=lambda c: c.id)
     wake, sleep = wake_and_sleep(senior, day)
-    bands = profile.viewing_bands()
+    hours = profile.viewing_hours()
     knows_taste = profile.knows_taste
     family = senior.family_picks or []
     scored = [(p, score_program(p, profile, family)) for p in programs]
@@ -146,14 +152,19 @@ def build_plan(
     for p, s in usable:
         if rules.is_pinned(p.series_key):
             continue
-        if not in_viewing_hours(p.start, bands):
+        if not in_viewing_hours(p.start, hours):
             dropped[p.id] = OFF_HOURS
+        elif p.series_key in profile.left_on_series:  # 틀어만 놓던 방송 → 집중 시청 말고 배경 편성 후보 (D24)
+            dropped[p.id] = LEFT_ON
         elif not knows_taste and not (p.is_new or p.is_live):
             dropped[p.id] = NO_TASTE
         else:
             eligible.append((p, s))
     floor = candidate_floor([s.score for _, s in eligible])
-    d = _Day(profile, rules, bands, floor, profile.daily_budget_min, dropped, {})
+    focus = profile.daily_budget_min if profile.focus_budget_min is None else profile.focus_budget_min
+    d = _Day(
+        profile, rules, hours, floor, min(focus, profile.daily_budget_min), dropped, {}
+    )  # 방송은 집중 시청 상한 안에서
 
     # 2) 먼저 넣기: 챙겨 줘 → 대표 방송
     fixed: list[tuple[Candidate, str]] = [(c, PIN) for c in resolve_pins(usable, rules)]
@@ -167,7 +178,7 @@ def build_plan(
         fixed.append((rep, REPRESENTATIVE))
     d.budget_left -= sum(c.minutes for c, _ in fixed)
     if d.budget_left < 0:
-        d.notes["S3"] = "대표 방송·챙겨 줘만으로 하루 시간 상한을 넘음 (우선순위가 더 높음)"
+        d.notes["S3"] = "대표 방송·챙겨 줘만으로 집중 시청 상한을 넘음 (우선순위가 더 높음)"
     open_cands = _open_candidates(eligible, fixed, d)
 
     # 3)~5) 배치 + 다양성 + 채널 유지
@@ -202,18 +213,20 @@ def build_plan(
         [_entry(c, role) for c, role in fixed] + [_entry(c, NORMAL) for c in chosen], key=lambda e: e.start
     )
     need_lg_novelty = novel_genres if (knows_taste and not novel) else []
-    entries, lg_note = fill_gaps(
+    filled = fill_gaps(
         picks,
         [p for p, _ in usable],
         lg_contents,
         profile,
         rules,
-        first_viewing_moment(wake, sleep, bands),
+        first_viewing_moment(wake, sleep, hours),
         floor,
         need_lg_novelty,
+        sleep,
     )
-    if lg_note and "S5" not in d.notes:
-        d.notes["S5"] = lg_note
+    if filled.novelty_note and "S5" not in d.notes:
+        d.notes["S5"] = filled.novelty_note
+    entries = filled.entries
     favorite = profile.favorite_genre()
     for e in entries:
         r = explain(e, knows_taste, favorite)
@@ -222,13 +235,14 @@ def build_plan(
         entries=entries,
         floor=floor,
         budget_min=profile.daily_budget_min,
-        bands=bands,
+        hours=hours,
         knows_taste=knows_taste,
         favorite_genre=favorite,
         scores={p.id: s.score for p, s in scored},
         dropped={k: v for k, v in dropped.items() if k not in {e.program_id for e in entries}},
         notes=d.notes,
         day=day,
+        rests=filled.rests,
     )
 
 
@@ -354,13 +368,22 @@ def _place_with_diversity(
     - 비율 넘친 장르: 그 장르에서 고른 칸 중 가장 약한 칸 하나만 (장르 전체를 깎으면 "전부 트로트 ↔ 전부 다큐"로 오락가락함)
     - 3연속: 그 줄의 칸 전부"""
     key_factor: dict[str, float] = {}
+    share_factor: dict[str, float] = {}  # 장르 비율(S2) 때문에 깎인 몫만 따로 (이게 많이 쌓이면 후보에서 뺌)
     best, best_rank, best_factors = [], None, {}
+    first_count = None  # 감점 전 첫 배치의 '비율에 세는 칸' 수
     for _ in range(config.MAX_REPLANS):
         for c in pool:
             c.factor = key_factor.get(c.key, 1.0)
-        chosen = select_best(pool, max(d.budget_left, 0))
+        # 장르 비율 때문에 많이 깎인 후보는 빼서 자리를 비움 (무게가 0 보다 크면 DP 가 예산이 남는 한 계속 넣으므로)
+        alive = [c for c in pool if share_factor.get(c.key, 1.0) >= config.REPLAN_DROP_FACTOR]
+        chosen = _staged(alive, max(d.budget_left, 0), d.profile)
         v = _violations(chosen, fixed, d)
-        rank = (*v.count(), -sum(c.base_weight for c in chosen))
+        counted = len(chosen) + sum(1 for _, role in fixed if role == NOVELTY)
+        first_count = counted if first_count is None else first_count
+        over, runs = v.count()
+        if first_count >= 2 and counted < 2:
+            over += 1  # 칸을 줄여 '비율 판정 안 함'으로 피한 것도 위반으로 셈
+        rank = (over, runs, -sum(c.base_weight for c in chosen))
         if best_rank is None or rank < best_rank:
             best, best_rank, best_factors = chosen, rank, {c.key: c.factor for c in pool}
         if v.count() == (0, 0):
@@ -370,6 +393,7 @@ def _place_with_diversity(
                 (c for c in chosen if c.genre == g), key=lambda c: (c.weight, -_minute(c.start), c.key)
             )
             key_factor[weakest.key] = key_factor.get(weakest.key, 1.0) * config.REPLAN_PENALTY
+            share_factor[weakest.key] = share_factor.get(weakest.key, 1.0) * config.REPLAN_PENALTY
         for c in v.breakers:
             key_factor[c.key] = key_factor.get(c.key, 1.0) * config.REPLAN_PENALTY
     v = _violations(best, fixed, d)
@@ -422,6 +446,31 @@ def _prefer_same_channel(
     return sorted(chosen, key=lambda c: c.start)
 
 
+def _staged(pool: list[Candidate], budget: float, profile: Profile) -> list[Candidate]:
+    """시간 배분 (결정 D18·D23): TV 켜짐 '높음' 시각에 걸친 후보로 먼저 배치하고, 남은 예산으로 나머지.
+    패턴을 모르면 한 번에 배치."""
+    high = [c for c in pool if _touches_high(c, profile)]
+    if not profile.pattern_known or not high:
+        return select_best(pool, budget)
+    first = select_best(high, budget)
+    taken = {c.series_key for c in first}
+    rest = [
+        c
+        for c in pool
+        if not _touches_high(c, profile)
+        and c.series_key not in taken
+        and not any(overlaps(c, f) for f in first)
+    ]
+    return sorted(first + select_best(rest, budget - sum(c.minutes for c in first)), key=lambda c: c.start)
+
+
+def _touches_high(c: Candidate, profile: Profile) -> bool:
+    """방송이 걸친 시각 중 하나라도 TV 켜짐 '높음'인가 (결정 D23)."""
+    last = c.end - timedelta(minutes=1)
+    last_hour = last.hour if last.date() == c.start.date() else 23
+    return any(profile.tier(h) == HIGH for h in range(c.start.hour, last_hour + 1))
+
+
 def _record_unchosen(pool: list[Candidate], chosen: list[Candidate], fixed, d: _Day) -> None:
     """후보였는데 안 들어간 방송의 이유: 조건을 하나씩 끈 배치와 비교해서 정한다.
     - 시간 예산·다양성 둘 다 없어도 못 들어감 → 겹침
@@ -431,7 +480,7 @@ def _record_unchosen(pool: list[Candidate], chosen: list[Candidate], fixed, d: _
     for c in pool:
         c.factor = 1.0
     free = {c.key for c in select_best(pool)}
-    budget_only = {c.key for c in select_best(pool, max(d.budget_left, 0))}
+    budget_only = {c.key for c in _staged(pool, max(d.budget_left, 0), d.profile)}
     for c in pool:
         c.factor = factors[id(c)]
     diversity_only = {c.key for c in select_best(pool)}
