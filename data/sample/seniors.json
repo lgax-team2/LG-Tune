@@ -51,14 +51,14 @@
     "age": 70,
     "wake_time": "06:30",
     "sleep_time": "22:30",
-    "pref_source": "age_default",
+    "pref_source": "child",
     "seed_prefs": {
       "series": [],
       "cast": [],
       "genres": [
-        "교양",
         "건강",
-        "트로트"
+        "교양",
+        "요리"
       ]
     },
     "family_picks": [

@@ -9,22 +9,25 @@
     ],
     "cast": [],
     "started_at": "2026-11-17T06:00:00",
-    "watched_min": 76.6,
+    "watched_min": 113.9,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
   },
   {
-    "senior_id": "s2",
-    "channel_id": "EBS1",
-    "series_key": "ebs-baduk",
-    "genre": "취미",
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-hometown",
+    "genre": "교양",
     "genres": [
-      "취미"
+      "교양",
+      "다큐"
     ],
-    "cast": [],
-    "started_at": "2026-11-17T14:00:00",
-    "watched_min": 44.1,
+    "cast": [
+      "이철호"
+    ],
+    "started_at": "2026-11-17T10:30:00",
+    "watched_min": 60.0,
     "feedback": "none",
     "how_started": "continued",
     "cancelled": false
@@ -32,19 +35,68 @@
   {
     "senior_id": "s1",
     "channel_id": "KBS1",
-    "series_key": "kbs1-songclass",
+    "series_key": "kbs1-animal",
+    "genre": "다큐",
+    "genres": [
+      "다큐"
+    ],
+    "cast": [],
+    "started_at": "2026-11-17T11:30:00",
+    "watched_min": 30.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-noon",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-17T12:00:00",
+    "watched_min": 60.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-trot-party",
     "genre": "트로트",
     "genres": [
       "트로트",
-      "교양"
+      "예능"
     ],
     "cast": [
-      "송미란"
+      "송미란",
+      "김태호"
     ],
-    "started_at": "2026-11-17T16:30:00",
-    "watched_min": 49.1,
+    "started_at": "2026-11-17T13:00:00",
+    "watched_min": 90.0,
     "feedback": "none",
-    "how_started": "plan",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "MBC",
+    "series_key": "mbc-joseon",
+    "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
+    "cast": [
+      "정대현"
+    ],
+    "started_at": "2026-11-17T13:00:00",
+    "watched_min": 105.9,
+    "feedback": "none",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
@@ -61,7 +113,22 @@
       "송미란"
     ],
     "started_at": "2026-11-17T16:30:00",
-    "watched_min": 55.1,
+    "watched_min": 72.1,
+    "feedback": "none",
+    "how_started": "plan",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "TVC",
+    "series_key": "tvc-current-pm",
+    "genre": "시사",
+    "genres": [
+      "시사"
+    ],
+    "cast": [],
+    "started_at": "2026-11-17T18:00:00",
+    "watched_min": 72.9,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
@@ -76,9 +143,9 @@
     ],
     "cast": [],
     "started_at": "2026-11-17T19:00:00",
-    "watched_min": 79.1,
+    "watched_min": 81.6,
     "feedback": "none",
-    "how_started": "continued",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
@@ -94,7 +161,73 @@
       "오민재"
     ],
     "started_at": "2026-11-17T20:30:00",
-    "watched_min": 41.6,
+    "watched_min": 48.9,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "TVC",
+    "series_key": "tvc-star",
+    "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
+    "cast": [
+      "김태호",
+      "송미란"
+    ],
+    "started_at": "2026-11-17T21:00:00",
+    "watched_min": 112.4,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS2",
+    "series_key": "kbs2-season",
+    "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
+    "cast": [
+      "오민재"
+    ],
+    "started_at": "2026-11-17T21:30:00",
+    "watched_min": 79.8,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "SBS",
+    "series_key": "sbs-laugh",
+    "genre": "예능",
+    "genres": [
+      "예능"
+    ],
+    "cast": [],
+    "started_at": "2026-11-17T22:20:00",
+    "watched_min": 1.0,
+    "feedback": "help",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "SBS",
+    "series_key": "sbs-laugh",
+    "genre": "예능",
+    "genres": [
+      "예능"
+    ],
+    "cast": [],
+    "started_at": "2026-11-17T22:20:00",
+    "watched_min": 1.3,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
@@ -102,24 +235,38 @@
   {
     "senior_id": "s2",
     "channel_id": "KBS1",
-    "series_key": "kbs1-king",
-    "genre": "사극",
+    "series_key": "kbs1-news-am",
+    "genre": "뉴스",
     "genres": [
-      "사극",
-      "드라마"
+      "뉴스"
     ],
-    "cast": [
-      "정대현",
-      "윤서아"
-    ],
-    "started_at": "2026-11-17T21:30:00",
-    "watched_min": 46.4,
+    "cast": [],
+    "started_at": "2026-11-18T06:00:00",
+    "watched_min": 111.1,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
   },
   {
-    "senior_id": "s2",
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-hometown",
+    "genre": "교양",
+    "genres": [
+      "교양",
+      "다큐"
+    ],
+    "cast": [
+      "이철호"
+    ],
+    "started_at": "2026-11-18T10:30:00",
+    "watched_min": 60.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
     "channel_id": "KBS1",
     "series_key": "kbs1-animal",
     "genre": "다큐",
@@ -136,6 +283,73 @@
   {
     "senior_id": "s1",
     "channel_id": "KBS1",
+    "series_key": "kbs1-news-noon",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-18T12:00:00",
+    "watched_min": 60.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-trot-party",
+    "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
+    "cast": [
+      "송미란",
+      "김태호"
+    ],
+    "started_at": "2026-11-18T13:00:00",
+    "watched_min": 90.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "SBS",
+    "series_key": "sbs-sports",
+    "genre": "스포츠",
+    "genres": [
+      "스포츠"
+    ],
+    "cast": [],
+    "started_at": "2026-11-18T13:00:00",
+    "watched_min": 2.8,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "MBC",
+    "series_key": "mbc-joseon",
+    "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
+    "cast": [
+      "정대현"
+    ],
+    "started_at": "2026-11-18T13:00:00",
+    "watched_min": 98.9,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
     "series_key": "kbs1-songclass",
     "genre": "트로트",
     "genres": [
@@ -146,9 +360,9 @@
       "송미란"
     ],
     "started_at": "2026-11-18T16:30:00",
-    "watched_min": 44.7,
+    "watched_min": 51.3,
     "feedback": "none",
-    "how_started": "continued",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
@@ -161,7 +375,7 @@
     ],
     "cast": [],
     "started_at": "2026-11-18T18:00:00",
-    "watched_min": 89.6,
+    "watched_min": 79.7,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
@@ -176,9 +390,9 @@
     ],
     "cast": [],
     "started_at": "2026-11-18T19:00:00",
-    "watched_min": 59.9,
+    "watched_min": 83.6,
     "feedback": "none",
-    "how_started": "plan",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
@@ -194,26 +408,9 @@
       "오민재"
     ],
     "started_at": "2026-11-18T20:30:00",
-    "watched_min": 54.6,
+    "watched_min": 50.3,
     "feedback": "none",
-    "how_started": "plan",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s1",
-    "channel_id": "MBC",
-    "series_key": "mbc-bluesea",
-    "genre": "드라마",
-    "genres": [
-      "드라마"
-    ],
-    "cast": [
-      "이은정"
-    ],
-    "started_at": "2026-11-18T20:30:00",
-    "watched_min": 56.5,
-    "feedback": "none",
-    "how_started": "continued",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
@@ -230,43 +427,41 @@
       "송미란"
     ],
     "started_at": "2026-11-18T21:00:00",
-    "watched_min": 75.3,
+    "watched_min": 103.4,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
   },
   {
-    "senior_id": "s2",
-    "channel_id": "KBS1",
-    "series_key": "kbs1-king",
-    "genre": "사극",
+    "senior_id": "s1",
+    "channel_id": "KBS2",
+    "series_key": "kbs2-season",
+    "genre": "드라마",
     "genres": [
-      "사극",
       "드라마"
     ],
     "cast": [
-      "정대현",
-      "윤서아"
+      "오민재"
     ],
     "started_at": "2026-11-18T21:30:00",
-    "watched_min": 57.6,
+    "watched_min": 67.0,
     "feedback": "none",
-    "how_started": "plan",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
     "senior_id": "s1",
-    "channel_id": "MBC",
-    "series_key": "mbc-current",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-debate",
     "genre": "시사",
     "genres": [
       "시사"
     ],
     "cast": [],
     "started_at": "2026-11-18T22:40:00",
-    "watched_min": 1.2,
-    "feedback": "none",
-    "how_started": "chosen",
+    "watched_min": 3.9,
+    "feedback": "next",
+    "how_started": "continued",
     "cancelled": false
   },
   {
@@ -279,60 +474,94 @@
     ],
     "cast": [],
     "started_at": "2026-11-19T06:00:00",
-    "watched_min": 117.2,
+    "watched_min": 107.6,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
   },
   {
     "senior_id": "s1",
-    "channel_id": "KBS2",
-    "series_key": "kbs2-spring",
-    "genre": "드라마",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-hometown",
+    "genre": "교양",
     "genres": [
-      "드라마"
+      "교양",
+      "다큐"
     ],
     "cast": [
-      "이은정"
+      "이철호"
     ],
-    "started_at": "2026-11-19T08:30:00",
-    "watched_min": 40.0,
+    "started_at": "2026-11-19T10:30:00",
+    "watched_min": 60.0,
     "feedback": "none",
     "how_started": "continued",
     "cancelled": false
   },
   {
-    "senior_id": "s2",
-    "channel_id": "EBS1",
-    "series_key": "ebs-baduk",
-    "genre": "취미",
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-animal",
+    "genre": "다큐",
     "genres": [
-      "취미"
+      "다큐"
     ],
     "cast": [],
-    "started_at": "2026-11-19T14:00:00",
-    "watched_min": 50.3,
+    "started_at": "2026-11-19T11:30:00",
+    "watched_min": 30.0,
     "feedback": "none",
-    "how_started": "chosen",
+    "how_started": "continued",
     "cancelled": false
   },
   {
     "senior_id": "s1",
-    "channel_id": "KBS2",
-    "series_key": "kbs2-king-of-song",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-noon",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-19T12:00:00",
+    "watched_min": 60.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-trot-party",
     "genre": "트로트",
     "genres": [
       "트로트",
       "예능"
     ],
     "cast": [
-      "김태호",
-      "송미란"
+      "송미란",
+      "김태호"
     ],
-    "started_at": "2026-11-19T15:00:00",
-    "watched_min": 82.2,
+    "started_at": "2026-11-19T13:00:00",
+    "watched_min": 90.0,
     "feedback": "none",
-    "how_started": "plan",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "MBC",
+    "series_key": "mbc-joseon",
+    "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
+    "cast": [
+      "정대현"
+    ],
+    "started_at": "2026-11-19T13:00:00",
+    "watched_min": 115.1,
+    "feedback": "none",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
@@ -348,22 +577,7 @@
       "송미란"
     ],
     "started_at": "2026-11-19T16:30:00",
-    "watched_min": 57.2,
-    "feedback": "none",
-    "how_started": "chosen",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s1",
-    "channel_id": "EBS1",
-    "series_key": "ebs-prime",
-    "genre": "다큐",
-    "genres": [
-      "다큐"
-    ],
-    "cast": [],
-    "started_at": "2026-11-19T17:00:00",
-    "watched_min": 2.1,
+    "watched_min": 54.6,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
@@ -378,26 +592,55 @@
     ],
     "cast": [],
     "started_at": "2026-11-19T18:00:00",
-    "watched_min": 63.1,
+    "watched_min": 83.2,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-pm",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-19T19:00:00",
+    "watched_min": 86.9,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "EBS1",
+    "series_key": "ebs-extreme",
+    "genre": "다큐",
+    "genres": [
+      "다큐"
+    ],
+    "cast": [],
+    "started_at": "2026-11-19T20:00:00",
+    "watched_min": 3.8,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
   },
   {
     "senior_id": "s1",
-    "channel_id": "KBS2",
-    "series_key": "kbs2-king-of-song",
-    "genre": "트로트",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-haetsal",
+    "genre": "드라마",
     "genres": [
-      "트로트",
-      "예능"
+      "드라마"
     ],
     "cast": [
-      "김태호",
-      "송미란"
+      "한지수",
+      "오민재"
     ],
-    "started_at": "2026-11-19T20:00:00",
-    "watched_min": 80.8,
+    "started_at": "2026-11-19T20:30:00",
+    "watched_min": 58.5,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
@@ -416,26 +659,24 @@
       "송미란"
     ],
     "started_at": "2026-11-19T21:00:00",
-    "watched_min": 78.9,
+    "watched_min": 106.1,
     "feedback": "none",
     "how_started": "plan",
     "cancelled": false
   },
   {
-    "senior_id": "s2",
-    "channel_id": "KBS1",
-    "series_key": "kbs1-king",
-    "genre": "사극",
+    "senior_id": "s1",
+    "channel_id": "KBS2",
+    "series_key": "kbs2-season",
+    "genre": "드라마",
     "genres": [
-      "사극",
       "드라마"
     ],
     "cast": [
-      "정대현",
-      "윤서아"
+      "오민재"
     ],
     "started_at": "2026-11-19T21:30:00",
-    "watched_min": 58.7,
+    "watched_min": 65.8,
     "feedback": "none",
     "how_started": "plan",
     "cancelled": false
@@ -450,7 +691,7 @@
     ],
     "cast": [],
     "started_at": "2026-11-19T22:20:00",
-    "watched_min": 3.7,
+    "watched_min": 3.0,
     "feedback": "help",
     "how_started": "continued",
     "cancelled": false
@@ -465,56 +706,110 @@
     ],
     "cast": [],
     "started_at": "2026-11-20T06:00:00",
-    "watched_min": 75.8,
+    "watched_min": 103.6,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
   },
   {
     "senior_id": "s1",
-    "channel_id": "KBS2",
-    "series_key": "kbs2-wisdom",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-hometown",
     "genre": "교양",
     "genres": [
-      "교양"
+      "교양",
+      "다큐"
     ],
-    "cast": [],
-    "started_at": "2026-11-20T09:10:00",
-    "watched_min": 2.7,
+    "cast": [
+      "이철호"
+    ],
+    "started_at": "2026-11-20T10:30:00",
+    "watched_min": 60.0,
     "feedback": "none",
-    "how_started": "chosen",
+    "how_started": "continued",
     "cancelled": false
   },
   {
     "senior_id": "s2",
     "channel_id": "TVC",
-    "series_key": "tvc-news-noon",
-    "genre": "뉴스",
+    "series_key": "tvc-health",
+    "genre": "건강",
     "genres": [
-      "뉴스"
+      "건강",
+      "교양"
     ],
-    "cast": [],
-    "started_at": "2026-11-20T12:30:00",
-    "watched_min": 2.4,
+    "cast": [
+      "강민수"
+    ],
+    "started_at": "2026-11-20T11:00:00",
+    "watched_min": 3.5,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
   },
   {
     "senior_id": "s1",
-    "channel_id": "KBS2",
-    "series_key": "kbs2-king-of-song",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-animal",
+    "genre": "다큐",
+    "genres": [
+      "다큐"
+    ],
+    "cast": [],
+    "started_at": "2026-11-20T11:30:00",
+    "watched_min": 30.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-noon",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-20T12:00:00",
+    "watched_min": 60.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-trot-party",
     "genre": "트로트",
     "genres": [
       "트로트",
       "예능"
     ],
     "cast": [
-      "김태호",
-      "송미란"
+      "송미란",
+      "김태호"
     ],
-    "started_at": "2026-11-20T15:00:00",
-    "watched_min": 80.6,
+    "started_at": "2026-11-20T13:00:00",
+    "watched_min": 90.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "MBC",
+    "series_key": "mbc-joseon",
+    "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
+    "cast": [
+      "정대현"
+    ],
+    "started_at": "2026-11-20T13:00:00",
+    "watched_min": 97.0,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
@@ -532,9 +827,9 @@
       "송미란"
     ],
     "started_at": "2026-11-20T16:30:00",
-    "watched_min": 42.3,
+    "watched_min": 58.4,
     "feedback": "none",
-    "how_started": "continued",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
@@ -547,9 +842,9 @@
     ],
     "cast": [],
     "started_at": "2026-11-20T18:00:00",
-    "watched_min": 83.0,
+    "watched_min": 76.8,
     "feedback": "none",
-    "how_started": "continued",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
@@ -562,9 +857,27 @@
     ],
     "cast": [],
     "started_at": "2026-11-20T19:00:00",
-    "watched_min": 83.4,
+    "watched_min": 74.6,
     "feedback": "none",
-    "how_started": "plan",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-haetsal",
+    "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
+    "cast": [
+      "한지수",
+      "오민재"
+    ],
+    "started_at": "2026-11-20T20:30:00",
+    "watched_min": 48.7,
+    "feedback": "none",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
@@ -581,42 +894,40 @@
       "송미란"
     ],
     "started_at": "2026-11-20T21:00:00",
-    "watched_min": 113.8,
-    "feedback": "none",
-    "how_started": "continued",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s2",
-    "channel_id": "KBS1",
-    "series_key": "kbs1-king",
-    "genre": "사극",
-    "genres": [
-      "사극",
-      "드라마"
-    ],
-    "cast": [
-      "정대현",
-      "윤서아"
-    ],
-    "started_at": "2026-11-20T21:30:00",
-    "watched_min": 48.7,
+    "watched_min": 110.7,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
   },
   {
     "senior_id": "s1",
-    "channel_id": "KBS1",
-    "series_key": "kbs1-debate",
-    "genre": "시사",
+    "channel_id": "KBS2",
+    "series_key": "kbs2-season",
+    "genre": "드라마",
     "genres": [
-      "시사"
+      "드라마"
+    ],
+    "cast": [
+      "오민재"
+    ],
+    "started_at": "2026-11-20T21:30:00",
+    "watched_min": 78.7,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "KBS2",
+    "series_key": "kbs2-laugh",
+    "genre": "예능",
+    "genres": [
+      "예능"
     ],
     "cast": [],
-    "started_at": "2026-11-20T22:40:00",
-    "watched_min": 2.9,
-    "feedback": "next",
+    "started_at": "2026-11-20T22:50:00",
+    "watched_min": 3.6,
+    "feedback": "help",
     "how_started": "continued",
     "cancelled": false
   },
@@ -630,7 +941,226 @@
     ],
     "cast": [],
     "started_at": "2026-11-21T06:00:00",
-    "watched_min": 87.9,
+    "watched_min": 119.9,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "MBC",
+    "series_key": "mbc-joseon",
+    "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
+    "cast": [
+      "정대현"
+    ],
+    "started_at": "2026-11-21T13:00:00",
+    "watched_min": 112.5,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-songclass",
+    "genre": "트로트",
+    "genres": [
+      "트로트",
+      "교양"
+    ],
+    "cast": [
+      "송미란"
+    ],
+    "started_at": "2026-11-21T16:30:00",
+    "watched_min": 55.6,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "TVC",
+    "series_key": "tvc-current-pm",
+    "genre": "시사",
+    "genres": [
+      "시사"
+    ],
+    "cast": [],
+    "started_at": "2026-11-21T18:00:00",
+    "watched_min": 82.4,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-haetsal",
+    "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
+    "cast": [
+      "한지수",
+      "오민재"
+    ],
+    "started_at": "2026-11-21T20:30:00",
+    "watched_min": 50.3,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "EBS1",
+    "series_key": "ebs-doctor",
+    "genre": "건강",
+    "genres": [
+      "건강",
+      "교양"
+    ],
+    "cast": [
+      "강민수"
+    ],
+    "started_at": "2026-11-21T21:00:00",
+    "watched_min": 2.3,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS2",
+    "series_key": "kbs2-season",
+    "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
+    "cast": [
+      "오민재"
+    ],
+    "started_at": "2026-11-21T21:30:00",
+    "watched_min": 64.2,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-debate",
+    "genre": "시사",
+    "genres": [
+      "시사"
+    ],
+    "cast": [],
+    "started_at": "2026-11-21T22:40:00",
+    "watched_min": 3.6,
+    "feedback": "next",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-am",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-22T06:00:00",
+    "watched_min": 111.3,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-hometown",
+    "genre": "교양",
+    "genres": [
+      "교양",
+      "다큐"
+    ],
+    "cast": [
+      "이철호"
+    ],
+    "started_at": "2026-11-22T10:30:00",
+    "watched_min": 60.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-animal",
+    "genre": "다큐",
+    "genres": [
+      "다큐"
+    ],
+    "cast": [],
+    "started_at": "2026-11-22T11:30:00",
+    "watched_min": 30.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-noon",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-22T12:00:00",
+    "watched_min": 60.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-trot-party",
+    "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
+    "cast": [
+      "송미란",
+      "김태호"
+    ],
+    "started_at": "2026-11-22T13:00:00",
+    "watched_min": 90.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "MBC",
+    "series_key": "mbc-joseon",
+    "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
+    "cast": [
+      "정대현"
+    ],
+    "started_at": "2026-11-22T13:00:00",
+    "watched_min": 117.0,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
@@ -644,46 +1174,10 @@
       "다큐"
     ],
     "cast": [],
-    "started_at": "2026-11-21T14:30:00",
-    "watched_min": 1.9,
+    "started_at": "2026-11-22T14:30:00",
+    "watched_min": 2.1,
     "feedback": "none",
     "how_started": "chosen",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s1",
-    "channel_id": "KBS2",
-    "series_key": "kbs2-king-of-song",
-    "genre": "트로트",
-    "genres": [
-      "트로트",
-      "예능"
-    ],
-    "cast": [
-      "김태호",
-      "송미란"
-    ],
-    "started_at": "2026-11-21T20:00:00",
-    "watched_min": 78.8,
-    "feedback": "none",
-    "how_started": "plan",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s1",
-    "channel_id": "MBC",
-    "series_key": "mbc-bluesea",
-    "genre": "드라마",
-    "genres": [
-      "드라마"
-    ],
-    "cast": [
-      "이은정"
-    ],
-    "started_at": "2026-11-21T20:30:00",
-    "watched_min": 45.6,
-    "feedback": "none",
-    "how_started": "plan",
     "cancelled": false
   },
   {
@@ -699,95 +1193,8 @@
       "김태호",
       "송미란"
     ],
-    "started_at": "2026-11-21T21:00:00",
-    "watched_min": 89.9,
-    "feedback": "none",
-    "how_started": "plan",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s2",
-    "channel_id": "KBS1",
-    "series_key": "kbs1-king",
-    "genre": "사극",
-    "genres": [
-      "사극",
-      "드라마"
-    ],
-    "cast": [
-      "정대현",
-      "윤서아"
-    ],
-    "started_at": "2026-11-21T21:30:00",
-    "watched_min": 43.9,
-    "feedback": "none",
-    "how_started": "chosen",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s2",
-    "channel_id": "SBS",
-    "series_key": "sbs-laugh",
-    "genre": "예능",
-    "genres": [
-      "예능"
-    ],
-    "cast": [],
-    "started_at": "2026-11-21T22:20:00",
-    "watched_min": 2.5,
-    "feedback": "help",
-    "how_started": "continued",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s2",
-    "channel_id": "KBS1",
-    "series_key": "kbs1-news-am",
-    "genre": "뉴스",
-    "genres": [
-      "뉴스"
-    ],
-    "cast": [],
-    "started_at": "2026-11-22T06:00:00",
-    "watched_min": 108.2,
-    "feedback": "none",
-    "how_started": "chosen",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s1",
-    "channel_id": "KBS2",
-    "series_key": "kbs2-king-of-song",
-    "genre": "트로트",
-    "genres": [
-      "트로트",
-      "예능"
-    ],
-    "cast": [
-      "김태호",
-      "송미란"
-    ],
-    "started_at": "2026-11-22T15:00:00",
-    "watched_min": 103.4,
-    "feedback": "none",
-    "how_started": "chosen",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s1",
-    "channel_id": "KBS2",
-    "series_key": "kbs2-king-of-song",
-    "genre": "트로트",
-    "genres": [
-      "트로트",
-      "예능"
-    ],
-    "cast": [
-      "김태호",
-      "송미란"
-    ],
-    "started_at": "2026-11-22T15:00:00",
-    "watched_min": 1.3,
+    "started_at": "2026-11-22T16:30:00",
+    "watched_min": 81.6,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
@@ -805,7 +1212,7 @@
       "송미란"
     ],
     "started_at": "2026-11-22T16:30:00",
-    "watched_min": 37.5,
+    "watched_min": 49.4,
     "feedback": "none",
     "how_started": "plan",
     "cancelled": false
@@ -820,7 +1227,7 @@
     ],
     "cast": [],
     "started_at": "2026-11-22T18:00:00",
-    "watched_min": 54.5,
+    "watched_min": 81.4,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
@@ -835,15 +1242,15 @@
     ],
     "cast": [],
     "started_at": "2026-11-22T19:00:00",
-    "watched_min": 84.8,
+    "watched_min": 85.9,
     "feedback": "none",
-    "how_started": "continued",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
     "senior_id": "s1",
-    "channel_id": "KBS2",
-    "series_key": "kbs2-king-of-song",
+    "channel_id": "TVC",
+    "series_key": "tvc-star",
     "genre": "트로트",
     "genres": [
       "트로트",
@@ -853,47 +1260,42 @@
       "김태호",
       "송미란"
     ],
-    "started_at": "2026-11-22T20:00:00",
-    "watched_min": 66.8,
+    "started_at": "2026-11-22T21:00:00",
+    "watched_min": 106.6,
     "feedback": "none",
-    "how_started": "plan",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
     "senior_id": "s1",
-    "channel_id": "KBS1",
-    "series_key": "kbs1-haetsal",
+    "channel_id": "KBS2",
+    "series_key": "kbs2-season",
     "genre": "드라마",
     "genres": [
       "드라마"
     ],
     "cast": [
-      "한지수",
       "오민재"
     ],
-    "started_at": "2026-11-22T20:30:00",
-    "watched_min": 56.7,
+    "started_at": "2026-11-22T21:30:00",
+    "watched_min": 77.7,
     "feedback": "none",
-    "how_started": "chosen",
+    "how_started": "plan",
     "cancelled": false
   },
   {
     "senior_id": "s2",
-    "channel_id": "KBS1",
-    "series_key": "kbs1-king",
-    "genre": "사극",
+    "channel_id": "SBS",
+    "series_key": "sbs-laugh",
+    "genre": "예능",
     "genres": [
-      "사극",
-      "드라마"
+      "예능"
     ],
-    "cast": [
-      "정대현",
-      "윤서아"
-    ],
-    "started_at": "2026-11-22T21:30:00",
-    "watched_min": 60.3,
-    "feedback": "none",
-    "how_started": "chosen",
+    "cast": [],
+    "started_at": "2026-11-22T22:20:00",
+    "watched_min": 3.2,
+    "feedback": "help",
+    "how_started": "continued",
     "cancelled": false
   },
   {
@@ -906,7 +1308,7 @@
     ],
     "cast": [],
     "started_at": "2026-11-22T22:50:00",
-    "watched_min": 2.2,
+    "watched_min": 3.1,
     "feedback": "help",
     "how_started": "continued",
     "cancelled": false
@@ -921,32 +1323,13 @@
     ],
     "cast": [],
     "started_at": "2026-11-23T06:00:00",
-    "watched_min": 74.7,
+    "watched_min": 115.0,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
   },
   {
     "senior_id": "s1",
-    "channel_id": "KBS2",
-    "series_key": "kbs2-king-of-song",
-    "genre": "트로트",
-    "genres": [
-      "트로트",
-      "예능"
-    ],
-    "cast": [
-      "김태호",
-      "송미란"
-    ],
-    "started_at": "2026-11-23T15:00:00",
-    "watched_min": 93.8,
-    "feedback": "none",
-    "how_started": "plan",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s2",
     "channel_id": "KBS1",
     "series_key": "kbs1-hometown",
     "genre": "교양",
@@ -957,10 +1340,77 @@
     "cast": [
       "이철호"
     ],
-    "started_at": "2026-11-23T17:30:00",
+    "started_at": "2026-11-23T10:30:00",
+    "watched_min": 60.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-animal",
+    "genre": "다큐",
+    "genres": [
+      "다큐"
+    ],
+    "cast": [],
+    "started_at": "2026-11-23T11:30:00",
+    "watched_min": 30.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-noon",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-23T12:00:00",
+    "watched_min": 60.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-trot-party",
+    "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
+    "cast": [
+      "송미란",
+      "김태호"
+    ],
+    "started_at": "2026-11-23T13:00:00",
     "watched_min": 90.0,
     "feedback": "none",
     "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "MBC",
+    "series_key": "mbc-joseon",
+    "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
+    "cast": [
+      "정대현"
+    ],
+    "started_at": "2026-11-23T13:00:00",
+    "watched_min": 118.2,
+    "feedback": "none",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
@@ -973,9 +1423,9 @@
     ],
     "cast": [],
     "started_at": "2026-11-23T18:00:00",
-    "watched_min": 68.5,
+    "watched_min": 72.5,
     "feedback": "none",
-    "how_started": "continued",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
@@ -988,7 +1438,7 @@
     ],
     "cast": [],
     "started_at": "2026-11-23T19:00:00",
-    "watched_min": 84.6,
+    "watched_min": 88.3,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
@@ -1006,61 +1456,40 @@
       "오민재"
     ],
     "started_at": "2026-11-23T20:30:00",
-    "watched_min": 49.3,
+    "watched_min": 53.1,
     "feedback": "none",
-    "how_started": "continued",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
     "senior_id": "s1",
-    "channel_id": "TVC",
-    "series_key": "tvc-star",
-    "genre": "트로트",
+    "channel_id": "KBS2",
+    "series_key": "kbs2-season",
+    "genre": "드라마",
     "genres": [
-      "트로트",
-      "예능"
+      "드라마"
     ],
     "cast": [
-      "김태호",
-      "송미란"
+      "오민재"
     ],
-    "started_at": "2026-11-23T21:00:00",
-    "watched_min": 118.0,
+    "started_at": "2026-11-23T21:30:00",
+    "watched_min": 77.6,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
   },
   {
     "senior_id": "s2",
-    "channel_id": "KBS1",
-    "series_key": "kbs1-king",
-    "genre": "사극",
+    "channel_id": "SBS",
+    "series_key": "sbs-laugh",
+    "genre": "예능",
     "genres": [
-      "사극",
-      "드라마"
-    ],
-    "cast": [
-      "정대현",
-      "윤서아"
-    ],
-    "started_at": "2026-11-23T21:30:00",
-    "watched_min": 43.9,
-    "feedback": "none",
-    "how_started": "chosen",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s1",
-    "channel_id": "MBC",
-    "series_key": "mbc-current",
-    "genre": "시사",
-    "genres": [
-      "시사"
+      "예능"
     ],
     "cast": [],
-    "started_at": "2026-11-23T22:40:00",
-    "watched_min": 1.9,
-    "feedback": "next",
+    "started_at": "2026-11-23T22:20:00",
+    "watched_min": 2.3,
+    "feedback": "help",
     "how_started": "continued",
     "cancelled": false
   },
@@ -1074,24 +1503,21 @@
     ],
     "cast": [],
     "started_at": "2026-11-24T06:00:00",
-    "watched_min": 85.7,
+    "watched_min": 99.1,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
   },
   {
     "senior_id": "s2",
-    "channel_id": "TVC",
-    "series_key": "tvc-health",
-    "genre": "건강",
+    "channel_id": "SBS",
+    "series_key": "sbs-life-book",
+    "genre": "교양",
     "genres": [
-      "건강",
       "교양"
     ],
-    "cast": [
-      "강민수"
-    ],
-    "started_at": "2026-11-24T11:00:00",
+    "cast": [],
+    "started_at": "2026-11-24T09:10:00",
     "watched_min": 2.6,
     "feedback": "none",
     "how_started": "chosen",
@@ -1099,121 +1525,85 @@
   },
   {
     "senior_id": "s1",
-    "channel_id": "KBS2",
-    "series_key": "kbs2-king-of-song",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-hometown",
+    "genre": "교양",
+    "genres": [
+      "교양",
+      "다큐"
+    ],
+    "cast": [
+      "이철호"
+    ],
+    "started_at": "2026-11-24T10:30:00",
+    "watched_min": 60.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-animal",
+    "genre": "다큐",
+    "genres": [
+      "다큐"
+    ],
+    "cast": [],
+    "started_at": "2026-11-24T11:30:00",
+    "watched_min": 30.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-noon",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-24T12:00:00",
+    "watched_min": 60.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-trot-party",
     "genre": "트로트",
     "genres": [
       "트로트",
       "예능"
     ],
     "cast": [
-      "김태호",
-      "송미란"
+      "송미란",
+      "김태호"
     ],
-    "started_at": "2026-11-24T20:00:00",
-    "watched_min": 58.7,
+    "started_at": "2026-11-24T13:00:00",
+    "watched_min": 90.0,
     "feedback": "none",
-    "how_started": "chosen",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s1",
-    "channel_id": "MBC",
-    "series_key": "mbc-bluesea",
-    "genre": "드라마",
-    "genres": [
-      "드라마"
-    ],
-    "cast": [
-      "이은정"
-    ],
-    "started_at": "2026-11-24T20:30:00",
-    "watched_min": 43.5,
-    "feedback": "none",
-    "how_started": "plan",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s1",
-    "channel_id": "KBS1",
-    "series_key": "kbs1-haetsal",
-    "genre": "드라마",
-    "genres": [
-      "드라마"
-    ],
-    "cast": [
-      "한지수",
-      "오민재"
-    ],
-    "started_at": "2026-11-24T20:30:00",
-    "watched_min": 47.0,
-    "feedback": "none",
-    "how_started": "plan",
+    "how_started": "continued",
     "cancelled": false
   },
   {
     "senior_id": "s2",
-    "channel_id": "KBS1",
-    "series_key": "kbs1-king",
+    "channel_id": "MBC",
+    "series_key": "mbc-joseon",
     "genre": "사극",
     "genres": [
       "사극",
       "드라마"
     ],
     "cast": [
-      "정대현",
-      "윤서아"
+      "정대현"
     ],
-    "started_at": "2026-11-24T21:30:00",
-    "watched_min": 43.9,
-    "feedback": "none",
-    "how_started": "chosen",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s1",
-    "channel_id": "EBS1",
-    "series_key": "ebs-movie",
-    "genre": "영화",
-    "genres": [
-      "영화"
-    ],
-    "cast": [],
-    "started_at": "2026-11-24T23:00:00",
-    "watched_min": 4.5,
-    "feedback": "none",
-    "how_started": "chosen",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s2",
-    "channel_id": "KBS1",
-    "series_key": "kbs1-news-am",
-    "genre": "뉴스",
-    "genres": [
-      "뉴스"
-    ],
-    "cast": [],
-    "started_at": "2026-11-25T06:00:00",
-    "watched_min": 93.2,
-    "feedback": "none",
-    "how_started": "chosen",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s2",
-    "channel_id": "EBS1",
-    "series_key": "ebs-doctor",
-    "genre": "건강",
-    "genres": [
-      "건강",
-      "교양"
-    ],
-    "cast": [
-      "강민수"
-    ],
-    "started_at": "2026-11-25T13:00:00",
-    "watched_min": 1.1,
+    "started_at": "2026-11-24T13:00:00",
+    "watched_min": 101.5,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
@@ -1230,8 +1620,8 @@
     "cast": [
       "송미란"
     ],
-    "started_at": "2026-11-25T16:30:00",
-    "watched_min": 42.3,
+    "started_at": "2026-11-24T16:30:00",
+    "watched_min": 53.1,
     "feedback": "none",
     "how_started": "plan",
     "cancelled": false
@@ -1245,25 +1635,239 @@
       "시사"
     ],
     "cast": [],
-    "started_at": "2026-11-25T18:00:00",
-    "watched_min": 88.0,
+    "started_at": "2026-11-24T18:00:00",
+    "watched_min": 84.1,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
   },
   {
     "senior_id": "s2",
-    "channel_id": "MBC",
-    "series_key": "mbc-town",
-    "genre": "교양",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-pm",
+    "genre": "뉴스",
     "genres": [
-      "교양"
+      "뉴스"
     ],
     "cast": [],
-    "started_at": "2026-11-25T18:30:00",
+    "started_at": "2026-11-24T19:00:00",
+    "watched_min": 88.8,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-haetsal",
+    "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
+    "cast": [
+      "한지수",
+      "오민재"
+    ],
+    "started_at": "2026-11-24T20:30:00",
+    "watched_min": 53.2,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS2",
+    "series_key": "kbs2-season",
+    "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
+    "cast": [
+      "오민재"
+    ],
+    "started_at": "2026-11-24T21:30:00",
+    "watched_min": 67.7,
+    "feedback": "none",
+    "how_started": "plan",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-debate",
+    "genre": "시사",
+    "genres": [
+      "시사"
+    ],
+    "cast": [],
+    "started_at": "2026-11-24T22:40:00",
+    "watched_min": 2.6,
+    "feedback": "next",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "KBS2",
+    "series_key": "kbs2-laugh",
+    "genre": "예능",
+    "genres": [
+      "예능"
+    ],
+    "cast": [],
+    "started_at": "2026-11-24T22:50:00",
+    "watched_min": 3.6,
+    "feedback": "help",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "TVC",
+    "series_key": "tvc-news-dawn",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-25T05:00:00",
+    "watched_min": 4.1,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-am",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-25T06:00:00",
+    "watched_min": 109.6,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-hometown",
+    "genre": "교양",
+    "genres": [
+      "교양",
+      "다큐"
+    ],
+    "cast": [
+      "이철호"
+    ],
+    "started_at": "2026-11-25T10:30:00",
     "watched_min": 60.0,
     "feedback": "none",
     "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-animal",
+    "genre": "다큐",
+    "genres": [
+      "다큐"
+    ],
+    "cast": [],
+    "started_at": "2026-11-25T11:30:00",
+    "watched_min": 30.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-noon",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-25T12:00:00",
+    "watched_min": 60.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-trot-party",
+    "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
+    "cast": [
+      "송미란",
+      "김태호"
+    ],
+    "started_at": "2026-11-25T13:00:00",
+    "watched_min": 90.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-songclass",
+    "genre": "트로트",
+    "genres": [
+      "트로트",
+      "교양"
+    ],
+    "cast": [
+      "송미란"
+    ],
+    "started_at": "2026-11-25T16:30:00",
+    "watched_min": 48.7,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "TVC",
+    "series_key": "tvc-star",
+    "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
+    "cast": [
+      "김태호",
+      "송미란"
+    ],
+    "started_at": "2026-11-25T16:30:00",
+    "watched_min": 86.8,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "TVC",
+    "series_key": "tvc-current-pm",
+    "genre": "시사",
+    "genres": [
+      "시사"
+    ],
+    "cast": [],
+    "started_at": "2026-11-25T18:00:00",
+    "watched_min": 73.8,
+    "feedback": "none",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
@@ -1276,24 +1880,9 @@
     ],
     "cast": [],
     "started_at": "2026-11-25T19:00:00",
-    "watched_min": 74.2,
+    "watched_min": 88.8,
     "feedback": "none",
-    "how_started": "plan",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s1",
-    "channel_id": "SBS",
-    "series_key": "sbs-news-pm",
-    "genre": "뉴스",
-    "genres": [
-      "뉴스"
-    ],
-    "cast": [],
-    "started_at": "2026-11-25T20:00:00",
-    "watched_min": 60.0,
-    "feedback": "none",
-    "how_started": "continued",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
@@ -1309,110 +1898,107 @@
       "오민재"
     ],
     "started_at": "2026-11-25T20:30:00",
-    "watched_min": 49.3,
+    "watched_min": 58.1,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-am",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-26T06:00:00",
+    "watched_min": 101.7,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
   },
   {
     "senior_id": "s1",
-    "channel_id": "MBC",
-    "series_key": "mbc-bluesea",
-    "genre": "드라마",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-hometown",
+    "genre": "교양",
     "genres": [
+      "교양",
+      "다큐"
+    ],
+    "cast": [
+      "이철호"
+    ],
+    "started_at": "2026-11-26T10:30:00",
+    "watched_min": 60.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-animal",
+    "genre": "다큐",
+    "genres": [
+      "다큐"
+    ],
+    "cast": [],
+    "started_at": "2026-11-26T11:30:00",
+    "watched_min": 30.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-noon",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-26T12:00:00",
+    "watched_min": 60.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-trot-party",
+    "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
+    "cast": [
+      "송미란",
+      "김태호"
+    ],
+    "started_at": "2026-11-26T13:00:00",
+    "watched_min": 90.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "MBC",
+    "series_key": "mbc-joseon",
+    "genre": "사극",
+    "genres": [
+      "사극",
       "드라마"
     ],
     "cast": [
-      "이은정"
+      "정대현"
     ],
-    "started_at": "2026-11-25T20:30:00",
-    "watched_min": 50.5,
-    "feedback": "none",
-    "how_started": "chosen",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s1",
-    "channel_id": "TVC",
-    "series_key": "tvc-star",
-    "genre": "트로트",
-    "genres": [
-      "트로트",
-      "예능"
-    ],
-    "cast": [
-      "김태호",
-      "송미란"
-    ],
-    "started_at": "2026-11-25T21:00:00",
-    "watched_min": 81.8,
-    "feedback": "none",
-    "how_started": "plan",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s2",
-    "channel_id": "SBS",
-    "series_key": "sbs-laugh",
-    "genre": "예능",
-    "genres": [
-      "예능"
-    ],
-    "cast": [],
-    "started_at": "2026-11-25T22:20:00",
-    "watched_min": 1.1,
-    "feedback": "help",
-    "how_started": "continued",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s1",
-    "channel_id": "MBC",
-    "series_key": "mbc-health",
-    "genre": "건강",
-    "genres": [
-      "건강",
-      "교양"
-    ],
-    "cast": [
-      "강민수"
-    ],
-    "started_at": "2026-11-26T08:40:00",
-    "watched_min": 80.0,
-    "feedback": "none",
-    "how_started": "continued",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s2",
-    "channel_id": "EBS1",
-    "series_key": "ebs-baduk",
-    "genre": "취미",
-    "genres": [
-      "취미"
-    ],
-    "cast": [],
-    "started_at": "2026-11-26T14:00:00",
-    "watched_min": 58.3,
-    "feedback": "none",
-    "how_started": "chosen",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s1",
-    "channel_id": "TVC",
-    "series_key": "tvc-star",
-    "genre": "트로트",
-    "genres": [
-      "트로트",
-      "예능"
-    ],
-    "cast": [
-      "김태호",
-      "송미란"
-    ],
-    "started_at": "2026-11-26T16:30:00",
-    "watched_min": 82.1,
+    "started_at": "2026-11-26T13:00:00",
+    "watched_min": 105.6,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
@@ -1427,9 +2013,42 @@
     ],
     "cast": [],
     "started_at": "2026-11-26T18:00:00",
-    "watched_min": 80.5,
+    "watched_min": 86.2,
     "feedback": "none",
     "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-pm",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-26T19:00:00",
+    "watched_min": 75.1,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-haetsal",
+    "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
+    "cast": [
+      "한지수",
+      "오민재"
+    ],
+    "started_at": "2026-11-26T20:30:00",
+    "watched_min": 57.5,
+    "feedback": "none",
+    "how_started": "plan",
     "cancelled": false
   },
   {
@@ -1446,23 +2065,55 @@
       "송미란"
     ],
     "started_at": "2026-11-26T21:00:00",
-    "watched_min": 84.0,
+    "watched_min": 105.0,
+    "feedback": "none",
+    "how_started": "plan",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS2",
+    "series_key": "kbs2-season",
+    "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
+    "cast": [
+      "오민재"
+    ],
+    "started_at": "2026-11-26T21:30:00",
+    "watched_min": 75.3,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "MBC",
+    "series_key": "mbc-current",
+    "genre": "시사",
+    "genres": [
+      "시사"
+    ],
+    "cast": [],
+    "started_at": "2026-11-26T22:40:00",
+    "watched_min": 3.0,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
   },
   {
     "senior_id": "s2",
-    "channel_id": "KBS1",
-    "series_key": "kbs1-news-night",
-    "genre": "뉴스",
+    "channel_id": "KBS2",
+    "series_key": "kbs2-laugh",
+    "genre": "예능",
     "genres": [
-      "뉴스"
+      "예능"
     ],
     "cast": [],
-    "started_at": "2026-11-26T23:40:00",
-    "watched_min": 20.0,
-    "feedback": "none",
+    "started_at": "2026-11-26T22:50:00",
+    "watched_min": 1.7,
+    "feedback": "help",
     "how_started": "continued",
     "cancelled": false
   },
@@ -1476,22 +2127,111 @@
     ],
     "cast": [],
     "started_at": "2026-11-27T06:00:00",
-    "watched_min": 87.1,
+    "watched_min": 105.2,
     "feedback": "none",
-    "how_started": "plan",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-hometown",
+    "genre": "교양",
+    "genres": [
+      "교양",
+      "다큐"
+    ],
+    "cast": [
+      "이철호"
+    ],
+    "started_at": "2026-11-27T10:30:00",
+    "watched_min": 60.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-animal",
+    "genre": "다큐",
+    "genres": [
+      "다큐"
+    ],
+    "cast": [],
+    "started_at": "2026-11-27T11:30:00",
+    "watched_min": 30.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-noon",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-27T12:00:00",
+    "watched_min": 60.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-trot-party",
+    "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
+    "cast": [
+      "송미란",
+      "김태호"
+    ],
+    "started_at": "2026-11-27T13:00:00",
+    "watched_min": 90.0,
+    "feedback": "none",
+    "how_started": "continued",
     "cancelled": false
   },
   {
     "senior_id": "s2",
-    "channel_id": "EBS1",
-    "series_key": "ebs-exercise",
-    "genre": "건강",
+    "channel_id": "MBC",
+    "series_key": "mbc-joseon",
+    "genre": "사극",
     "genres": [
-      "건강"
+      "사극",
+      "드라마"
     ],
-    "cast": [],
-    "started_at": "2026-11-27T16:00:00",
-    "watched_min": 1.3,
+    "cast": [
+      "정대현"
+    ],
+    "started_at": "2026-11-27T13:00:00",
+    "watched_min": 100.4,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "KBS2",
+    "series_key": "kbs2-king-of-song",
+    "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
+    "cast": [
+      "김태호",
+      "송미란"
+    ],
+    "started_at": "2026-11-27T15:00:00",
+    "watched_min": 1.5,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
@@ -1510,24 +2250,9 @@
       "송미란"
     ],
     "started_at": "2026-11-27T16:30:00",
-    "watched_min": 61.0,
+    "watched_min": 81.6,
     "feedback": "none",
     "how_started": "chosen",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s1",
-    "channel_id": "TVC",
-    "series_key": "tvc-current-pm",
-    "genre": "시사",
-    "genres": [
-      "시사"
-    ],
-    "cast": [],
-    "started_at": "2026-11-27T18:00:00",
-    "watched_min": 90.0,
-    "feedback": "none",
-    "how_started": "continued",
     "cancelled": false
   },
   {
@@ -1540,9 +2265,9 @@
     ],
     "cast": [],
     "started_at": "2026-11-27T18:00:00",
-    "watched_min": 63.6,
+    "watched_min": 73.2,
     "feedback": "none",
-    "how_started": "continued",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
@@ -1555,24 +2280,9 @@
     ],
     "cast": [],
     "started_at": "2026-11-27T19:00:00",
-    "watched_min": 60.4,
+    "watched_min": 77.3,
     "feedback": "none",
-    "how_started": "continued",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s2",
-    "channel_id": "SBS",
-    "series_key": "sbs-animal",
-    "genre": "다큐",
-    "genres": [
-      "다큐"
-    ],
-    "cast": [],
-    "started_at": "2026-11-27T19:00:00",
-    "watched_min": 60.0,
-    "feedback": "none",
-    "how_started": "continued",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
@@ -1588,9 +2298,26 @@
       "오민재"
     ],
     "started_at": "2026-11-27T20:30:00",
-    "watched_min": 41.5,
+    "watched_min": 48.1,
     "feedback": "none",
-    "how_started": "plan",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "MBC",
+    "series_key": "mbc-bluesea",
+    "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
+    "cast": [
+      "이은정"
+    ],
+    "started_at": "2026-11-27T20:30:00",
+    "watched_min": 3.2,
+    "feedback": "none",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
@@ -1607,7 +2334,24 @@
       "송미란"
     ],
     "started_at": "2026-11-27T21:00:00",
-    "watched_min": 86.6,
+    "watched_min": 110.7,
+    "feedback": "none",
+    "how_started": "plan",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS2",
+    "series_key": "kbs2-season",
+    "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
+    "cast": [
+      "오민재"
+    ],
+    "started_at": "2026-11-27T21:30:00",
+    "watched_min": 78.1,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
@@ -1615,38 +2359,115 @@
   {
     "senior_id": "s2",
     "channel_id": "KBS1",
-    "series_key": "kbs1-king",
+    "series_key": "kbs1-news-am",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-28T06:00:00",
+    "watched_min": 117.2,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "MBC",
+    "series_key": "mbc-joseon",
     "genre": "사극",
     "genres": [
       "사극",
       "드라마"
     ],
     "cast": [
-      "정대현",
-      "윤서아"
+      "정대현"
     ],
-    "started_at": "2026-11-27T21:30:00",
-    "watched_min": 54.2,
+    "started_at": "2026-11-28T13:00:00",
+    "watched_min": 105.6,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
   },
   {
-    "senior_id": "s3",
-    "channel_id": "EBS1",
-    "series_key": "ebs-doctor",
-    "genre": "건강",
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-songclass",
+    "genre": "트로트",
     "genres": [
-      "건강",
+      "트로트",
       "교양"
     ],
     "cast": [
-      "강민수"
+      "송미란"
     ],
-    "started_at": "2026-11-28T08:00:00",
-    "watched_min": 43.3,
+    "started_at": "2026-11-28T16:30:00",
+    "watched_min": 48.6,
     "feedback": "none",
-    "how_started": "continued",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "TVC",
+    "series_key": "tvc-current-pm",
+    "genre": "시사",
+    "genres": [
+      "시사"
+    ],
+    "cast": [],
+    "started_at": "2026-11-28T18:00:00",
+    "watched_min": 77.3,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-pm",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-28T19:00:00",
+    "watched_min": 78.6,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "MBC",
+    "series_key": "mbc-news-pm",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-28T19:30:00",
+    "watched_min": 1.1,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-haetsal",
+    "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
+    "cast": [
+      "한지수",
+      "오민재"
+    ],
+    "started_at": "2026-11-28T20:30:00",
+    "watched_min": 51.6,
+    "feedback": "none",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
@@ -1662,8 +2483,70 @@
       "김태호",
       "송미란"
     ],
-    "started_at": "2026-11-28T16:30:00",
-    "watched_min": 69.5,
+    "started_at": "2026-11-28T21:00:00",
+    "watched_min": 96.6,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS2",
+    "series_key": "kbs2-season",
+    "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
+    "cast": [
+      "오민재"
+    ],
+    "started_at": "2026-11-28T21:30:00",
+    "watched_min": 69.4,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-debate",
+    "genre": "시사",
+    "genres": [
+      "시사"
+    ],
+    "cast": [],
+    "started_at": "2026-11-28T22:40:00",
+    "watched_min": 3.7,
+    "feedback": "next",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "MBC",
+    "series_key": "mbc-current",
+    "genre": "시사",
+    "genres": [
+      "시사"
+    ],
+    "cast": [],
+    "started_at": "2026-11-28T22:40:00",
+    "watched_min": 1.2,
+    "feedback": "next",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-am",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-29T06:00:00",
+    "watched_min": 97.1,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
@@ -1671,14 +2554,152 @@
   {
     "senior_id": "s3",
     "channel_id": "EBS1",
-    "series_key": "ebs-prime",
+    "series_key": "ebs-doctor",
+    "genre": "건강",
+    "genres": [
+      "건강",
+      "교양"
+    ],
+    "cast": [
+      "강민수"
+    ],
+    "started_at": "2026-11-29T08:00:00",
+    "watched_min": 59.6,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "KBS2",
+    "series_key": "kbs2-spring",
+    "genre": "드라마",
+    "genres": [
+      "드라마"
+    ],
+    "cast": [
+      "이은정"
+    ],
+    "started_at": "2026-11-29T08:30:00",
+    "watched_min": 0.7,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-hometown",
+    "genre": "교양",
+    "genres": [
+      "교양",
+      "다큐"
+    ],
+    "cast": [
+      "이철호"
+    ],
+    "started_at": "2026-11-29T10:30:00",
+    "watched_min": 60.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-animal",
     "genre": "다큐",
     "genres": [
       "다큐"
     ],
     "cast": [],
-    "started_at": "2026-11-28T17:00:00",
-    "watched_min": 2.9,
+    "started_at": "2026-11-29T11:30:00",
+    "watched_min": 30.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-noon",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-29T12:00:00",
+    "watched_min": 60.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-trot-party",
+    "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
+    "cast": [
+      "송미란",
+      "김태호"
+    ],
+    "started_at": "2026-11-29T13:00:00",
+    "watched_min": 90.0,
+    "feedback": "none",
+    "how_started": "continued",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "MBC",
+    "series_key": "mbc-joseon",
+    "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
+    "cast": [
+      "정대현"
+    ],
+    "started_at": "2026-11-29T13:00:00",
+    "watched_min": 117.8,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-songclass",
+    "genre": "트로트",
+    "genres": [
+      "트로트",
+      "교양"
+    ],
+    "cast": [
+      "송미란"
+    ],
+    "started_at": "2026-11-29T16:30:00",
+    "watched_min": 51.3,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "TVC",
+    "series_key": "tvc-current-pm",
+    "genre": "시사",
+    "genres": [
+      "시사"
+    ],
+    "cast": [],
+    "started_at": "2026-11-29T18:00:00",
+    "watched_min": 75.5,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
@@ -1692,134 +2713,10 @@
       "뉴스"
     ],
     "cast": [],
-    "started_at": "2026-11-28T19:00:00",
-    "watched_min": 58.6,
+    "started_at": "2026-11-29T19:00:00",
+    "watched_min": 74.5,
     "feedback": "none",
     "how_started": "chosen",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s1",
-    "channel_id": "KBS2",
-    "series_key": "kbs2-king-of-song",
-    "genre": "트로트",
-    "genres": [
-      "트로트",
-      "예능"
-    ],
-    "cast": [
-      "김태호",
-      "송미란"
-    ],
-    "started_at": "2026-11-28T20:00:00",
-    "watched_min": 80.5,
-    "feedback": "none",
-    "how_started": "continued",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s2",
-    "channel_id": "KBS1",
-    "series_key": "kbs1-king",
-    "genre": "사극",
-    "genres": [
-      "사극",
-      "드라마"
-    ],
-    "cast": [
-      "정대현",
-      "윤서아"
-    ],
-    "started_at": "2026-11-28T21:30:00",
-    "watched_min": 53.3,
-    "feedback": "none",
-    "how_started": "chosen",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s2",
-    "channel_id": "KBS1",
-    "series_key": "kbs1-news-am",
-    "genre": "뉴스",
-    "genres": [
-      "뉴스"
-    ],
-    "cast": [],
-    "started_at": "2026-11-29T06:00:00",
-    "watched_min": 93.9,
-    "feedback": "none",
-    "how_started": "plan",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s2",
-    "channel_id": "EBS1",
-    "series_key": "ebs-baduk",
-    "genre": "취미",
-    "genres": [
-      "취미"
-    ],
-    "cast": [],
-    "started_at": "2026-11-29T14:00:00",
-    "watched_min": 50.7,
-    "feedback": "none",
-    "how_started": "continued",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s1",
-    "channel_id": "KBS2",
-    "series_key": "kbs2-king-of-song",
-    "genre": "트로트",
-    "genres": [
-      "트로트",
-      "예능"
-    ],
-    "cast": [
-      "김태호",
-      "송미란"
-    ],
-    "started_at": "2026-11-29T15:00:00",
-    "watched_min": 76.1,
-    "feedback": "none",
-    "how_started": "chosen",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s3",
-    "channel_id": "KBS1",
-    "series_key": "kbs1-hometown",
-    "genre": "교양",
-    "genres": [
-      "교양",
-      "다큐"
-    ],
-    "cast": [
-      "이철호"
-    ],
-    "started_at": "2026-11-29T17:30:00",
-    "watched_min": 54.2,
-    "feedback": "none",
-    "how_started": "plan",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s1",
-    "channel_id": "KBS2",
-    "series_key": "kbs2-king-of-song",
-    "genre": "트로트",
-    "genres": [
-      "트로트",
-      "예능"
-    ],
-    "cast": [
-      "김태호",
-      "송미란"
-    ],
-    "started_at": "2026-11-29T20:00:00",
-    "watched_min": 82.7,
-    "feedback": "none",
-    "how_started": "continued",
     "cancelled": false
   },
   {
@@ -1835,73 +2732,94 @@
       "오민재"
     ],
     "started_at": "2026-11-29T20:30:00",
-    "watched_min": 51.2,
+    "watched_min": 58.3,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s1",
+    "channel_id": "TVC",
+    "series_key": "tvc-star",
+    "genre": "트로트",
+    "genres": [
+      "트로트",
+      "예능"
+    ],
+    "cast": [
+      "김태호",
+      "송미란"
+    ],
+    "started_at": "2026-11-29T21:00:00",
+    "watched_min": 107.4,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
   },
   {
     "senior_id": "s2",
-    "channel_id": "MBC",
-    "series_key": "mbc-news-dawn",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-am",
     "genre": "뉴스",
     "genres": [
       "뉴스"
     ],
     "cast": [],
-    "started_at": "2026-11-30T05:00:00",
-    "watched_min": 3.9,
-    "feedback": "none",
-    "how_started": "chosen",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s3",
-    "channel_id": "MBC",
-    "series_key": "mbc-health",
-    "genre": "건강",
-    "genres": [
-      "건강",
-      "교양"
-    ],
-    "cast": [
-      "강민수"
-    ],
-    "started_at": "2026-11-30T08:40:00",
-    "watched_min": 1.8,
+    "started_at": "2026-11-30T06:00:00",
+    "watched_min": 115.6,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
   },
   {
     "senior_id": "s2",
-    "channel_id": "EBS1",
-    "series_key": "ebs-cook",
-    "genre": "요리",
+    "channel_id": "KBS2",
+    "series_key": "kbs2-spring",
+    "genre": "드라마",
     "genres": [
-      "요리"
+      "드라마"
     ],
-    "cast": [],
-    "started_at": "2026-11-30T12:00:00",
-    "watched_min": 60.0,
+    "cast": [
+      "이은정"
+    ],
+    "started_at": "2026-11-30T08:30:00",
+    "watched_min": 0.6,
     "feedback": "none",
-    "how_started": "continued",
+    "how_started": "chosen",
     "cancelled": false
   },
   {
     "senior_id": "s3",
-    "channel_id": "EBS1",
-    "series_key": "ebs-doctor",
-    "genre": "건강",
+    "channel_id": "KBS2",
+    "series_key": "kbs2-cook",
+    "genre": "요리",
     "genres": [
-      "건강",
-      "교양"
+      "요리",
+      "예능"
     ],
     "cast": [
-      "강민수"
+      "최영자"
+    ],
+    "started_at": "2026-11-30T12:00:00",
+    "watched_min": 2.6,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "MBC",
+    "series_key": "mbc-joseon",
+    "genre": "사극",
+    "genres": [
+      "사극",
+      "드라마"
+    ],
+    "cast": [
+      "정대현"
     ],
     "started_at": "2026-11-30T13:00:00",
-    "watched_min": 37.9,
+    "watched_min": 108.7,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
@@ -1920,7 +2838,7 @@
       "송미란"
     ],
     "started_at": "2026-11-30T16:30:00",
-    "watched_min": 70.7,
+    "watched_min": 86.1,
     "feedback": "none",
     "how_started": "plan",
     "cancelled": false
@@ -1935,7 +2853,22 @@
     ],
     "cast": [],
     "started_at": "2026-11-30T18:00:00",
-    "watched_min": 83.9,
+    "watched_min": 78.9,
+    "feedback": "none",
+    "how_started": "chosen",
+    "cancelled": false
+  },
+  {
+    "senior_id": "s2",
+    "channel_id": "KBS1",
+    "series_key": "kbs1-news-pm",
+    "genre": "뉴스",
+    "genres": [
+      "뉴스"
+    ],
+    "cast": [],
+    "started_at": "2026-11-30T19:00:00",
+    "watched_min": 85.9,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
@@ -1953,43 +2886,26 @@
       "오민재"
     ],
     "started_at": "2026-11-30T20:30:00",
-    "watched_min": 58.0,
-    "feedback": "none",
-    "how_started": "chosen",
-    "cancelled": false
-  },
-  {
-    "senior_id": "s2",
-    "channel_id": "KBS1",
-    "series_key": "kbs1-king",
-    "genre": "사극",
-    "genres": [
-      "사극",
-      "드라마"
-    ],
-    "cast": [
-      "정대현",
-      "윤서아"
-    ],
-    "started_at": "2026-11-30T21:30:00",
-    "watched_min": 67.1,
+    "watched_min": 48.9,
     "feedback": "none",
     "how_started": "chosen",
     "cancelled": false
   },
   {
     "senior_id": "s1",
-    "channel_id": "KBS1",
-    "series_key": "kbs1-debate",
-    "genre": "시사",
+    "channel_id": "KBS2",
+    "series_key": "kbs2-season",
+    "genre": "드라마",
     "genres": [
-      "시사"
+      "드라마"
     ],
-    "cast": [],
-    "started_at": "2026-11-30T22:40:00",
-    "watched_min": 1.4,
-    "feedback": "next",
-    "how_started": "continued",
+    "cast": [
+      "오민재"
+    ],
+    "started_at": "2026-11-30T21:30:00",
+    "watched_min": 66.0,
+    "feedback": "none",
+    "how_started": "chosen",
     "cancelled": false
   }
 ]

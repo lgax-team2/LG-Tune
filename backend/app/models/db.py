@@ -28,7 +28,9 @@ HowStarted = Literal[
 RuleKind = Literal[
     "exclude", "pin", "skip_today", "rest_day"
 ]  # 앞으로 빼기 / 항상 챙기기 / 오늘만 넘기기 / 오늘은 그만
-PrefSource = Literal["child", "self", "age_default"]  # 첫날 정보 출처: 자녀 입력 > 본인 선택 > 나이대 기본값
+PrefSource = Literal[
+    "child", "self", "none"
+]  # 첫날 관심사 출처: 자녀가 설치 때 고름 > 본인이 고름 > 없음 (기본 장르는 두지 않음)
 
 
 class Base(DeclarativeBase):
@@ -67,7 +69,7 @@ class Senior(Base):
     age: Mapped[int] = mapped_column(Integer)
     wake_time: Mapped[str] = mapped_column(String, default="06:00")  # HH:MM
     sleep_time: Mapped[str] = mapped_column(String, default="22:00")
-    pref_source: Mapped[str] = mapped_column(String, default="age_default")  # PrefSource
+    pref_source: Mapped[str] = mapped_column(String, default="none")  # PrefSource
     # 첫날 정보: {"series": [...], "cast": [...], "genres": [...]}
     seed_prefs: Mapped[dict[str, Any]] = mapped_column(default=dict)
     family_picks: Mapped[list[str]] = mapped_column(default=list)  # 가족이 추천한 series_key

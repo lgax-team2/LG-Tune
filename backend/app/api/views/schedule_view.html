@@ -68,6 +68,23 @@
   .detail { color: var(--mute); font-size: 21px; margin-left: 8px; }
   .none { color: var(--mute); padding: 18px 12px; }
   .legend { display: flex; gap: 12px; font-size: 20px; margin-left: auto; }
+
+  /* 기준표 v3 판정 (backend/app/engine/QUALITY.md) */
+  .quality { display: grid; grid-template-columns: 1fr 1.4fr; gap: 6px 28px; }
+  .quality h3 { margin: 0; font-size: 20px; color: var(--mute); }
+  .q-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px 16px; font-size: 19px; }
+  .q { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .q .mark { display: inline-block; width: 26px; font-weight: 800; }
+  .q-ok .mark { color: #15803d; } .q-bad .mark { color: #b91c1c; } .q-na .mark { color: var(--mute); }
+  .q-bad { color: #b91c1c; }
+  .q .d { color: var(--mute); margin-left: 6px; }
+  .metrics { display: flex; gap: 28px; font-size: 20px; flex-wrap: wrap; }
+  .metrics b { font-size: 22px; }
+  .hint { background: #fff7d6; border: 1px solid #f1d46b; border-radius: 10px; padding: 6px 16px; font-size: 22px; }
+  .role { font-size: 17px; font-weight: 700; border-radius: 6px; padding: 1px 6px; margin-right: 6px; }
+  .role-representative { background: #fde68a; } .role-novelty { background: #bbf7d0; } .role-pin { background: #e0e7ff; }
+  .role-background { background: #e5e7eb; }
+  tr.row-rest td { color: var(--mute); font-style: italic; background: #fafafa; }
 </style>
 </head>
 <body>
@@ -80,6 +97,13 @@
     <button id="go">보기</button>
     <div class="facts" id="facts"></div>
   </header>
+
+  <div class="hint" id="hint" hidden></div>
+  <section class="card quality" id="quality">
+    <h3>반드시 (어기면 버그)</h3><h3>목표 (우선순위 순)</h3>
+    <div class="q-list" id="q-must"></div><div class="q-list" id="q-goals"></div>
+  </section>
+  <section class="card metrics" id="metrics"></section>
 
   <section class="card profile" id="profile"></section>
 
@@ -141,11 +165,42 @@
   var p = data.profile;
   $("facts").innerHTML = "";
   [["기상", data.senior.wake], ["취침", data.senior.sleep], ["시청 기록", p.n_logs + "건"],
-   ["기록 비중", Math.round(p.history_share * 100) + "%"], ["기준점", score(data.floor)]
+   ["기록 비중", Math.round(p.history_share * 100) + "%"], ["기준점", score(data.floor)],
+   ["하루표 시간", data.budget.used_min + "분 / 상한 " + data.budget.limit_min + "분 (집중 " + data.budget.focus_min + "분)"],
+   ["TV 켜는 시각", (data.pattern_known ? "" : "(기록 적음·전부 중간) ") + data.viewing_hours.join(", ")]
   ].forEach(function (kv, i) {
     if (i) $("facts").appendChild(document.createTextNode(" · "));
     $("facts").appendChild(document.createTextNode(kv[0] + " "));
     $("facts").appendChild(el("b", null, kv[1]));
+  });
+
+  // ── 기준표 판정 · 가치 지표 ──
+  if (data.hint) { $("hint").hidden = false; $("hint").textContent = "💡 " + data.hint; }
+  function qrow(q) {
+    var cls = q.ok === true ? "q-ok" : (q.ok === false ? "q-bad" : "q-na");
+    var mark = q.ok === true ? "✔" : (q.ok === false ? "✘" : "—");
+    var d = el("div", "q " + cls);
+    d.appendChild(el("span", "mark", mark));
+    d.appendChild(document.createTextNode(q.code + " " + q.label));
+    if (q.detail) d.appendChild(el("span", "d", q.detail));
+    d.title = q.code + " " + q.label + " — " + (q.detail || "");
+    return d;
+  }
+  data.quality.must.forEach(function (q) { $("q-must").appendChild(qrow(q)); });
+  data.quality.goals.forEach(function (q) { $("q-goals").appendChild(qrow(q)); });
+  function pct(v) { return Math.round(v * 100) + "%"; }
+  function shares(obj) {
+    var ks = Object.keys(obj).sort(function (a, b) { return obj[b] - obj[a]; });
+    return ks.length ? ks.map(function (k) { return k + " " + pct(obj[k]); }).join(" · ") : "없음";
+  }
+  var m = data.metrics;
+  [["취향 일치율", pct(m.taste_match)], ["새 장르 발견", m.new_genre || "없음"],
+   ["LG 노출", m.lg_minutes + "분 (" + pct(m.lg_share) + ")"], ["채널 전환", m.switches + "번"],
+   ["배경 편성", m.background_minutes + "분"], ["쉬는 시간", m.rest_minutes + "분"],
+   ["장르 비율(대표 포함)", shares(m.genre_share_with_rep)], ["장르 비율(대표 제외)", shares(m.genre_share_without_rep)]
+  ].forEach(function (kv) {
+    var d = el("div"); d.appendChild(document.createTextNode(kv[0] + " ")); d.appendChild(el("b", null, kv[1]));
+    $("metrics").appendChild(d);
   });
 
   // ── 취향 요약 (build_profile 상위 3개) ──
@@ -166,7 +221,18 @@
 
   // ── 하루표 ──
   var counts = { pick: 0, fill: 0, lg: 0 };
-  data.items.forEach(function (it) {
+  var rows = data.items.map(function (it) { return { at: it.start, item: it }; })
+    .concat(data.rests.map(function (r) { return { at: r.start, rest: r }; }))
+    .sort(function (a, b) { return a.at < b.at ? -1 : (a.at > b.at ? 1 : 0); });
+  rows.forEach(function (row) {
+    if (row.rest) {
+      var tr0 = el("tr", "row-rest");
+      tr0.appendChild(el("td", "time", span(row.rest.start, row.rest.end)));
+      var td = el("td", null, "쉬는 시간 — 평소 이 시간엔 TV 를 거의 안 켜세요"); td.colSpan = 5;
+      tr0.appendChild(td); $("plan").appendChild(tr0);
+      return;
+    }
+    var it = row.item;
     counts[it.kind] = (counts[it.kind] || 0) + 1;
     var tr = el("tr", "row-" + it.kind);
     tr.appendChild(el("td", "time", span(it.start, it.end)));
@@ -175,7 +241,12 @@
     var ch = el("td", "ch", it.channel_id + " ");
     if (it.channel_number !== null && it.channel_number !== undefined) ch.appendChild(el("span", "no", it.channel_number + "번"));
     tr.appendChild(ch);
-    tr.appendChild(el("td", "title", it.title));
+    var title = el("td", "title");
+    var role = data.roles[it.program_id];
+    var roleName = { representative: "대표", novelty: "새로 추천", pin: "챙겨 줘", background: "배경" }[role];
+    if (roleName) title.appendChild(el("span", "role role-" + role, roleName));
+    title.appendChild(document.createTextNode(it.title));
+    tr.appendChild(title);
     tr.appendChild(el("td", "reason", it.reason));
     $("plan").appendChild(tr);
   });
@@ -187,7 +258,10 @@
     "개 (pick " + counts.pick + " · fill " + counts.fill + " · lg " + counts.lg + ")";
 
   // ── 점수는 높은데 빠진 방송 ──
-  var whyCls = { "겹침": "why-overlap", "기상 전·취침 후": "why-time", "규칙으로 제외": "why-rule", "기준점 미만": "why-floor" };
+  var whyCls = { "겹침": "why-overlap", "겹치는 챙겨 줘": "why-overlap", "기상 전·취침 후": "why-time",
+    "시청 시간대 밖": "why-time", "시간 상한": "why-time", "규칙으로 제외": "why-rule", "기준점 미만": "why-floor",
+    "취향 정보 없음": "why-floor", "같은 시리즈": "why-overlap", "다양성": "why-floor", "시간 상한·다양성": "why-time",
+    "채널 유지": "why-overlap" };
   data.missed.forEach(function (m) {
     var tr = el("tr");
     tr.appendChild(el("td", "num", score(m.score)));
