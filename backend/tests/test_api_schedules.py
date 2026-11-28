@@ -51,10 +51,13 @@ def test_date_omitted_means_demo_day(client):
 
 
 def test_given_date_is_used(client):
-    # 샘플 편성표는 12/1 하루치뿐 → 다른 날은 항목 없이 그 날짜로 답한다
+    # 샘플 편성표는 12/1 하루치뿐 → 다른 날은 방송 칸 없이 그 날짜로 답한다
+    # (기준표 M9, 11/28: 빈 하루표 대신 취향에 맞는 LG 1칸은 나올 수 있음)
     r = client.get("/api/schedules/s1", params={"date": "2026-12-02"})
     assert r.status_code == 200
-    assert r.json() == {"senior_id": "s1", "date": "2026-12-02", "items": []}
+    body = r.json()
+    assert (body["senior_id"], body["date"]) == ("s1", "2026-12-02")
+    assert all(i["kind"] == "lg" for i in body["items"]) and len(body["items"]) <= 1
 
 
 def test_no_new_file_in_backend_data(client):
@@ -235,7 +238,17 @@ def test_view_data_escapes_script_tags_in_titles(client, tmp_path):
 def test_view_top_shows_quality_table_and_value_metrics(client):
     """확인 화면 맨 위: 기준표 v3 의 반드시 7개·목표 9개 판정 + 가치 지표."""
     data = _view_data(client.get("/api/schedules/s1/view").text)
-    assert [q["code"] for q in data["quality"]["must"]] == ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"]
+    assert [q["code"] for q in data["quality"]["must"]] == [
+        "M1",
+        "M2",
+        "M3",
+        "M4",
+        "M5",
+        "M6",
+        "M7",
+        "M8",
+        "M9",
+    ]
     assert [q["code"] for q in data["quality"]["goals"]] == [
         "S1",
         "S2",

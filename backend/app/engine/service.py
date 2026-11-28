@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from ..contracts.rest import ScheduleItem, ScheduleResponse
 from ..models.db import Channel, LgContent, PlanItem, PlanVersion, Program, Senior, UserRule, WatchLog
 from .plan import Plan
-from .planner import build_plan
+from .planner import build_plan, wake_and_sleep
 from .preference import Profile, build_profile
 from .quality import Report, check_plan
 from .rules import RuleSet
@@ -41,10 +41,13 @@ def load_inputs(session: Session, senior_id: str, day: date) -> DayInputs:
     if senior is None:
         raise SeniorNotFound(senior_id)
     day_start = datetime.combine(day, time.min)
+    day_end = max(
+        day_start + timedelta(days=1), wake_and_sleep(senior, day)[1]
+    )  # 취침이 다음 날이면 그때까지
     programs = list(
         session.scalars(
             select(Program)
-            .where(Program.start >= day_start, Program.start < day_start + timedelta(days=1))
+            .where(Program.start >= day_start, Program.start < day_end)
             .order_by(Program.start, Program.channel_id, Program.id)
         )
     )
