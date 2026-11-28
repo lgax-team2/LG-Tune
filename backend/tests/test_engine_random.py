@@ -15,6 +15,7 @@ from hypothesis import strategies as st
 from hypothesis.errors import NoSuchExample
 
 from app.engine import config
+from app.engine.planner import wake_and_sleep
 from app.engine.preference import build_profile
 from app.engine.quality import Report, check_plan
 from app.engine.rules import RuleSet
@@ -44,6 +45,8 @@ def _at(minutes: int, day: date = DAY) -> datetime:
 
 
 def _hhmm(minutes: int) -> str:
+    """하루 안의 분 → HH:MM (24시를 넘으면 다음 날 시각으로, 예 25:00 → 01:00)."""
+    minutes %= 24 * 60
     return f"{minutes // 60:02d}:{minutes % 60:02d}"
 
 
@@ -58,7 +61,7 @@ def programs(draw) -> list[Program]:
     out = []
     for ch in channels + (["NEW"] if draw(st.booleans()) else []):
         t = draw(st.integers(24, 60)) * 10  # 04:00~10:00 부터
-        while t < 24 * 60:
+        while t < 26 * 60:  # 다음 날 02:00 까지 (취침이 자정 넘는 분)
             t += draw(st.sampled_from([0, 0, 0, 30]))  # 가끔 편성 없는 30분
             length = draw(st.integers(1, 18)) * 10
             genre = draw(st.sampled_from(GENRES))
@@ -82,7 +85,7 @@ def programs(draw) -> list[Program]:
                 )
             )
             t += length
-    return [p for p in out if p.start.date() == DAY]  # 그날 시작하는 방송만 (DB 에서 읽는 것과 같음)
+    return out  # 취침 전에 시작하는 것만 남기는 건 day_cases 에서 (DB 에서 읽는 것과 같게)
 
 
 @st.composite
@@ -111,7 +114,7 @@ def seniors(draw) -> Senior:
         name="무작위",
         age=75,
         wake_time=_hhmm(draw(st.integers(8, 20)) * 30),  # 04:00~10:00
-        sleep_time=_hhmm(draw(st.integers(40, 47)) * 30),  # 20:00~23:30
+        sleep_time=_hhmm(draw(st.integers(40, 52)) * 30),  # 20:00~다음 날 02:00
         pref_source=draw(st.sampled_from(["child", "none"])),
         seed_prefs={
             "series": draw(st.lists(st.sampled_from(SERIES), max_size=2, unique=True)),
@@ -177,7 +180,9 @@ def user_rules(draw) -> list[UserRule]:
             rule.target_type, rule.target = "genre", draw(st.sampled_from(GENRES))
         elif kind == "rest_day":
             rule.target_type, rule.date = "none", DAY.isoformat()
-            rule.from_time = _hhmm(draw(st.integers(12, 46)) * 30)
+            rule.from_time = _hhmm(
+                draw(st.one_of(st.integers(42, 47), st.integers(12, 46))) * 30
+            )  # 21~23시 자주
         else:
             rule.target = draw(st.sampled_from(SERIES))
             rule.date = DAY.isoformat() if kind == "skip_today" else None
@@ -187,10 +192,14 @@ def user_rules(draw) -> list[UserRule]:
 
 @st.composite
 def day_cases(draw) -> dict:
+    progs, senior = draw(programs()), draw(seniors())
+    day_end = max(
+        _at(24 * 60), wake_and_sleep(senior, DAY)[1]
+    )  # 그날 + 취침이 다음 날이면 그때까지 (service 와 같음)
     return {
-        "programs": draw(programs()),
+        "programs": [p for p in progs if _at(0) <= p.start < day_end],
         "lgs": draw(lg_contents()),
-        "senior": draw(seniors()),
+        "senior": senior,
         "logs": draw(watch_logs()),
         "rules": draw(user_rules()),
     }
