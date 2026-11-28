@@ -687,3 +687,90 @@ def test_sample_s3_is_child_picked_interests_with_few_logs(sample_session):
     logs = sample_session.scalars(select(WatchLog).where(WatchLog.senior_id == "s3")).all()
     assert 0 < len(logs) < 10
     assert {s.pref_source for s in sample_session.scalars(select(Senior))} <= {"child", "self", "none"}
+
+
+# ───────── 독립 리뷰 H3: 채널이 많아도 하루표가 빨리 나옴 ─────────
+
+
+def _many_channels(n_channels: int = 30):
+    """채널 30개 × 05:00~다음 날 01:00, 30~90분짜리 방송이 빈틈없이 (합성 편성)."""
+    import random
+    from datetime import datetime, timedelta
+
+    from app.models.db import Program
+
+    rng = random.Random(30)
+    genres = ["뉴스", "드라마", "예능", "트로트", "교양", "다큐", "시사", "건강"]
+    out = []
+    for c in range(n_channels):
+        t, end = datetime(2026, 12, 1, 5), datetime(2026, 12, 2, 1)
+        while t < end:
+            length = rng.choice([30, 40, 50, 60, 70, 80, 90])
+            g = rng.choice(genres)
+            out.append(
+                Program(
+                    id=f"CH{c}-{t:%H%M}",
+                    channel_id=f"CH{c}",
+                    title=f"{g}{c}",
+                    series_key=f"s{c}-{t:%H}",
+                    genre=g,
+                    genres=[g],
+                    start=t,
+                    end=t + timedelta(minutes=length),
+                    cast=[],
+                    is_new=rng.random() < 0.3,
+                    is_live=False,
+                )
+            )
+            t += timedelta(minutes=length)
+    return out
+
+
+def test_plan_with_30_channels_is_fast():
+    """취향이 넓으면(모든 장르·시간대) 후보가 500개 넘게 남음 → 예전엔 예산 없는 DP 표가 3만 분이라 70초대."""
+    import time
+
+    from app.engine.planner import build_plan
+    from app.engine.preference import Profile
+    from app.engine.rules import RuleSet
+    from app.models.db import Senior
+
+    progs = _many_channels()
+    s = Senior(
+        id="t", name="t", age=75, wake_time="05:00", sleep_time="01:00", pref_source="child",
+        seed_prefs={}, family_picks=[], fixed_breaks=[],
+    )  # fmt: skip
+    every = ["뉴스", "드라마", "예능", "트로트", "교양", "다큐", "시사", "건강"]
+    prof = Profile(
+        series={}, cast={}, genre=dict.fromkeys(every, 1.0), timeslot=dict.fromkeys(["아침", "낮", "저녁", "밤"], 1.0),
+        history_share=0.0, n_logs=0, on_ratio={h: 1.0 for h in range(24)},
+    )  # fmt: skip
+    started = time.perf_counter()
+    plan = build_plan(progs, [], s, prof, RuleSet([], date(2026, 12, 1)), date(2026, 12, 1))
+    took = time.perf_counter() - started
+    assert plan.entries and took < 2.0, f"{len(progs)}개 편성에 {took:.1f}초"
+
+
+def test_select_best_without_budget_equals_a_very_large_budget():
+    """예산 없음 = 아주 큰 예산 (예전 '예산 없음'의 표 크기 = 후보 시간 전부). 같은 무게·음수 무게도 섞어서."""
+    import random
+
+    from app.engine.selection import Candidate, select_best
+
+    pick = lambda xs: [c.key for c in xs]
+    for seed in range(6):
+        rng = random.Random(seed)
+        progs = rng.sample(_many_channels(4), 40)
+        cands = [
+            Candidate(
+                key=p.id,
+                start=p.start,
+                end=p.end,
+                channel_id=p.channel_id,
+                score=rng.choice([0.2, 0.5, 0.5, 0.8]),
+                floor=0.35,  # 0.2 는 음수 무게, 0.5 는 같은 무게
+            )
+            for p in progs
+        ]
+        total = sum(c.minutes for c in cands)
+        assert pick(select_best(cands)) == pick(select_best(cands, budget_min=total)), seed

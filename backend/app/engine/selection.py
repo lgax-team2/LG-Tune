@@ -45,6 +45,32 @@ def overlaps(a: Any, b: Any) -> bool:
     return a.start < b.end and b.start < a.end
 
 
+def _best_without_budget(cands: list[Candidate], before: list[int], gain: list) -> list[Candidate]:
+    """예산이 없을 때: 시간 칸 없이 '앞에서 j 개만 볼 때 최대 (무게 합, 이른 정도 합)' 한 줄만 채운다.
+    겹치지 않는 방송들의 시간 합은 하루 길이를 못 넘으므로, 예산 표의 '충분히 큰 시간' 칸과 값이 같고 고르는 것도 같음
+    (같을 땐 안 넣는 쪽 · 거꾸로 따라갈 땐 손해 없으면 넣기 — select_best 와 같은 규칙). 예전엔 후보 시간 전부를
+    표 크기로 써서 채널이 많으면 수만 칸 × 수백 후보였음 (독립 리뷰 H3)."""
+    best = [(0.0, 0)]
+    for j, c in enumerate(cands):
+        prev = best[j]
+        if c.weight < 0:
+            best.append(prev)
+            continue
+        w, e = best[before[j]]
+        got = (round(w + gain[j][0], 9), e + gain[j][1])
+        best.append(max(prev, got))
+    chosen, j = [], len(cands)
+    while j > 0:
+        c = cands[j - 1]
+        w, e = best[before[j - 1]]
+        if c.weight >= 0 and (round(w + gain[j - 1][0], 9), e + gain[j - 1][1]) >= best[j - 1]:
+            chosen.append(c)
+            j = before[j - 1]
+        else:
+            j -= 1
+    return sorted(chosen, key=lambda c: c.start)
+
+
 def _earliness(c: Candidate) -> int:
     """동점 가르기 값: 시작이 이를수록 큼 (하루 1440분 기준)."""
     return 24 * 60 - (c.start.hour * 60 + c.start.minute)
@@ -60,31 +86,45 @@ def select_best(cands: list[Candidate], budget_min: float | None = None) -> list
     무게가 같으면 시작이 이른 방송 쪽: 표의 값 = (무게 합, 이른 정도 합) — 무게를 먼저 비교하고 같을 때만 이른 정도.
     """
     cands = sorted(cands, key=lambda c: (c.end, c.start, c.key))
-    limit = sum(c.minutes for c in cands) if budget_min is None else max(0, int(budget_min))
     ends = [c.end for c in cands]
     before = [bisect_right(ends, c.start, 0, j) for j, c in enumerate(cands)]  # c 시작 전에 끝나는 후보 수
     gain = [
         (round(c.weight, 9), _earliness(c)) for c in cands
     ]  # 반올림: 같은 무게가 계산 순서 탓에 갈리지 않게
+    if budget_min is None:
+        return _best_without_budget(cands, before, gain)
+    limit = max(0, int(budget_min))
     best = [[(0.0, 0)] * (limit + 1)]
+
+    minutes = [c.minutes for c in cands]  # 표를 채우며 수백만 번 쓰므로 미리 계산 (결과는 같음)
+    usable = [c.weight >= 0 for c in cands]
 
     def take(j: int, t: int) -> tuple[float, int] | None:
         """j 번째 후보를 넣었을 때 값 (못 넣으면 None)."""
-        c = cands[j]
-        if c.minutes > t or c.weight < 0:
+        m = minutes[j]
+        if m > t or not usable[j]:
             return None
-        w, e = best[before[j]][t - c.minutes]
+        w, e = best[before[j]][t - m]
         return (round(w + gain[j][0], 9), e + gain[j][1])
 
-    for j in range(len(cands)):
-        prev = best[j]
-        best.append([max(prev[t], take(j, t) or prev[t]) for t in range(limit + 1)])
+    for j in range(len(cands)):  # 표 채우기: take() 와 같은 계산을 칸마다 함수 호출 없이 (결과는 같음)
+        prev, m = best[j], minutes[j]
+        if not usable[j] or m > limit:
+            best.append(prev)  # 넣을 수 없으면 앞 줄 그대로 (줄은 고치지 않으니 같이 써도 됨)
+            continue
+        base, (gw, ge) = best[before[j]], gain[j]
+        row = prev[:m]
+        for t in range(m, limit + 1):
+            w, e = base[t - m]
+            got = (round(w + gw, 9), e + ge)
+            row.append(max(prev[t], got))  # 같으면 안 넣는 쪽 (max 와 같음)
+        best.append(row)
     chosen, j, t = [], len(cands), limit
     while j > 0:
         got = take(j - 1, t)
         if got is not None and got >= best[j - 1][t]:
             chosen.append(cands[j - 1])  # 무게 0 은 손해가 없을 때만 들어감
-            t -= cands[j - 1].minutes
+            t -= minutes[j - 1]
             j = before[j - 1]
         else:
             j -= 1
