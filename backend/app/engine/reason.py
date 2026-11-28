@@ -68,6 +68,8 @@ def _fill_reason(e: Entry) -> Reason:
         return Reason(f"{e.scored.top_cast} 님이 나와요", f"cast:{e.scored.top_cast}")
     if e.fill_why == "genre":
         return Reason(f"좋아하시는 {e.scored.top_genre} " + ieyo("방송"), f"genre:{e.scored.top_genre}")
+    if e.scored and not e.scored.timeslot_seen:
+        return Reason("채널을 그대로 두고 이어서 봐요", "fill")  # 기록 없는 시간대는 습관 이유를 못 댐
     return Reason("이 시간에 자주 보시는 " + ieyo("방송"), "timeslot")  # (habit 은 배경 편성 이유로)
 
 
@@ -97,6 +99,8 @@ def _from_score(e: Entry) -> Reason:
     positive = {k: v for k, v in parts.items() if v > 0}
     if e.scored and e.scored.top_cast is None:
         positive.pop("cast", None)  # 출연자 정보가 없을 때 넣은 기본값은 "○○ 님이 나와요"의 근거가 아님
+    if e.scored and not e.scored.timeslot_seen:
+        positive.pop("timeslot", None)  # 기록 없는 시간대의 중립값은 "이 시간에 자주 보시는"의 근거가 아님
     if not positive:
         return Reason("오늘 볼 만한 " + ieyo("방송"), "none")
     top = max(positive, key=lambda k: (positive[k], k))

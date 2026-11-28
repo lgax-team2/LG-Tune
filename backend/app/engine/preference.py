@@ -60,6 +60,14 @@ class Profile:
     genre_seen_share: dict[str, float] = field(
         default_factory=dict
     )  # 장르 목록 기준, 시청 시간 중 그 장르가 든 비율
+    timeslot_seen: set[str] | None = (
+        None  # 실제 시청 기록이 있는 시간대(아침·낮·저녁·밤). None = 손으로 만든 취향표
+    )
+
+    def timeslot_has_history(self, dt: datetime) -> bool:
+        """그 시각의 시간대 습관이 실제 기록에서 나왔나 (기록이 없으면 중립값일 뿐이라 이유로 못 씀).
+        손으로 만든 취향표(timeslot_seen=None)는 주어진 값을 실제 습관으로 봄."""
+        return self.timeslot_seen is None or band_of(dt) in self.timeslot_seen
 
     def timeslot_score(self, dt: datetime) -> float:
         """그 시각의 시간대 습관: 1시간 단위 기록이 충분하면 그 시각 값, 아니면 4구간 값."""
@@ -259,4 +267,5 @@ def build_profile(
         left_on_series=_left_on_only(weighted, seed),
         genre_watch_share=genre_watch_share(logs, today),
         genre_seen_share=genre_seen_share(logs, today),
+        timeslot_seen={band for band, w in slot.items() if w > 0},
     )

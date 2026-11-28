@@ -20,6 +20,9 @@ class Scored:
     parts: dict[str, float]  # 항목별 기여 (가중치 곱한 값) → 고른 이유 만들 때 씀
     top_cast: str | None  # 가장 좋아하는 출연자
     top_genre: str | None = None  # 장르 목록 중 가장 좋아하는 장르
+    timeslot_seen: bool = (
+        True  # 그 시각 시간대 습관이 실제 기록에서 나왔나 (아니면 점수엔 넣되 이유로는 안 씀)
+    )
 
 
 def _score(
@@ -49,7 +52,13 @@ def _score(
     if not cast:  # 출연자 정보 없음 → 출연자 항목 빼고 나머지로 비율 맞춤
         rescale = 1.0 / (1.0 - w["cast"])
         parts = {k: v * rescale for k, v in parts.items()}
-    return Scored(score=sum(parts.values()), parts=parts, top_cast=top_cast, top_genre=top_genre)
+    return Scored(
+        score=sum(parts.values()),
+        parts=parts,
+        top_cast=top_cast,
+        top_genre=top_genre,
+        timeslot_seen=profile.timeslot_has_history(when),
+    )
 
 
 def _best_liked(names: list[str], liked: dict[str, float]) -> str | None:

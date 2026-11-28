@@ -17,7 +17,7 @@ from .gaps import first_high_moment, hour_marks
 from .genres import genres_of, same_episode
 from .plan import NOVELTY, PIN, REPRESENTATIVE, Entry, Plan
 from .planner import build_plan, starts_in_day, wake_and_sleep
-from .preference import Profile
+from .preference import Profile, band_of
 from .rules import RuleSet
 from .scoring import score_lg, score_program
 from .tv_pattern import HIGH, LOW
@@ -221,7 +221,7 @@ def _basis_holds(b: str, e: Entry, plan: Plan, senior: Senior, profile: Profile,
         "live": lambda: bool(getattr(src, "is_live", False)),
         "cast": lambda: arg in (src.cast or []) and profile.cast.get(arg, 0) > 0,
         "genre": lambda: arg in genres_of(src) and profile.genre.get(arg, 0) > 0,
-        "timeslot": lambda: profile.timeslot_score(e.start) > 0,
+        "timeslot": lambda: profile.timeslot_score(e.start) > 0 and _slot_seen(profile, e.start),
         "more_episode": lambda: any(
             q.source.series_key == series and not same_episode(q.source, src) for q in plan.picks()
         ),
@@ -361,6 +361,12 @@ def _why_no_candidates(plan: Plan, programs: list[Program], lg_contents: list[Lg
         shows = "방송 " + ", ".join(f"{why} {n}개" for why, n in top)
     lg = "LG 콘텐츠 없음" if not lg_contents else "LG 는 취향 점수 미달·뺀 장르"
     return f"{shows} / {lg}"
+
+
+def _slot_seen(profile: Profile, when) -> bool:
+    """M5 시간대 근거: 그 시간대(아침·낮·저녁·밤)에 실제 시청 기록이 있음 (기록 없으면 0.5 중립값일 뿐).
+    손으로 만든 취향표(timeslot_seen=None)는 주어진 값을 실제 습관으로 봄."""
+    return profile.timeslot_seen is None or band_of(when) in profile.timeslot_seen
 
 
 # ───────── 목표 ─────────

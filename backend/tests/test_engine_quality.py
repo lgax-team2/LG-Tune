@@ -1346,3 +1346,37 @@ def test_rest_day_said_after_midnight_means_the_next_day():
     rules = RuleSet([_rest_day("00:30")], DAY, "06:00")
     assert rules.allows_start(at("23:00")) and rules.allows_start(at("00:10", DAY + timedelta(days=1)))
     assert not rules.allows_start(at("00:40", DAY + timedelta(days=1)))
+
+
+# ───────── 독립 리뷰 H2: 기록 0건인데 '이 시간에 자주 보시는 방송' ─────────
+
+
+def _no_history_case():
+    """관심 장르=사극, 기록 0건, 출연자 정보 없는 교양 8개 (08~15시)."""
+    s = senior(genres=["사극"])
+    progs = [
+        prog(f"c{h}", f"{h:02d}:00", f"{h:02d}:50", key=f"c{h}", genre="교양", cast=()) for h in range(8, 16)
+    ]
+    return s, progs, build_profile([], s, DAY)
+
+
+def test_no_timeslot_reason_without_any_viewing_record():
+    s, progs, prof = _no_history_case()
+    p, report = check_plan(progs, [], s, prof, RuleSet([], DAY), DAY, numbered_channels={"KBS1"})
+    assert p.entries, "기준점이 낮아져 하루표는 나옴"
+    assert not [e for e in p.entries if "timeslot" in e.basis.split("+")], [
+        (e.title, e.reason) for e in p.entries
+    ]
+    assert report.must["M5"].ok, report.must["M5"].detail
+
+
+def test_m5_rejects_a_timeslot_reason_built_on_the_neutral_default():
+    """기록 없이 중립값(0.5)만 있는 시간대 습관을 이유로 붙이면 M5 실패 (자기 채점 금지)."""
+    from app.engine.quality import evaluate
+
+    s, progs, prof = _no_history_case()
+    p, _ = check_plan(progs, [], s, prof, RuleSet([], DAY), DAY, numbered_channels={"KBS1"})
+    picked = next(e for e in p.entries if e.kind == "pick")
+    picked.reason, picked.basis = "이 시간에 자주 보시는 방송이에요", "timeslot"
+    report = evaluate(p, programs=progs, senior=s, profile=prof, rules=RuleSet([], DAY))
+    assert report.must["M5"].ok is False
