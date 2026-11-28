@@ -33,6 +33,11 @@ HABITS = {
     },
     "종일": {h: (1.0 if 8 <= h < 22 else 0.3 if h in (7, 22) else 0.0) for h in range(24)},
 }
+# 채널 충성도: 방송이 끝나도 채널을 그대로 둘 확률 (continued). 높음 = 기본, 낮음 = 민감도 확인용
+LOYALTY = {
+    "높음": {"종일 틀어 둠": 0.85, "기본": 0.55},
+    "낮음": {"종일 틀어 둠": 0.4, "기본": 0.15},
+}
 WAKE_SLEEP = {"아침형": ("05:30", "21:00"), "저녁형": ("07:00", "23:30"), "종일": ("06:30", "22:30")}
 
 
@@ -143,8 +148,8 @@ def _top(weights: dict[str, float], k: int) -> list[str]:
     return [g for g, _ in sorted(weights.items(), key=lambda kv: (-kv[1], kv[0]))[:k]]
 
 
-def make_senior(kind: str, seed: int, schedule: list[Program]) -> SimSenior:
-    """유형 kind 의 가상 어르신 1명 (seed 고정 → 항상 같음)."""
+def make_senior(kind: str, seed: int, schedule: list[Program], loyalty: str = "높음") -> SimSenior:
+    """유형 kind 의 가상 어르신 1명 (seed 고정 → 항상 같음). loyalty 는 채널 충성도만 바꿈 (취향·습관은 같은 사람)."""
     rng = random.Random(f"{kind}-{seed}")
     genres = standard_genres()
     aired = sorted({g for p in schedule for g in (p.genres or [p.genre])})
@@ -171,7 +176,7 @@ def make_senior(kind: str, seed: int, schedule: list[Program]) -> SimSenior:
     behavior = Behavior(
         habit=habit,
         daily_minutes=rng.uniform(lo, hi) * (1.6 if kind == "종일 틀어 둠" else 1.0),
-        stickiness={"종일 틀어 둠": 0.85}.get(kind, 0.55),
+        stickiness=LOYALTY[loyalty].get(kind, LOYALTY[loyalty]["기본"]),
         noise={"잡음 많음": 0.35}.get(kind, 0.08),
         early_exit={"잡음 많음": 0.5}.get(kind, 0.25),
     )
@@ -288,9 +293,13 @@ def _log(senior_id: str, p: Program, t: datetime, minutes: float, how: str, reas
 
 
 def make_population(
-    n: int, seed: int = 0, schedule: list[Program] | None = None, types: list[str] | None = None
+    n: int,
+    seed: int = 0,
+    schedule: list[Program] | None = None,
+    types: list[str] | None = None,
+    loyalty: str = "높음",
 ) -> list[SimSenior]:
     """모두 n 명 (유형을 돌아가며, seed 고정 → 항상 같은 사람들)."""
     schedule = schedule if schedule is not None else make_schedule()
     types = types or TYPES
-    return [make_senior(types[i % len(types)], seed * 100_000 + i, schedule) for i in range(n)]
+    return [make_senior(types[i % len(types)], seed * 100_000 + i, schedule, loyalty) for i in range(n)]
