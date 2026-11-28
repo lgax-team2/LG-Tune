@@ -1300,3 +1300,49 @@ def test_m9_counts_an_lg_that_fits_after_a_fixed_break():
     p.entries = []
     report = evaluate(p, programs=[], senior=s, profile=prof, rules=RuleSet([], DAY), lg_contents=lgs)
     assert report.must["M9"].ok is False
+
+
+# ───────── 독립 리뷰 H1: '오늘은 그만 볼래'와 자정 넘는 방송 ─────────
+
+
+def _rest_day(from_time: str) -> UserRule:
+    return UserRule(
+        senior_id="t", kind="rest_day", target_type="none", target="", date=DAY.isoformat(), from_time=from_time,
+        active=True,
+    )  # fmt: skip
+
+
+def _night_case():
+    """기상 06:00·취침 01:00, 22:00 부터 그만 볼래, 20:00 방송 + 다음 날 00:10~00:50 방송."""
+    evening = prog("eve", "20:00", "21:00", key="eve")
+    late = prog("late", "10:00", "10:40", key="late", ch="MBC")
+    late.start, late.end = at("00:10", DAY + timedelta(days=1)), at("00:50", DAY + timedelta(days=1))
+    return [evening, late], profile(series={"eve": 1.0, "late": 1.0}), senior(wake="06:00", sleep="01:00")
+
+
+def test_rest_day_blocks_shows_after_midnight():
+    progs, prof, s = _night_case()
+    rules = RuleSet([_rest_day("22:00")], DAY, s.wake_time)
+    p, report = check_plan(progs, [], s, prof, rules, DAY)
+    assert "late" not in {e.program_id for e in p.entries}, "22:00 부터 그만 → 다음 날 00:10 방송도 안 됨"
+    assert all(e.start < at("22:00") for e in p.entries)
+    assert report.must["M2"].ok, report.must["M2"].detail
+
+
+def test_m2_catches_a_slot_after_midnight_when_the_engine_compares_time_only(monkeypatch):
+    """엔진을 옛 방식(시각만 비교)으로 되돌리면 00:10 방송이 들어가고, 판정기(M2)가 그걸 잡아야 함."""
+    from datetime import time
+
+    progs, prof, s = _night_case()
+    rules = RuleSet([_rest_day("22:00")], DAY, s.wake_time)
+    monkeypatch.setattr(RuleSet, "allows_start", lambda self, start: start.time() < time(22, 0))
+    p, report = check_plan(progs, [], s, prof, rules, DAY)
+    assert "late" in {e.program_id for e in p.entries}
+    assert report.must["M2"].ok is False and "그만 볼래" in report.must["M2"].detail
+
+
+def test_rest_day_said_after_midnight_means_the_next_day():
+    """from_time 이 기상보다 이르면(00:30) 다음 날 00:30 부터 (wake_and_sleep 과 같은 규칙)."""
+    rules = RuleSet([_rest_day("00:30")], DAY, "06:00")
+    assert rules.allows_start(at("23:00")) and rules.allows_start(at("00:10", DAY + timedelta(days=1)))
+    assert not rules.allows_start(at("00:40", DAY + timedelta(days=1)))

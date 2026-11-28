@@ -7,7 +7,7 @@ check_plan() 은 하루표를 세 번 짠다: 원래대로 / 입력 순서를 �
 import itertools
 from collections import Counter
 from dataclasses import dataclass, field
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 
 from ..models.db import LgContent, Program, Senior
 from . import config
@@ -122,13 +122,27 @@ def _no_overlap(entries: list[Entry]) -> Check:
     return Check(True)
 
 
+def _rest_from(rules: RuleSet, wake) -> datetime | None:
+    """'오늘은 그만 볼래' 시각을 규칙 행(UserRule)에서 직접 계산 (엔진 RuleSet 함수 안 씀 — 자기 채점 금지).
+    그날 켜진 rest_day 중 가장 이른 것, 날짜+시각. 기상 시각보다 이르면 다음 날 그 시각."""
+    day = wake.date()
+    moments = []
+    for r in getattr(rules, "rows", []):
+        if r.active and r.kind == "rest_day" and r.date == day.isoformat() and r.from_time:
+            at = datetime.combine(day, time.fromisoformat(r.from_time))
+            moments.append(at + timedelta(days=1) if at < wake else at)
+    return min(moments, default=None)
+
+
 def _rules_kept(plan, programs, senior, profile, rules, wake, sleep, numbered=None) -> Check:
+    rest_from = _rest_from(rules, wake)
+    allowed = lambda start: rest_from is None or start < rest_from
     for e in plan.entries:
         series = getattr(e.source, "series_key", None)
         if rules.blocks(series, genres_of(e.source)):
             return Check(False, f"'안 볼래' 위반: {e.title}")
-        if not rules.allows_start(e.start):
-            return Check(False, f"'오늘은 그만 볼래' 뒤에 시작: {e.title} {e.start:%H:%M}")
+        if not allowed(e.start):
+            return Check(False, f"'오늘은 그만 볼래' 뒤에 시작: {e.title} {e.start:%m-%d %H:%M}")
     # '챙겨 줘'는 엔진 함수를 다시 쓰지 않고 규칙대로 직접 확인: 빠진 pin 은 (같은 회차가 더 좋은 쪽으로 있거나)
     # (겹치는 pin 이 점수가 더 높을 때 — 같으면 이른 시작 → ID)만 허용
     family = senior.family_picks or []
@@ -138,7 +152,7 @@ def _rules_kept(plan, programs, senior, profile, rules, wake, sleep, numbered=No
         for p in programs
         if rules.is_pinned(p.series_key)
         and starts_in_day(p, wake, sleep)
-        and rules.allows_start(p.start)
+        and allowed(p.start)
         and not rules.blocks(p.series_key, genres_of(p))
         and (numbered is None or p.channel_id in numbered)  # 채널 번호 없는 방송은 넣지 않음 (M8 이 먼저)
         and not in_break(p.start, parse_breaks(senior))  # 고정 비움 시간 시작도 넣지 않음 (M3 가 먼저)

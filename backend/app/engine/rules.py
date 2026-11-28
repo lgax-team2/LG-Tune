@@ -7,21 +7,23 @@
 | rest_day | "오늘은 그만 볼래" | 그날 from_time 이후 |
 """
 
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 
 from ..models.db import UserRule
 
 
 class RuleSet:
-    def __init__(self, rules: list[UserRule], day: date) -> None:
+    def __init__(self, rules: list[UserRule], day: date, wake_time: str | None = None) -> None:
+        """wake_time: 그날 기상 시각(HH:MM). '그만 볼래' 시각이 이보다 이르면 다음 날 그 시각 (wake_and_sleep 과 같은 규칙)."""
         today = day.isoformat()
+        self.rows = list(rules)  # 원래 규칙 행 (기준표 판정이 엔진 함수 없이 직접 계산할 때 씀)
         on = [r for r in rules if r.active]
         blocking = [r for r in on if r.kind == "exclude" or (r.kind == "skip_today" and r.date == today)]
         self._blocked_series = {r.target for r in blocking if r.target_type == "series"}
         self._blocked_genres = {r.target for r in blocking if r.target_type == "genre"}
         self._pinned = {r.target for r in on if r.kind == "pin" and r.target_type == "series"}
         rest = [r.from_time for r in on if r.kind == "rest_day" and r.date == today and r.from_time]
-        self._rest_from = min(time.fromisoformat(t) for t in rest) if rest else None
+        self._rest_from = min((rest_moment(day, t, wake_time) for t in rest), default=None)
 
     def blocks(self, series_key: str | None, genres: list[str]) -> bool:
         """뺀 시리즈이거나, 장르 목록 중 하나라도 뺀 장르면 막는다."""
@@ -31,5 +33,13 @@ class RuleSet:
         return series_key in self._pinned and series_key not in self._blocked_series
 
     def allows_start(self, start: datetime) -> bool:
-        """'오늘은 그만 볼래' 이후 시작하는 건 안 넣음."""
-        return self._rest_from is None or start.time() < self._rest_from
+        """'오늘은 그만 볼래' 이후 시작하는 건 안 넣음. 날짜+시각으로 비교 (취침이 다음 날이면 자정 넘은 방송도 막음)."""
+        return self._rest_from is None or start < self._rest_from
+
+
+def rest_moment(day: date, from_time: str, wake_time: str | None = None) -> datetime:
+    """'그만 볼래' 시각 → 날짜+시각. 기상 시각보다 이르면 다음 날 (예: 기상 06:00, 00:30 → 다음 날 00:30)."""
+    at = datetime.combine(day, time.fromisoformat(from_time))
+    if wake_time and at.time() < time.fromisoformat(wake_time):
+        at += timedelta(days=1)
+    return at

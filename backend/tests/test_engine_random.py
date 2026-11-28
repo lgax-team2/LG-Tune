@@ -203,7 +203,13 @@ def run_case(case: dict) -> Report:
     rules = case["rules"]
     profile = build_profile(case["logs"], case["senior"], DAY, rules)
     _, report = check_plan(
-        case["programs"], case["lgs"], case["senior"], profile, RuleSet(rules, DAY), DAY, set(NUMBERED)
+        case["programs"],
+        case["lgs"],
+        case["senior"],
+        profile,
+        RuleSet(rules, DAY, case["senior"].wake_time),
+        DAY,
+        set(NUMBERED),
     )
     return report
 
