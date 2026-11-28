@@ -208,6 +208,14 @@ def day_cases(draw) -> dict:
 # ───────── 판정 ─────────
 
 
+def make_rules(rules: list[UserRule], senior: Senior) -> RuleSet:
+    """기상 시각까지 넘긴 규칙 묶음 (기상 시각을 안 받는 옛 엔진 — 전후 비교 compare.py — 에서도 돌게)."""
+    try:
+        return RuleSet(rules, DAY, senior.wake_time)
+    except TypeError:
+        return RuleSet(rules, DAY)
+
+
 def run_case(case: dict) -> Report:
     rules = case["rules"]
     profile = build_profile(case["logs"], case["senior"], DAY, rules)
@@ -216,7 +224,7 @@ def run_case(case: dict) -> Report:
         case["lgs"],
         case["senior"],
         profile,
-        RuleSet(rules, DAY, case["senior"].wake_time),
+        make_rules(rules, case["senior"]),
         DAY,
         set(NUMBERED),
     )
