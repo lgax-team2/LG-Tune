@@ -1,6 +1,6 @@
 """좋은 하루표 기준표 v4 (backend/app/engine/QUALITY.md) 테스트.
 
-- 반드시(M1~M8): 샘플 3명 + 테스트 페르소나 19명(예외형 8명 포함) 모두 통과해야 함
+- 반드시(M1~M9): 샘플 3명 + 테스트 페르소나 19명(예외형 8명 포함) 모두 통과해야 함
 - 무작위 검사는 test_engine_random.py, 두 버전 비교는 `uv run python -m app.engine.compare`
 - 목표(S1~S9): 규칙별 작은 예제로 확인
 - 페르소나는 샘플 파일이 아니라 여기서 만든다 (편성표만 샘플 programs.json·lg_contents.json 을 씀)
@@ -21,7 +21,7 @@ from app.models.db import LgContent, Program, Senior, UserRule, WatchLog
 from app.models.sample import SAMPLE_DIR
 
 DAY = date(2026, 12, 1)
-MUST = ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"]
+MUST = ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9"]
 
 
 def at(hhmm: str, d: date = DAY) -> datetime:
@@ -1164,3 +1164,139 @@ def test_persona_who_often_says_next_time_gets_those_series_paused():
     assert (
         prof.cast.get("김태호", 0) > 0 or True
     )  # 출연자 점수는 쉬어가기와 상관없음 (signals 테스트에서 확인)
+
+
+# ───────── E3: 자정 넘는 취침 · M9 빈 하루표 · 취향 일치율 해당 없음 ─────────
+
+
+def test_sleep_earlier_than_wake_means_next_day():
+    """취침이 기상보다 이르면(01:00) 다음 날 그 시각 (11/28 사람 결정)."""
+    from app.engine.planner import wake_and_sleep
+
+    wake, sleep = wake_and_sleep(senior(wake="09:00", sleep="01:00"), DAY)
+    assert (wake, sleep) == (at("09:00"), at("01:00", DAY + timedelta(days=1)))
+
+
+def test_night_owl_gets_shows_until_after_midnight():
+    late = prog("late", "23:00", "23:50", key="late")
+    after = prog("after", "10:00", "10:30", key="after", ch="MBC")
+    after.start, after.end = at("00:10", DAY + timedelta(days=1)), at("00:40", DAY + timedelta(days=1))
+    p = plan(
+        [late, after], profile(series={"late": 1.0, "after": 1.0}), s=senior(wake="09:00", sleep="01:00")
+    )
+    assert {"late", "after"} <= {e.program_id for e in picks(p)}
+
+
+def test_persona_night_owl_gets_a_plan():
+    p, report = persona_plan("자정 넘는 방송")
+    assert p.entries, "취침 01:00 은 다음 날 01:00 → 밤 방송이 들어가야 함"
+    assert any(e.start.hour >= 22 for e in p.entries)
+    assert report.must["M9"].ok
+
+
+def test_m9_flags_an_empty_plan_when_there_are_candidates():
+    from app.engine.quality import evaluate
+
+    progs = [prog("a", "10:00", "11:00", key="a")]
+    prof = profile(series={"a": 1.0})
+    p = plan(progs, prof)
+    assert p.entries
+    p.entries = []
+    report = evaluate(p, programs=progs, senior=senior(), profile=prof, rules=RuleSet([], DAY))
+    assert report.must["M9"].ok is False
+
+
+def test_m9_passes_an_empty_plan_without_candidates_and_says_why():
+    progs = [prog("a", "10:00", "11:00", key="a", genre="트로트")]
+    rules = RuleSet([rule("exclude", "트로트", "genre")], DAY)
+    p, report = check_plan(progs, [], senior(), profile(series={"a": 1.0}), rules, DAY)
+    assert not p.entries
+    assert report.must["M9"].ok and report.must["M9"].detail.startswith("빈 하루표 — 후보 없음")
+    assert "규칙으로 제외" in report.must["M9"].detail
+
+
+def test_taste_match_is_not_applicable_without_chosen_slots():
+    """취향 일치율을 셀 칸(새로 추천·채널 유지 말고)이 없으면 0% 가 아니라 '해당 없음'(None)."""
+    from app.engine.plan import Entry, Plan
+    from app.engine.quality import metrics
+
+    keep = prog("k", "11:00", "12:00")
+    fill = Entry("k", "KBS1", "k", keep.start, keep.end, 0.5, "fill", source=keep, basis="background")
+    p = Plan([fill], floor=0.35, budget_min=240, hours=set(range(24)), knows_taste=False)
+    assert metrics(p)["taste_match"] is None
+    assert (
+        metrics(Plan([], floor=0.35, budget_min=240, hours=set(), knows_taste=False))["taste_match"] is None
+    )
+
+
+def test_one_lg_instead_of_an_empty_plan_when_only_lg_fits():
+    """방송 후보가 없고 취향에 맞는 LG 만 있으면 빈 하루표 대신 LG 1칸 — M9(반드시)가 S9·S10(목표)보다 먼저 (D48)."""
+    progs = [prog("x", "10:00", "11:00", key="x", genre="트로트")]
+    rules = RuleSet([rule("exclude", "트로트", "genre")], DAY)
+    prof = profile(
+        genre={"교양": 1.0}, timeslot={"낮": 1.0}, seen={"교양": 1.0, "다큐": 1.0, "건강": 1.0, "요리": 1.0}
+    )
+    lgs = [lg("a", "교양", 30), lg("b", "교양", 30)]
+    p, report = check_plan(progs, lgs, senior(), prof, rules, DAY, numbered_channels={"KBS1"})
+    assert [e.kind for e in p.entries] == ["lg"]
+    assert all(report.must[c].ok for c in MUST), {c: report.must[c].detail for c in MUST}
+    assert report.goals["S10"].ok is False and "M9 가 먼저" in report.goals["S10"].detail
+
+
+def test_empty_plan_from_zero_focus_time_passes_m9_with_reason():
+    """틀어만 두는 분(집중 시청 상한 0분)이 켜짐 '중간'뿐이면 빈 하루표가 정상 — 이유 '시청 시간 상한' (11/28 결정)."""
+    progs = [prog("a", "10:00", "11:00", key="a")]
+    prof = profile(series={"a": 1.0}, on={h: 0.4 for h in range(24)})
+    prof.focus_budget_min = 0
+    p, report = check_plan(progs, [], senior(), prof, RuleSet([], DAY), DAY, numbered_channels={"KBS1"})
+    assert not p.entries and "시청 시간 상한" in p.notes["M9"]
+    assert report.must["M9"].ok and "시청 시간 상한" in report.must["M9"].detail
+
+
+def test_empty_plan_without_a_channel_to_keep_passes_m9_with_reason():
+    """켜짐 '높음' 시각에 배경으로 깔 방송만 있는데 평소 켜 두는 채널이 아니면 이유를 남기고 통과 (채널 맞추기는 E6)."""
+    progs = [prog("bg", "10:00", "11:00", key="bg", genre="뉴스", cast=(), ch="MBC")]
+    prof = profile(genre={"트로트": 1.0}, cast={}, on={h: (0.9 if h == 10 else 0.0) for h in range(24)})
+    prof.usual_channel = {10: "KBS1"}
+    p, report = check_plan(
+        progs, [], senior(), prof, RuleSet([], DAY), DAY, numbered_channels={"KBS1", "MBC"}
+    )
+    assert not p.entries and "이어 갈 채널이 없음" in p.notes["M9"]
+    assert report.must["M9"].ok
+
+
+def test_m9_fails_an_empty_plan_without_a_reason():
+    from app.engine.quality import evaluate
+
+    progs = [prog("a", "10:00", "11:00", key="a")]
+    prof = profile(series={"a": 1.0}, on={h: 0.4 for h in range(24)})
+    prof.focus_budget_min = 0
+    p = plan(progs, prof)
+    p.notes.pop("M9")
+    report = evaluate(p, programs=progs, senior=senior(), profile=prof, rules=RuleSet([], DAY))
+    assert report.must["M9"].ok is False and "빈 이유 없음" in report.must["M9"].detail
+
+
+def test_m9_does_not_count_an_lg_that_cannot_fit_before_sleep():
+    """기상 21:50·취침 22:00 에 30분 LG 만 있으면 넣을 자리가 없음 → 빈 하루표가 맞고 M9 통과 (Codex 리뷰에서 찾음)."""
+    prof = profile(genre={"교양": 1.0}, timeslot={"밤": 1.0})
+    p, report = check_plan(
+        [], [lg("a", "교양", 30)], senior(wake="21:50", sleep="22:00"), prof, RuleSet([], DAY), DAY
+    )
+    assert not p.entries and report.must["M9"].ok
+
+
+def test_m9_counts_an_lg_that_fits_after_a_fixed_break():
+    """기상 10:00·취침 11:00·비움 10:00~10:15 → 10:15 에 30분 LG 가 들어감. 비어 있으면 M9 실패 (Codex 리뷰에서 찾음)."""
+    from app.engine.quality import evaluate
+
+    s = senior(wake="10:00", sleep="11:00", breaks=["10:00-10:15"])
+    prof = profile(
+        genre={"교양": 1.0}, timeslot={"낮": 1.0}, seen={"교양": 1.0, "다큐": 1.0, "건강": 1.0, "요리": 1.0}
+    )
+    lgs = [lg("a", "교양", 30)]
+    p, _ = check_plan([], lgs, s, prof, RuleSet([], DAY), DAY)
+    assert [(e.program_id, e.start) for e in p.entries] == [("a", at("10:15"))]
+    p.entries = []
+    report = evaluate(p, programs=[], senior=s, profile=prof, rules=RuleSet([], DAY), lg_contents=lgs)
+    assert report.must["M9"].ok is False

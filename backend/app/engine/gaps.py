@@ -7,13 +7,14 @@
 - 낮음 → 비움 ("쉬는 시간"으로 확인 화면에 표시)
 이미 시작한 방송은 남은 시간이 절반 이상이고 15분 이상일 때만 (can_join).
 LG 조건 (기준표 S9·S10): 취향 점수 ≥ 기준점 × 0.8 (새로 추천 1개는 예외), 하루표 전체 시간 중 LG ≤ 30%, LG 칸 수 < 방송 칸 수.
+  단 방송·채우기가 하나도 없어 하루표가 비게 생겼으면 LG 1칸은 비율·칸 수 예외 (기준표 M9 가 목표보다 먼저, 결정 D48).
 LG 배정 순서: 새로 추천(S5) → 켜짐 '높음' 첫 자리(S6) → 취향 점수 높은 것부터 (같은 콘텐츠는 하루 한 번).
 채운 시간도 하루 총 시간 상한에 들어간다. LG 는 빈자리에만 들어가므로 방송 칸을 밀어내지 않는다 (기준표 M7).
 """
 
 import itertools
 from dataclasses import dataclass, field
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
 
 from ..models.db import LgContent, Program
 from . import config
@@ -52,24 +53,21 @@ class Filled:
 
 def first_viewing_moment(wake: datetime, sleep: datetime, hours: set[int]) -> datetime | None:
     """기상 이후 처음으로 시청 시간대(켜짐 '중간' 이상)가 되는 시각 (취침 전까지 없으면 None)."""
-    if wake.hour in hours:
-        return wake
-    for h in range(wake.hour + 1, 24):
-        moment = datetime.combine(wake.date(), time(h))
-        if h in hours and moment < sleep:
-            return moment
-    return None
+    return next((m for m in hour_marks(wake, sleep) if m.hour in hours), None)
 
 
 def first_high_moment(wake: datetime, sleep: datetime, profile: Profile) -> datetime | None:
     """기상 이후 처음으로 TV 켜짐 '높음'이 되는 시각 (기준표 S6). 없으면 None."""
-    if profile.tier(wake.hour) == HIGH:
-        return wake
-    for h in range(wake.hour + 1, 24):
-        moment = datetime.combine(wake.date(), time(h))
-        if profile.tier(h) == HIGH and moment < sleep:
-            return moment
-    return None
+    return next((m for m in hour_marks(wake, sleep) if profile.tier(m.hour) == HIGH), None)
+
+
+def hour_marks(wake: datetime, sleep: datetime) -> list[datetime]:
+    """기상 시각, 그다음 정시들 … 취침 전까지 (취침이 다음 날이면 자정 넘어서도)."""
+    marks, m = [wake], wake.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+    while m < sleep:
+        marks.append(m)
+        m += timedelta(hours=1)
+    return marks
 
 
 def fill_gaps(
@@ -430,6 +428,16 @@ def _choose_lg(
 
     def allowed(c: LgContent, slot: Slot) -> bool:
         total = base_minutes + lg_minutes() + c.duration_min
+        if (
+            not base and not chosen
+        ):  # 하루표가 비게 생겼으면 LG 1칸은 S9 비율·S10 칸 수 예외 (M9 > 목표, 결정 D48)
+            return (
+                rules.allows_start(slot.start)
+                and not in_break(slot.start, breaks)
+                and c.duration_min <= slot.minutes
+                and not rules.blocks(None, genres_of(c))
+                and c.duration_min <= budget
+            )
         return (
             c.id not in used
             and rules.allows_start(slot.start)  # "그만 볼래" 뒤에 시작하지 않게

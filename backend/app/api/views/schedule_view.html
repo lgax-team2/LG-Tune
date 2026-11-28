@@ -192,7 +192,7 @@
   }
   data.quality.must.forEach(function (q) { $("q-must").appendChild(qrow(q)); });
   data.quality.goals.forEach(function (q) { $("q-goals").appendChild(qrow(q)); });
-  function pct(v) { return Math.round(v * 100) + "%"; }
+  function pct(v) { return v === null || v === undefined ? "해당 없음" : Math.round(v * 100) + "%"; }
   function shares(obj) {
     var ks = Object.keys(obj).sort(function (a, b) { return obj[b] - obj[a]; });
     return ks.length ? ks.map(function (k) { return k + " " + pct(obj[k]); }).join(" · ") : "없음";

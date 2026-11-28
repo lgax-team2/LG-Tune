@@ -18,7 +18,7 @@ import tempfile
 from pathlib import Path
 
 BACKEND = Path(__file__).resolve().parents[2]
-MUST = ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"]
+MUST = ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9"]
 GOALS = ["S1", "S2", "S3", "S9", "S10", "S8", "S4", "S5", "S6"]
 METRICS = [("taste_match", "취향일치", "{:.0%}"), ("lg_minutes", "LG분", "{}"), ("switches", "전환", "{}")]
 RED, END = "\033[31m", "\033[0m"

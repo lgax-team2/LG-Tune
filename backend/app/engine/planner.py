@@ -14,6 +14,7 @@
 하루표에 못 들어간 방송은 이유를 Plan.dropped 에, 못 지킨 목표는 Plan.notes 에 남긴다.
 """
 
+from collections import Counter
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 
@@ -76,8 +77,9 @@ def _at(day: date, hhmm: str) -> datetime:
 
 
 def wake_and_sleep(senior: Senior, day: date) -> tuple[datetime, datetime]:
-    """그날의 기상·취침 시각."""
-    return _at(day, senior.wake_time), _at(day, senior.sleep_time)
+    """그날의 기상·취침 시각. 취침이 기상보다 이르면(예 01:00) 다음 날 그 시각 (11/28 결정)."""
+    wake, sleep = _at(day, senior.wake_time), _at(day, senior.sleep_time)
+    return wake, sleep if sleep > wake else sleep + timedelta(days=1)
 
 
 def starts_in_day(p: Program, wake: datetime, sleep: datetime) -> bool:
@@ -256,6 +258,8 @@ def build_plan(
     if filled.novelty_note and "S5" not in d.notes:
         d.notes["S5"] = filled.novelty_note
     entries = filled.entries
+    if not entries:  # 빈 하루표는 이유를 남김 (기준표 M9 — 확인 화면에 표시)
+        d.notes["M9"] = _why_empty(eligible, usable, d, profile, min(focus, profile.daily_budget_min))
     favorite = profile.favorite_genre()
     for e in entries:
         r = explain(e, knows_taste, favorite)
@@ -273,6 +277,19 @@ def build_plan(
         day=day,
         rests=filled.rests,
     )
+
+
+def _why_empty(eligible: list, usable: list, d: "_Day", profile: Profile, cap: float) -> str:
+    """하루표가 빈 이유 (기준표 M9). 시청 시간 상한 / 켜짐 '높음' 시각에 이어 갈 채널 없음 / 그 밖의 빠진 이유."""
+    why = []
+    if eligible and all(d.dropped.get(p.id) == BUDGET for p, _ in eligible):
+        why.append(f"시청 시간 상한 — 집중 시청 상한 {max(cap, 0):.0f}분 안에 들어가는 방송이 없음")
+    if any(profile.tier(p.start.hour) == HIGH for p, _ in usable):
+        why.append("켜짐 '높음' 시각에 이어 갈 채널이 없음 (평소 켜 두는 채널에 그 시각 방송이 없음)")
+    if not why:
+        top = Counter(d.dropped.values()).most_common(3)
+        why.append("넣을 방송·LG 가 없음" + (": " + ", ".join(f"{w} {n}개" for w, n in top) if top else ""))
+    return "빈 하루표 — " + " · ".join(why)
 
 
 def _novelty_keeping_diversity(

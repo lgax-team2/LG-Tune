@@ -1,8 +1,8 @@
-"""무작위 검사 (E-eval): 시청 기록·편성표·설정을 무작위로 만들어 기준표 반드시(M1~M8)를 판정한다.
+"""무작위 검사 (E-eval): 시청 기록·편성표·설정을 무작위로 만들어 기준표 반드시(M1~M9)를 판정한다.
 
 - hypothesis 로 예시 200개. 시드(SEED) 고정이라 테스트·보고·전후 비교 모두 매번 같은 예시 → 같은 결과 (기준표 M6 과 같은 뜻)
 - 판정은 quality.check_plan 을 그대로 씀. 실패하면 hypothesis 가 가장 작은 예시로 줄여서 보여 준다
-- 보고용: `cd backend && uv run python -m tests.test_engine_random` → M 코드별 실패 개수 + 가장 작게 줄인 실패 예시
+- 보고용: `cd backend && uv run python -m tests.test_engine_random [--n 2000]` → M 코드별 실패 개수 + 가장 작게 줄인 실패 예시
 """
 
 import sys
@@ -21,7 +21,7 @@ from app.engine.rules import RuleSet
 from app.models.db import LgContent, Program, Senior, UserRule, WatchLog
 
 DAY = date(2026, 12, 1)
-MUST = ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"]
+MUST = ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9"]
 EXAMPLES = 200
 SEED = 20261201  # 무작위 예시를 만드는 시드 (바꾸면 다른 200개)
 
@@ -212,9 +212,9 @@ def failed_must(report: Report) -> dict[str, str]:
     return {c: report.must[c].detail for c in MUST if report.must[c].ok is False}
 
 
-def on_random_days(fn: Callable[[dict], None]) -> Callable[[], None]:
-    """fn(case) 를 무작위 예시 200개로 돌리는 함수로 (같은 시드 → 어디서 불러도 같은 200개)."""
-    return seed(SEED)(RANDOM_SETTINGS(given(day_cases())(fn)))
+def on_random_days(fn: Callable[[dict], None], n: int = EXAMPLES) -> Callable[[], None]:
+    """fn(case) 를 무작위 예시 n개(기본 200)로 돌리는 함수로 (같은 시드 → 어디서 불러도 같은 예시)."""
+    return seed(SEED)(settings(RANDOM_SETTINGS, max_examples=n)(given(day_cases())(fn)))
 
 
 @on_random_days
@@ -225,26 +225,25 @@ def test_random_days_pass_every_must_rule(case):
 # ───────── 보고용 (pytest 에서는 안 돎) ─────────
 
 
-def count_failures() -> dict[str, int]:
-    """예시 200개(테스트와 같은 예시) 중 M 코드별 실패 개수."""
+def count_failures(n: int = EXAMPLES) -> dict[str, int]:
+    """예시 n개(앞 200개는 테스트와 같은 예시) 중 M 코드별 실패 개수."""
     counts = dict.fromkeys(MUST, 0)
 
-    @on_random_days
     def collect(case):
         for code in failed_must(run_case(case)):
             counts[code] += 1
 
-    collect()
+    on_random_days(collect, n)()
     return counts
 
 
-def smallest_failure(code: str) -> tuple[dict, Report] | None:
+def smallest_failure(code: str, n: int = EXAMPLES) -> tuple[dict, Report] | None:
     """그 M 코드를 어기는 예시 중 가장 작게 줄인 것 (없으면 None)."""
     try:
         case = find(
             day_cases(),
             lambda c: code in failed_must(run_case(c)),
-            settings=RANDOM_SETTINGS,
+            settings=settings(RANDOM_SETTINGS, max_examples=n),
             random=Random(SEED),
         )
     except NoSuchExample:
@@ -276,10 +275,11 @@ def describe(case: dict) -> str:
 
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
-    counts = count_failures()
-    print(f"무작위 {EXAMPLES}개 중 M 실패 개수: {counts}")
+    n = int(sys.argv[sys.argv.index("--n") + 1]) if "--n" in sys.argv else EXAMPLES
+    counts = count_failures(n)
+    print(f"무작위 {n}개 중 M 실패 개수: {counts}")
     for code in MUST:
-        found = smallest_failure(code)
+        found = smallest_failure(code, n) if counts[code] else None
         if found is None:
             print(f"\n{code}: 실패 예시 없음")
             continue
